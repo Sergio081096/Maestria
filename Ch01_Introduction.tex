@@ -1,0 +1,28 @@
+\chapter{Introducción}
+
+La robótica de servicio doméstico representa uno de los campos de mayor proyección en la inteligencia artificial y la automatización, con aplicaciones que van desde la asistencia a personas mayores hasta la gestión autónoma de entornos residenciales. En este contexto, la planificación de acciones —es decir, la capacidad de un robot para descomponer objetivos de alto nivel en secuencias ejecutables— es un desafío central, particularmente en entornos dinámicos y no estructurados donde interactúan humanos, objetos móviles y tareas imprevistas.
+
+Los sistemas basados en reglas, como los implementados en motores de inferencia del tipo CLIPS, han demostrado ser robustos y predecibles en escenarios estructurados, como líneas de producción o laboratorios controlados. Su fortaleza radica en la transparencia del razonamiento simbólico y la capacidad de priorizar acciones críticas, como la evitación de colisiones o la gestión de emergencias. Sin embargo, su rigidez los hace poco adaptables ante variaciones no previstas en el entorno o ante comandos expresados en lenguaje natural con alto grado de ambigüedad o complejidad.
+
+Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT o Qwen, han emergido como herramientas capaces de interpretar y generar lenguaje natural, e incluso de actuar como agentes de planificación autónomos. Su flexibilidad contextual permite traducir instrucciones verbales en secuencias de acciones, complementando así la solidez de los sistemas basados en reglas. No obstante, su naturaleza probabilística y la falta de garantías formales de seguridad limitan su uso directo en aplicaciones robóticas donde la integridad física y la predictibilidad son prioritarias.
+
+Esta tesis propone un sistema híbrido de planificación de acciones que integra un motor de reglas CLIPS con modelos de lenguaje natural (ChatGPT/Qwen), aprovechando las ventajas de ambos enfoques: la previsibilidad y seguridad de CLIPS, y la adaptabilidad y capacidad de comprensión lingüística de los LLMs. El sistema se implementa y valida en el robot de servicio doméstico Justina, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, utilizando ROS 2 como marco de integración.
+
+Los objetivos específicos incluyen:
+
+Diseñar un conjunto jerárquico de reglas en CLIPS para priorizar acciones críticas.
+
+Integrar un módulo de lenguaje natural que traduzca comandos verbales a hechos estructurados en CLIPS.
+
+Implementar un esquema de planificación dual que permita tanto a CLIPS como a ChatGPT generar planes concurrentes.
+
+Desarrollar mecanismos de selección y validación de planes basados en criterios de seguridad, eficiencia y contexto.
+
+Validar el sistema en escenarios realistas mediante simulaciones y pruebas con el robot físico.
+
+La contribución principal de este trabajo es un marco metodológico y tecnológico para la planificación híbrida en robótica de servicio, que combina razonamiento simbólico y subsimbólico, manteniendo altos estándares de seguridad y transparencia. Los resultados esperados incluyen una mejora en la capacidad del robot para interpretar comandos complejos, adaptarse a situaciones novedosas y garantizar respuestas seguras en entornos domésticos dinámicos.
+
+\section{Contexto y Motivación}
+\section{Problemática: Sistemas Puramente Basados en Reglas en Entornos Dinámicos}
+\section{Hipótesis: La Complementariedad entre Sistemas Simbólicos (CLIPS) y Subsimbólicos (ChatGPT/Qwen)}
+\section{Objetivos}
