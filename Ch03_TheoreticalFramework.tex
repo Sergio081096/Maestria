@@ -1,13 +1,66 @@
 \chapter{Marco Teórico y Conceptual}
+
+Se presenta el fundamento teórico del sistema propuesto, describiendo arquitecturas de planeación jerárquica y los principios de los sistemas de producción. Se introduce el funcionamiento de los modelos de lenguaje grande y se detalla la integración de traductores de lenguaje natural con sistemas basados en reglas, estableciendo las bases tecnológicas para la implementación del sistema híbrido CLIPS-ChatGPT/Qwen y su uso en la arquitectura ViRoot descrita a continuación (ver Figura \ref{fig:viroot}).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figures/virbot.jpg}
+    \caption{Arquitectura ViRoot.}
+    \label{fig:viroot}
+\end{figure}
+
+\subsection*{Arquitectura del Sistema}
+
+La arquitectura VIRBOT de Justina se organiza en cuatro capas principales:
+
+\begin{itemize}
+    \item \textbf{Capa de Entradas}
+    \begin{itemize}
+        \item Procesamiento de datos de sensores internos y externos.
+        \item Aplicación de técnicas de reconocimiento de patrones.
+        \item Generación del estado del entorno.
+    \end{itemize}
+    \item \textbf{Capa de Planificación}
+    \begin{itemize}
+        \item Validación mediante gestión del conocimiento.
+        \item Reconocimiento de situaciones y activación de objetivos.
+        \item Planificación de secuencias de operaciones físicas.
+    \end{itemize}
+    \item \textbf{Capa de Gestión del Conocimiento}
+    \begin{itemize}
+        \item Mapas del entorno creados con técnicas SLAM.
+        \item Sistema de localización basado en filtro de Kalman.
+        \item Sistema basado en reglas CLIPS para representación del conocimiento.
+    \end{itemize}
+    \item \textbf{Capa de Ejecución}
+    \begin{itemize}
+        \item Ejecución y verificación de planes de movimiento.
+        \item Procedimientos predefinidos representados como máquinas de estado.
+        \item Integración de procedimientos para generar planes complejos.
+    \end{itemize}
+\end{itemize}
+
 \section{Arquitectura de un Sistema de Planeación de Acciones Jerárquico}
+
+Descripción del diseño escalonado del sistema de planificación, donde las decisiones de alto nivel (estrategias) se descomponen en acciones ejecutables de bajo nivel, por ejemplo ("servir la cena") se descomponen en tareas intermedias ("ir a la cocina", "tomar platos", "colocar en mesa") y finalmente en acciones primitivas ejecutables por el robot.
+
 \section{Fundamentos de los Sistemas de Producción (Rule-Based Systems)}
-\section{Introducción a los Modelos de Lenguaje Grande (LLMs) y ChatGPT}
+
+Análisis teórico de los sistemas basados en reglas, centrándose en el ciclo de inferencia "reconocer-actuar" y el algoritmo RETE para emparejamiento eficiente de patrones. Se detalla cómo CLIPS implementa estos conceptos mediante su motor de inferencia y memoria de trabajo.
+
+\section{Introducción a los Modelos de Lenguaje Grande (LLMs) y ChatGPT/Qwen}
+
+Exposición de los principios arquitectónicos de los transformadores y el mecanismo de atención que fundamenta los LLMs. Se contrastan las capacidades de ChatGPT (modelo propietario) frente a Qwen2.5-0.5B (modelo open-source), destacando ventajas computacionales y de personalización para entornos robóticos.
+
 \section{Integración de Traductores de Lenguaje Natural con Sistemas Basados en Reglas}
 \subsection{Utilidad y Función de la Integración}
 \subsection{Funcionamiento de la Integración CLIPS-Lenguaje Natural}
 \subsection{Descripción de Tecnologías: CLIPS, ChatGPT y Qwen2.5-0.5B}
 \section{ChatGPT como Agente de Planificación Autónomo}
 \subsection{Capacidades de Planificación de LLMs vs. Sistemas Basados en Reglas}
+
+Análisis comparativo de los enfoques de planificación, destacando la rigidez predecible de CLIPS frente a la adaptabilidad contextual de los LLMs.
+
 \subsection{Arquitectura de Planificación Dual: CLIPS y ChatGPT como Motores Complementarios}
 \subsection{Mecanismos de Selección y Validación de Planes}
 \subsection{Ventajas y Riesgos de la Planificación con LLMs en Robótica}

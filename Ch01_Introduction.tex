@@ -8,21 +8,42 @@ Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT o Qwen, han e
 
 Esta tesis propone un sistema híbrido de planificación de acciones que integra un motor de reglas CLIPS con modelos de lenguaje natural (ChatGPT/Qwen), aprovechando las ventajas de ambos enfoques: la previsibilidad y seguridad de CLIPS, y la adaptabilidad y capacidad de comprensión lingüística de los LLMs. El sistema se implementa y valida en el robot de servicio doméstico Justina, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, utilizando ROS 2 como marco de integración.
 
-Los objetivos específicos incluyen:
-
-Diseñar un conjunto jerárquico de reglas en CLIPS para priorizar acciones críticas.
-
-Integrar un módulo de lenguaje natural que traduzca comandos verbales a hechos estructurados en CLIPS.
-
-Implementar un esquema de planificación dual que permita tanto a CLIPS como a ChatGPT generar planes concurrentes.
-
-Desarrollar mecanismos de selección y validación de planes basados en criterios de seguridad, eficiencia y contexto.
-
-Validar el sistema en escenarios realistas mediante simulaciones y pruebas con el robot físico.
-
-La contribución principal de este trabajo es un marco metodológico y tecnológico para la planificación híbrida en robótica de servicio, que combina razonamiento simbólico y subsimbólico, manteniendo altos estándares de seguridad y transparencia. Los resultados esperados incluyen una mejora en la capacidad del robot para interpretar comandos complejos, adaptarse a situaciones novedosas y garantizar respuestas seguras en entornos domésticos dinámicos.
-
 \section{Contexto y Motivación}
 \section{Problemática: Sistemas Puramente Basados en Reglas en Entornos Dinámicos}
 \section{Hipótesis: La Complementariedad entre Sistemas Simbólicos (CLIPS) y Subsimbólicos (ChatGPT/Qwen)}
 \section{Objetivos}
+
+\begin{itemize}
+    \item \textbf{Diseño del Sistema Híbrido:}
+    \begin{itemize}
+        \item Definir un conjunto jerárquico de reglas en CLIPS para priorizar acciones críticas.
+        \item Especificar la arquitectura de integración entre CLIPS y modelos de lenguaje natural.
+        \item Diseñar un marco de planificación dual que permita tanto a CLIPS como a ChatGPT generar y ejecutar planes.
+        \item Establecer protocolos de comunicación y validación entre los módulos.
+    \end{itemize}
+    \item \textbf{Implementación Técnica:}
+    \begin{itemize}
+        \item Integrar el motor de reglas CLIPS con ROS (Robot Operating System).
+        \item Desarrollar el módulo de interfaz con APIs de ChatGPT o implementación local de Qwen2.5-0.5B.
+        \item Implementar capacidades de planificación autónoma en ChatGPT mediante prompting estructurado.
+        \item Desarrollar un mecanismo de selección y validación entre planes generados por diferentes motores.
+    \end{itemize}
+    \item \textbf{Capacidades de Interacción Natural:}
+    \begin{itemize}
+        \item Implementar traducción de comandos en lenguaje natural a hechos estructurados de CLIPS.
+        \item Desarrollar mecanismos de diálogo para resolución de ambigüedades.
+        \item Crear protocolos de retroalimentación para aprendizaje incremental.
+    \end{itemize}
+    \item \textbf{Validación Experimental:}
+    \begin{itemize}
+        \item Validar el sistema en escenarios realistas con el robot físico y simulaciones.
+        \item Evaluar el rendimiento mediante métricas comparativas:
+        \begin{itemize}
+            \item Tiempo de ejecución de tareas y tasa de éxito.
+            \item Precisión en interpretación de comandos complejos.
+            \item Robustez ante instrucciones ambiguas o novedosas.
+        \end{itemize}
+        \item Comparar el sistema híbrido vs. abordajes puramente basados en reglas.
+        \item Evaluar la calidad de planes generados por CLIPS vs. ChatGPT en diferentes escenarios.
+    \end{itemize}
+\end{itemize}

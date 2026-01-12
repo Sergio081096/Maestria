@@ -1,14 +1,46 @@
 \chapter{Metodología: Diseño del Sistema Híbrido CLIPS-ChatGPT/Qwen}
 \section{Diseño del Sistema Basado en Reglas con CLIPS}
 \subsection{Definición del Conjunto de Reglas Jerárquicas}
+
+Especificación de las reglas organizadas por niveles de prioridad, donde las reglas de seguridad (evitación de colisiones, gestión de emergencias) tienen máxima prioridad sobre las operativas.
+
 \subsection{Priorización de Acciones Críticas y Gestión de Emergencias}
+
+Diseño de reglas específicas para escenarios de fallo y situaciones críticas, asegurando respuestas predecibles y seguras.
+
 \subsection{Representación del Conocimiento y Hechos en la Base de Datos de CLIPS}
+
+Estructuración del conocimiento del entorno doméstico en hechos CLIPS iniciales que sirven como base para el razonamiento.
+
+\subsubsection*{Descripción de la base de conocimiento inicial incluye:}
+
+\begin{itemize}
+    \item \textit{Topología del entorno:} habitaciones, conexiones, zonas navegables.
+    \item \textit{Taxonomía de objetos:} categorías, subcategorías, propiedades heredables.
+    \item \textit{Relaciones espaciales:} contención, adyacencia, orientación.
+    \item \textit{Capacidades del robot:} acciones posibles, restricciones físicas.
+\end{itemize}
+
 \section{Integración de ChatGPT/Qwen como Sistema Complementario}
 \subsection{Funciones Asignadas al Módulo de Lenguaje Natural}
 \subsection{Protocolo de Comunicación entre CLIPS y los Modelos de Lenguaje}
 \subsection{Mecanismos de Seguridad y Validación para las Respuestas del LLM}
+
+Implementación de verificaciones para asegurar que los planes generados por LLMs cumplen con constraints de seguridad y factibilidad robótica.
+
 \section{Implementación de Planificación Dual}
 \subsection{Diseño del Módulo de Planificación con ChatGPT}
 \subsection{Protocolos de Prompting para Generación de Planes Robóticos}
 \subsection{Mecanismo de Selección entre Planes CLIPS vs. ChatGPT}
 \subsection{Validación y Simulación de Planes Antes de Ejecución}
+
+\subsubsection*{Integración con el Robot Justina}
+
+\begin{itemize}
+    \item \textit{Procesamiento de Entrada de Voz.}
+    \item \textit{Ejecución de Planes en el Entorno Físico:}
+    \begin{itemize}
+        \item Mecanismos para transformar los planes publicados en los tópicos de resultados en comandos ejecutables por los actuadores del robot (navegación, manipulación de objetos, etc.)
+    \end{itemize}
+    \item \textit{Retroalimentación y Aprendizaje Incremental.}
+\end{itemize}
