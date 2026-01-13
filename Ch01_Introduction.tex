@@ -9,8 +9,61 @@ Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT o Qwen, han e
 Esta tesis propone un sistema híbrido de planificación de acciones que integra un motor de reglas CLIPS con modelos de lenguaje natural (ChatGPT/Qwen), aprovechando las ventajas de ambos enfoques: la previsibilidad y seguridad de CLIPS, y la adaptabilidad y capacidad de comprensión lingüística de los LLMs. El sistema se implementa y valida en el robot de servicio doméstico Justina, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, utilizando ROS 2 como marco de integración.
 
 \section{Contexto y Motivación}
+
+La robótica de servicio doméstico ha evolucionado significativamente en la última década, impulsada por avances en percepción, planificación y interacción humano-robot. Estos sistemas están diseñados para operar en entornos no estructurados como hogares, hospitales o centros de cuidado, donde deben realizar tareas que van desde la entrega de objetos hasta la asistencia en actividades de la vida diaria. En este contexto, la capacidad de planificar acciones de manera autónoma, segura y adaptativa se convierte en un requisito fundamental.
+
+La planificación de acciones en robótica ha sido tradicionalmente abordada mediante sistemas basados en reglas (RBS), que ofrecen un marco predecible y verificable para la toma de decisiones. Sin embargo, la creciente complejidad de los entornos domésticos—caracterizados por la presencia de humanos, objetos dinámicos y situaciones imprevistas—ha expuesto las limitaciones de los enfoques puramente simbólicos. Paralelamente, el reciente surgimiento de modelos de lenguaje grande (LLMs) ha abierto nuevas posibilidades para la interpretación de comandos en lenguaje natural y la generación de planes flexibles, aunque a menudo carentes de garantías formales de seguridad.
+
+Esta tesis se desarrolla en el marco del Laboratorio de Bio-Robótica de la UNAM, utilizando como plataforma el robot de servicio Justina, un sistema modular basado en ROS 2 con capacidades avanzadas de navegación, manipulación y percepción. La motivación central del trabajo radica en la necesidad de desarrollar arquitecturas de planificación que combinen lo mejor de ambos mundos: la robustez y transparencia de los sistemas basados en reglas, y la adaptabilidad y capacidad de diálogo de los modelos de lenguaje modernos.
+
 \section{Problemática: Sistemas Puramente Basados en Reglas en Entornos Dinámicos}
+
+Los sistemas basados en reglas, implementados en motores de inferencia como CLIPS, se fundamentan en la lógica simbólica y el ciclo "reconocer-actuar". Su principal ventaja es la previsibilidad: ante un conjunto de hechos y reglas bien definidos, la respuesta del sistema es determinista y explicable. Esto los hace idóneos para aplicaciones donde la seguridad y la certificación son críticas, como en entornos industriales o médicos.
+
+No obstante, en contextos domésticos dinámicos, estos sistemas enfrentan desafíos significativos:
+
+\begin{enumerate}
+	\item \textbf{Rigidez interpretativa:} No pueden procesar comandos en lenguaje natural complejo o ambiguo, como "trae el libro rojo que está cerca de la ventana".
+	\item \textbf{Falta de adaptabilidad:} Las reglas deben ser definidas a priori; cualquier situación no prevista en la base de conocimiento puede llevar al fracaso o a un comportamiento no deseado.
+	\item \textbf{Dificultad para gestionar la incertidumbre:} No manejan bien la información incompleta o cambiante del entorno en tiempo real.
+	\item \textbf{Escalabilidad limitada:} Mantener y extender un conjunto grande de reglas para cubrir todos los escenarios posibles resulta complejo y laborioso.
+\end{enumerate}
+
+Por otro lado, los enfoques puramente basados en aprendizaje automático—especialmente los LLMs—ofrecen flexibilidad y capacidad de generalización, pero introducen riesgos como:
+\begin{itemize}
+	\item Comportamientos impredecibles o no verificables.
+	\item Falta de garantías de seguridad en la ejecución física.
+	\item Dependencia de grandes volúmenes de datos y recursos computacionales.
+\end{itemize}
+
+La problemática central, por tanto, es cómo diseñar un sistema de planificación que mantenga la seguridad y explicabilidad de los RBS, pero que sea lo suficientemente flexible para operar en entornos domésticos dinámicos e interactuar de manera natural con humanos.
+
 \section{Hipótesis: La Complementariedad entre Sistemas Simbólicos (CLIPS) y Subsimbólicos (ChatGPT/Qwen)}
+
+La hipótesis central de esta investigación postula que la integración sinérgica de un sistema basado en reglas (CLIPS) con un modelo de lenguaje grande (ChatGPT o Qwen) puede superar las limitaciones de cada enfoque por separado, resultando en un sistema híbrido de planificación que es a la vez seguro, explicable, adaptable y capaz de entender lenguaje natural.
+
+Esta complementariedad se articula en tres niveles:
+
+\begin{enumerate}
+	\item \textbf{Nivel de interpretación:} Los LLMs actúan como traductores de lenguaje natural a hechos estructurados, permitiendo que comandos complejos y ambiguos sean convertidos en representaciones simbólicas que CLIPS puede procesar.
+	\item \textbf{Nivel de planificación:} Se implementa una arquitectura de planificación dual, donde CLIPS genera planes predecibles y seguros para tareas conocidas, mientras que los LLMs proponen soluciones flexibles para situaciones novedosas o complejas.
+	\item \textbf{Nivel de validación y selección:} Un mecanismo de supervisión evalúa los planes generados por ambos motores con base en criterios de seguridad, eficiencia y contexto, seleccionando la mejor opción o combinándolas de manera segura.
+\end{enumerate}
+
+Se espera que este sistema híbrido:
+
+\begin{itemize}
+	\item Mejore la tasa de éxito en la ejecución de tareas en entornos domésticos.
+
+	\item Reduzca el tiempo de respuesta ante comandos complejos.
+
+	\item Mantenga un comportamiento seguro y predecible en situaciones críticas.
+
+	\item Permita una interacción más natural e intuitiva con usuarios no expertos.
+\end{itemize}
+
+La validación de esta hipótesis se realizará mediante experimentos en simulación y con el robot físico Justina, comparando el desempeño del sistema híbrido frente a enfoques puramente basados en reglas o puramente basados en LLMs.
+
 \section{Objetivos}
 
 \begin{itemize}
