@@ -6,7 +6,7 @@ Los sistemas basados en reglas, como los implementados en motores de inferencia 
 
 Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT o Qwen, han emergido como herramientas capaces de interpretar y generar lenguaje natural, e incluso de actuar como agentes de planificación autónomos \cite{vaswani2017}. Su flexibilidad contextual permite traducir instrucciones verbales en secuencias de acciones, complementando así la solidez de los sistemas basados en reglas. No obstante, su naturaleza probabilística y la falta de garantías formales de seguridad limitan su uso directo en aplicaciones robóticas donde la integridad física y la predictibilidad son prioritarias \cite{shi2023}.
 
-Esta tesis propone un \textbf{sistema híbrido de planificación de acciones} que integra un motor de reglas CLIPS \cite{nasaCLIPS} con modelos de lenguaje natural (ChatGPT/Qwen), aprovechando las ventajas de ambos enfoques: la previsibilidad y seguridad de CLIPS, y la adaptabilidad y capacidad de comprensión lingüística de los LLMs. El sistema se implementa y valida en el robot de servicio doméstico \textit{Justina}, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, utilizando ROS 2 como marco de integración \cite{savage2024}.
+Esta tesis propone un \textbf{sistema híbrido de planificación de tareas} que integra un motor de reglas CLIPS \cite{nasaCLIPS} con modelos de lenguaje natural (ChatGPT/Qwen), aprovechando las ventajas de ambos enfoques: la previsibilidad y seguridad de CLIPS, y la adaptabilidad y capacidad de comprensión lingüística de los LLMs. El sistema se implementa y valida en el robot de servicio doméstico \textit{Justina}, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, utilizando ROS 2 como marco de integración \cite{savage2024}.
 
 \section{Contexto y Motivación}
 
@@ -100,3 +100,5 @@ La validación de esta hipótesis se realizará mediante experimentos en simulac
         \item Evaluar la calidad de planes generados por CLIPS vs. ChatGPT en diferentes escenarios.
     \end{itemize}
 \end{itemize}
+
+\section{Estructura del documento}
