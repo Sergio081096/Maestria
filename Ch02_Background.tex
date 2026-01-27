@@ -3,6 +3,26 @@
 Se realiza una revisión comprensiva de la evolución histórica de los sistemas basados en reglas en robótica, analizando aplicaciones tradicionales y limitaciones actuales. Se examinan las características técnicas de CLIPS y se contrastan con enfoques modernos de aprendizaje automático, culminando con el estudio de sistemas híbridos que combinan la predictibilidad de las reglas con la flexibilidad del ML para entornos dinámicos.
 
 \section{Sistemas Basados en Reglas en Robótica: Historia y Aplicaciones}
+
+Los sistemas basados en reglas (Rule-Based Systems, RBS), constituyen uno de los paradigmas más antiguos y consolidados en inteligencia artificial y robótica \cite{giarratano2005}. Su origen se remonta a los sistemas expertos de la década de 1970, donde se utilizaban para representar el conocimiento de especialistas humanos en dominios bien delimitados, como el diagnóstico médico o la configuración de sistemas complejos \cite{russell2020}. En robótica, la adopción de estos sistemas se popularizó en los años 80 y 90, particularmente en entornos industriales estructurados, donde la previsibilidad y seguridad eran prioritarias.
+
+Históricamente, los RBS han sido fundamentales en arquitecturas de control robótico jerárquico, como la propuesta por Brooks \cite{brooks1986}, donde capas de comportamientos reactivos podían ser coordinadas mediante reglas de supresión. Más adelante, motores de inferencia como CLIPS (C Language Integrated Production System), desarrollado por la NASA en 1985, se convirtieron en herramientas estándar para la implementación de sistemas de planificación y toma de decisiones en robots autónomos \cite{NASA_CLIPS}. CLIPS permitió la representación simbólica del conocimiento a través de hechos y reglas, y su ciclo de inferencia "reconocer-actuar" ofreció un marco eficiente para el razonamiento en tiempo real.
+
+En cuanto a aplicaciones, los sistemas basados en reglas han demostrado su utilidad en diversos dominios robóticos:
+
+\begin{enumerate}
+	\item \textbf{Robótica industrial:}
+	 En cadenas de montaje automatizadas, donde las tareas son repetitivas y el entorno está controlado. Los RBS se utilizan para secuenciar operaciones, gestionar excepciones y garantizar la seguridad de los operarios humanos \cite{murphy2019}.
+	\item \textbf{Robótica de servicio y doméstica:}
+	En tareas como la entrega de objetos, navegación en interiores y asistencia a personas con movilidad reducida. 
+	\item \textbf{Robótica espacial y de exploración:}
+	Sistemas como Remote Agent de la NASA emplearon arquitecturas basadas en reglas para la planificación y ejecución autónoma de experimentos en misiones no tripuladas \cite{Pell1997}.
+	\item \textbf{Sistemas híbridos contemporáneos: }
+	Recientemente, los RBS se han integrado con técnicas de aprendizaje automático para compensar sus limitaciones en entornos dinámicos. Por ejemplo, en \cite{zeng2020} se combina un RBS con un modelo de lenguaje natural para interpretar comandos verbales en tareas de manipulación.
+\end{enumerate}
+
+A pesar de la relevancia de enfoques basados en aprendizaje profundo, los sistemas basados en reglas mantienen su relevancia en aplicaciones donde la explicabilidad, verificabilidad y seguridad son críticas \cite{shi2023}. Su capacidad para representar conocimiento simbólico de forma transparente los hace ideales para entornos regulados o donde se requiere auditoría de las decisiones del robot.
+
 \section{El Lenguaje CLIPS: Características, Ventajas y Limitaciones}
 \section{Enfoques Modernos: Aprendizaje Automático (ML) y Redes Neuronales en Robótica}
 \section{Sistemas Híbridos: Combinando la Predictibilidad de las Reglas con la Flexibilidad del ML}

@@ -16,7 +16,7 @@ La planificación de acciones en robótica ha sido tradicionalmente abordada med
 
 Esta tesis se desarrolla en el marco del Laboratorio de Bio-Robótica de la UNAM, utilizando como plataforma el robot de servicio Justina, un sistema modular basado en ROS 2 con capacidades avanzadas de navegación, manipulación y percepción. La motivación central del trabajo radica en la necesidad de desarrollar arquitecturas de planificación que combinen lo mejor de ambos mundos: la robustez y transparencia de los sistemas basados en reglas, y la adaptabilidad y capacidad de diálogo de los modelos de lenguaje modernos.
 
-\section{Problemática: Sistemas Puramente Basados en Reglas en Entornos Dinámicos}
+\section{Problemática: Sistemas Basados en Reglas en Entornos Dinámicos}
 
 Los sistemas basados en reglas, implementados en motores de inferencia como CLIPS, se fundamentan en la lógica simbólica y el ciclo "reconocer-actuar" \cite{giarratano2005}. Su principal ventaja es la previsibilidad: ante un conjunto de hechos y reglas bien definidos, la respuesta del sistema es determinista y explicable. Esto los hace idóneos para aplicaciones donde la seguridad y la certificación son críticas, como en entornos industriales o médicos.
 
@@ -29,7 +29,7 @@ No obstante, en contextos domésticos dinámicos, estos sistemas enfrentan desaf
 	\item \textbf{Escalabilidad limitada:} Mantener y extender un conjunto grande de reglas para cubrir todos los escenarios posibles resulta complejo y laborioso.
 \end{enumerate}
 
-Por otro lado, los enfoques puramente basados en aprendizaje automático—especialmente los LLMs—ofrecen flexibilidad y capacidad de generalización, pero introducen riesgos como \cite{shi2023}
+Por otro lado, los enfoques puramente basados en aprendizaje automático — especialmente los LLMs—ofrecen flexibilidad y capacidad de generalización, pero introducen riesgos como \cite{shi2023}
 \begin{itemize}
 	\item Comportamientos impredecibles o no verificables.
 	\item Falta de garantías de seguridad en la ejecución física.
@@ -102,3 +102,27 @@ La validación de esta hipótesis se realizará mediante experimentos en simulac
 \end{itemize}
 
 \section{Estructura del documento}
+
+Este documento está organizado en los siguientes capítulos que describen el sistema propuesto para el desarrollo de esta tesis, abarcando el planteamiento, desarrollo, implementación y validación del sistema híbrido de planificación. La estructura es la siguiente:
+
+\begin{enumerate}
+    \item \textbf{Capítulo 1: Introducción.} Presenta el contexto, motivación, problemática, hipótesis y objetivos de la investigación, así como la justificación del enfoque híbrido en robótica de servicio doméstico.
+
+    \item \textbf{Capítulo 2: Antecedentes y estado del arte.} Revisa la evolución de los sistemas basados en reglas en robótica, las características de CLIPS, los enfoques modernos de aprendizaje automático y los sistemas híbridos existentes.
+
+    \item \textbf{Capítulo 3: Marco teórico y conceptual.} Describe los fundamentos de la planificación jerárquica, los sistemas de producción, los modelos de lenguaje grande (LLMs) y la arquitectura de integración propuesta.
+
+    \item \textbf{Capítulo 4: Metodología.} Detalla el diseño del sistema híbrido, incluyendo la definición de reglas en CLIPS, la integración con ChatGPT/Qwen, y los mecanismos de planificación dual y validación.
+
+    \item \textbf{Capítulo 5: Implementación.} Explica los entornos de desarrollo, la configuración técnica, la interfaz con APIs y las pruebas utilizados para validar la integración de los módulos.
+
+    \item \textbf{Capítulo 6: Escenarios de validación y experimentación.} Presenta el diseño experimental, los escenarios de prueba y las métricas cuantitativas y cualitativas utilizadas para evaluar el sistema.
+
+    \item \textbf{Capítulo 7: Análisis de resultados.} Compara el rendimiento del sistema híbrido frente al sistema basado solo en reglas, evalúa la efectividad de los LLMs y discute limitaciones y costos computacionales.
+
+    \item \textbf{Capítulo 8: Discusión.} Interpreta los resultados en relación con los objetivos, analiza ventajas y desventajas del enfoque híbrido, y explora implicaciones éticas y de seguridad.
+
+    \item \textbf{Capítulo 9: Contribuciones y relevancia.} Destaca la aportación técnica del marco híbrido, su aplicabilidad práctica en distintos sectores y su relevancia académica como benchmark.
+
+    \item \textbf{Capítulo 10: Conclusiones y trabajo futuro.} Resume los hallazgos principales y propone líneas de investigación futura, como el fine-tuning de LLMs y la mejora de mecanismos de seguridad.
+\end{enumerate}
