@@ -1,26 +1,26 @@
 \chapter{Introducción}
 
-La robótica de servicio doméstico representa un campo de proyección para la inteligencia artificial y la automatización, con aplicaciones que van desde la asistencia a personas mayores hasta la gestión autónoma de entornos residenciales \cite{murphy2019}. En este contexto, la planificación de acciones, es decir, la capacidad de un robot para descomponer objetivos de alto nivel en secuencias ejecutables, es un desafío  en entornos dinámicos y no estructurados donde interactúan humanos, objetos móviles y tareas imprevistas \cite{russell2020}.
+La robótica de servicio doméstico representa un campo de proyección para la inteligencia artificial y la automatización, con aplicaciones que van desde la asistencia a personas mayores hasta la gestión autónoma de entornos residenciales \cite{Murphy2019}. En este contexto, la planificación de acciones, es decir, la capacidad de un robot para descomponer objetivos de alto nivel en secuencias ejecutables, es un desafío  en entornos dinámicos y no estructurados donde interactúan humanos, objetos móviles y tareas imprevistas \cite{Russell2020}.
 
-Los sistemas basados en reglas, como los implementados en motores de inferencia del tipo CLIPS, han demostrado ser robustos y predecibles en escenarios estructurados, como líneas de producción o laboratorios controlados \cite{giarratano2005}. Su fortaleza radica en la transparencia del razonamiento simbólico y la capacidad de priorizar acciones críticas, como la evasión de obstáculos o la gestión de emergencias. Sin embargo, su rigidez los hace poco adaptables ante variaciones no previstas en el entorno o ante comandos expresados en lenguaje natural con alto grado de ambigüedad o complejidad \cite{brooks1986}.
+Los sistemas basados en reglas, como los implementados en motores de inferencia del tipo CLIPS, han demostrado ser robustos y predecibles en escenarios estructurados, como líneas de producción o laboratorios controlados \cite{Giarratano2005}. Su fortaleza radica en la transparencia del razonamiento simbólico y la capacidad de priorizar acciones críticas, como la evasión de obstáculos o la gestión de emergencias. Sin embargo, su rigidez los hace poco adaptables ante variaciones no previstas en el entorno o ante comandos expresados en lenguaje natural con alto grado de ambigüedad o complejidad \cite{Brooks1986}.
 
-Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT o Qwen, han emergido como herramientas capaces de interpretar y generar lenguaje natural, e incluso de actuar como agentes de planificación autónomos \cite{vaswani2017}. Su flexibilidad contextual permite traducir instrucciones verbales en secuencias de acciones, complementando así la solidez de los sistemas basados en reglas. No obstante, su naturaleza probabilística y la falta de garantías formales de seguridad limitan su uso directo en aplicaciones robóticas donde la integridad física y la predictibilidad son prioritarias \cite{shi2023}.
+Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT o Qwen, han emergido como herramientas capaces de interpretar y generar lenguaje natural, e incluso de actuar como agentes de planificación autónomos \cite{Vaswani2017}. Su flexibilidad contextual permite traducir instrucciones verbales en secuencias de acciones, complementando así la solidez de los sistemas basados en reglas. No obstante, su naturaleza probabilística y la falta de garantías formales de seguridad limitan su uso directo en aplicaciones robóticas donde la integridad física y la predictibilidad son prioritarias \cite{Shi2023}.
 
-Esta tesis propone un \textbf{sistema híbrido de planificación de tareas} que integra un motor de reglas CLIPS \cite{nasaCLIPS} con modelos de lenguaje natural (ChatGPT/Qwen), aprovechando las ventajas de ambos enfoques: la previsibilidad y seguridad de CLIPS, y la adaptabilidad y capacidad de comprensión lingüística de los LLMs. El sistema se implementa y valida en el robot de servicio doméstico \textit{Justina}, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, utilizando ROS 2 como marco de integración \cite{savage2024}.
+Esta tesis propone un \textbf{sistema híbrido de planificación de tareas} que integra un motor de reglas CLIPS \cite{NasaCLIPS} con modelos de lenguaje natural (ChatGPT/Qwen), aprovechando las ventajas de ambos enfoques: la previsibilidad y seguridad de CLIPS, y la adaptabilidad y capacidad de comprensión lingüística de los LLMs. El sistema se implementa y valida en el robot de servicio doméstico \textit{Justina}, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, utilizando ROS 2 como marco de integración \cite{Savage2024}.
 
 \section{Contexto y Motivación}
 
-El área de la rebotica orientada al servicio doméstico ha evolucionado significativamente en la última década, impulsada por avances en percepción, planificación y interacción humano-robot \cite{murphy2019}. Estos sistemas están diseñados para operar en entornos no estructurados como hogares, hospitales o centros de cuidado, donde deben realizar tareas que van desde la entrega de objetos hasta la asistencia en actividades de la vida diaria. En este contexto, la capacidad de planificar acciones de manera autónoma, segura y adaptativa se convierte en un requisito fundamental.
+El área de la rebotica orientada al servicio doméstico ha evolucionado significativamente en la última década, impulsada por avances en percepción, planificación y interacción humano-robot \cite{Murphy2019}. Estos sistemas están diseñados para operar en entornos no estructurados como hogares, hospitales o centros de cuidado, donde deben realizar tareas que van desde la entrega de objetos hasta la asistencia en actividades de la vida diaria. En este contexto, la capacidad de planificar acciones de manera autónoma, segura y adaptativa se convierte en un requisito fundamental.
 
-La planificación de acciones en robótica ha sido tradicionalmente abordada mediante sistemas basados en reglas (RBS), que ofrecen un marco predecible y verificable para la toma de decisiones \cite{russell2020}. Sin embargo, la creciente complejidad de los entornos domésticos—caracterizados por la presencia de humanos, objetos dinámicos y situaciones imprevistas—ha expuesto las limitaciones de los enfoques puramente simbólicos. Paralelamente, el reciente surgimiento de modelos de lenguaje grande (LLMs) ha abierto nuevas posibilidades para la interpretación de comandos en lenguaje natural y la generación de planes flexibles, aunque a menudo carentes de garantías formales de seguridad \cite{shi2023}.
+La planificación de acciones en robótica ha sido tradicionalmente abordada mediante sistemas basados en reglas (RBS), que ofrecen un marco predecible y verificable para la toma de decisiones \cite{Russell2020}. Sin embargo, la creciente complejidad de los entornos domésticos—caracterizados por la presencia de humanos, objetos dinámicos y situaciones imprevistas—ha expuesto las limitaciones de los enfoques puramente simbólicos. Paralelamente, el reciente surgimiento de modelos de lenguaje grande (LLMs) ha abierto nuevas posibilidades para la interpretación de comandos en lenguaje natural y la generación de planes flexibles, aunque a menudo carentes de garantías formales de seguridad \cite{Shi2023}.
 
 Esta tesis se desarrolla en el marco del Laboratorio de Bio-Robótica de la UNAM, utilizando como plataforma el robot de servicio Justina, un sistema modular basado en ROS 2 con capacidades avanzadas de navegación, manipulación y percepción. La motivación central del trabajo radica en la necesidad de desarrollar arquitecturas de planificación que combinen lo mejor de ambos mundos: la robustez y transparencia de los sistemas basados en reglas, y la adaptabilidad y capacidad de diálogo de los modelos de lenguaje modernos.
 
 \section{Problemática: Sistemas Basados en Reglas en Entornos Dinámicos}
 
-Los sistemas basados en reglas, implementados en motores de inferencia como CLIPS, se fundamentan en la lógica simbólica y el ciclo "reconocer-actuar" \cite{giarratano2005}. Su principal ventaja es la previsibilidad: ante un conjunto de hechos y reglas bien definidos, la respuesta del sistema es determinista y explicable. Esto los hace idóneos para aplicaciones donde la seguridad y la certificación son críticas, como en entornos industriales o médicos.
+Los sistemas basados en reglas, implementados en motores de inferencia como CLIPS, se fundamentan en la lógica simbólica y el ciclo "reconocer-actuar" \cite{Giarratano2005}. Su principal ventaja es la previsibilidad: ante un conjunto de hechos y reglas bien definidos, la respuesta del sistema es determinista y explicable. Esto los hace idóneos para aplicaciones donde la seguridad y la certificación son críticas, como en entornos industriales o médicos.
 
-No obstante, en contextos domésticos dinámicos, estos sistemas enfrentan desafíos significativos \cite{brooks1986}:
+No obstante, en contextos domésticos dinámicos, estos sistemas enfrentan desafíos significativos \cite{Brooks1986}:
 
 \begin{enumerate}
 	\item \textbf{Rigidez interpretativa:} No pueden procesar comandos en lenguaje natural complejo o ambiguo, como "trae el libro rojo que está cerca de la ventana".
@@ -29,7 +29,7 @@ No obstante, en contextos domésticos dinámicos, estos sistemas enfrentan desaf
 	\item \textbf{Escalabilidad limitada:} Mantener y extender un conjunto grande de reglas para cubrir todos los escenarios posibles resulta complejo y laborioso.
 \end{enumerate}
 
-Por otro lado, los enfoques puramente basados en aprendizaje automático — especialmente los LLMs—ofrecen flexibilidad y capacidad de generalización, pero introducen riesgos como \cite{shi2023}
+Por otro lado, los enfoques puramente basados en aprendizaje automático — especialmente los LLMs—ofrecen flexibilidad y capacidad de generalización, pero introducen riesgos como \cite{Shi2023}
 \begin{itemize}
 	\item Comportamientos impredecibles o no verificables.
 	\item Falta de garantías de seguridad en la ejecución física.
@@ -45,8 +45,8 @@ La hipótesis central de esta investigación postula que la integración sinérg
 Esta complementariedad se articula en tres niveles:
 
 \begin{enumerate}
-	\item \textbf{Nivel de interpretación:} Los LLMs actúan como traductores de lenguaje natural a hechos estructurados, permitiendo que comandos complejos y ambiguos sean convertidos en representaciones simbólicas que CLIPS puede procesar \cite{zeng2020}.
-	\item \textbf{Nivel de planificación:} Se implementa una arquitectura de planificación dual, donde CLIPS genera planes predecibles y seguros para tareas conocidas, mientras que los LLMs proponen soluciones flexibles para situaciones novedosas o complejas  \cite{kaelbling2011}.
+	\item \textbf{Nivel de interpretación:} Los LLMs actúan como traductores de lenguaje natural a hechos estructurados, permitiendo que comandos complejos y ambiguos sean convertidos en representaciones simbólicas que CLIPS puede procesar \cite{Zeng2020}.
+	\item \textbf{Nivel de planificación:} Se implementa una arquitectura de planificación dual, donde CLIPS genera planes predecibles y seguros para tareas conocidas, mientras que los LLMs proponen soluciones flexibles para situaciones novedosas o complejas  \cite{Kaelbling2011}.
 	\item \textbf{Nivel de validación y selección:} Un mecanismo de supervisión evalúa los planes generados por ambos motores con base en criterios de seguridad, eficiencia y contexto, seleccionando la mejor opción o combinándolas de manera segura.
 \end{enumerate}
 
@@ -62,7 +62,7 @@ Se espera que este sistema híbrido:
 	\item Permita una interacción más natural e intuitiva con usuarios no expertos.
 \end{itemize}
 
-La validación de esta hipótesis se realizará mediante experimentos en simulación y con el robot físico Justina, comparando el desempeño del sistema híbrido frente a enfoques puramente basados en reglas o puramente basados en LLMs \cite{vaswani2017}.
+La validación de esta hipótesis se realizará mediante experimentos en simulación y con el robot físico Justina, comparando el desempeño del sistema híbrido frente a enfoques puramente basados en reglas o puramente basados en LLMs \cite{Vaswani2017}.
 
 \section{Objetivos}
 
