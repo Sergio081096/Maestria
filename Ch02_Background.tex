@@ -24,5 +24,50 @@ En cuanto a aplicaciones, los sistemas basados en reglas han demostrado su utili
 A pesar de la relevancia de enfoques basados en aprendizaje profundo, los sistemas basados en reglas mantienen su relevancia en aplicaciones donde la explicabilidad, verificabilidad y seguridad son críticas \cite{shi2023}. Su capacidad para representar conocimiento simbólico de forma transparente los hace ideales para entornos regulados o donde se requiere auditoría de las decisiones del robot.
 
 \section{El Lenguaje CLIPS: Características, Ventajas y Limitaciones}
+
+CLIPS (C Language Integrated Production System) es un lenguaje de programación basado en reglas desarrollado por el NASA Johnson Space Center en 1985, diseñado específicamente para la construcción de sistemas expertos y aplicaciones basadas en conocimiento \cite{nasaCLIPS}. Concebido originalmente como una alternativa a los costosos sistemas implementados en LISP y en estaciones de trabajo especializadas, CLIPS destacó por su portabilidad, eficiencia y su capacidad para ejecutarse en hardware de bajo costo . Su adopción se extendió rápidamente en la comunidad de robótica e inteligencia artificial, convirtiéndose en una herramienta de referencia para la implementación de sistemas de producción .
+
+\subsection{Características Fundamentales de CLIPS}
+
+CLIPS se fundamenta en el paradigma de los sistemas de producción, operando mediante un ciclo de inferencia "reconocer-actuar" que permite razonar sobre una base de hechos utilizando reglas del tipo if-then \cite{giarratano2005}. Entre sus características más distintivas se encuentran:
+
+Encadenamiento hacia adelante (forward chaining): CLIPS utiliza predominantemente encadenamiento hacia adelante, lo que significa que, partiendo de un conjunto de hechos iniciales, el motor de inferencia aplica reglas para derivar nuevos hechos de manera iterativa . Este enfoque es especialmente adecuado para aplicaciones en tiempo real donde los cambios en el entorno deben reflejarse inmediatamente en la base de conocimiento .
+
+Algoritmo RETE para emparejamiento de patrones: CLIPS implementa una versión optimizada del algoritmo RETE, que permite un emparejamiento eficiente de patrones entre reglas y hechos, incluso cuando la base de conocimiento contiene miles de elementos \cite{giarratano2005}. Esta característica es crítica en robótica, donde la velocidad de respuesta es determinante .
+
+Representación del conocimiento multifacética: Además de reglas, CLIPS permite representar conocimiento mediante hechos ordenados y plantillas (deftemplate), así como mediante funciones definidas por el usuario en C o C++ \cite{nasaCLIPS}. Esto facilita la integración con sistemas de percepción y control de bajo nivel .
+
+Portabilidad y código abierto: Escrito en C, CLIPS puede ejecutarse en prácticamente cualquier plataforma, desde microcontroladores hasta sistemas de alto rendimiento . Su naturaleza open source ha permitido su adaptación en múltiples contextos robóticos, como el control de robots de exploración  y sistemas de inspección .
+
+Integración con otros lenguajes: CLIPS ofrece una API en C que permite ser embebido en aplicaciones más grandes, lo que ha posibilitado su integración con frameworks robóticos como ROS 2  y entornos de simulación .
+
+\subsection{Ventajas de CLIPS en Robótica}
+
+La adopción de CLIPS en robótica de servicio y sistemas autónomos se justifica por varias ventajas clave:
+
+Explicabilidad y transparencia: Las decisiones tomadas por un sistema CLIPS pueden ser rastreadas y explicadas mediante la inspección de las reglas activadas y los hechos utilizados \cite{shi2023}. Esto es fundamental en aplicaciones donde la seguridad y la auditoría son prioritarias, como en robótica médica o espacial .
+
+Previsibilidad del comportamiento: Dado que el conjunto de reglas es definido explícitamente, el comportamiento del sistema es determinista y verificable formalmente \cite{russell2020}. Esta característica contrasta con los enfoques de deep learning, donde las decisiones pueden ser opacas y difíciles de validar \cite{shi2023}.
+
+Bajo consumo de recursos computacionales: CLIPS puede ejecutarse en hardware con capacidades limitadas, como robots móviles embarcados, sin necesidad de GPUs o grandes cantidades de memoria . Esto lo hace adecuado para plataformas robóticas con restricciones energéticas .
+
+Facilidad de mantenimiento y actualización: La base de conocimiento puede ser modificada o extendida sin necesidad de recompilar el sistema completo, lo que facilita la adaptación a nuevos entornos o requisitos \cite{giarratano2005}.
+
+\subsection{Limitaciones de CLIPS en Entornos Dinámicos}
+
+A pesar de sus fortalezas, CLIPS presenta limitaciones significativas cuando se aplica en entornos domésticos dinámicos y no estructurados:
+
+Rigidez semántica: CLIPS no puede interpretar directamente comandos en lenguaje natural complejo o ambiguo; requiere que la entrada sea previamente estructurada en hechos formales . Esto limita su capacidad para interactuar con usuarios no expertos de manera intuitiva \cite{zeng2020}.
+
+Falta de aprendizaje automático: CLIPS es un sistema simbólico puro; no posee mecanismos intrínsecos para aprender de la experiencia o adaptar sus reglas automáticamente ante situaciones novedosas . Cualquier modificación debe ser realizada manualmente por un programador.
+
+Escalabilidad del conocimiento: Mantener una base de reglas que cubra todas las posibles situaciones en un hogar resulta complejo y propenso a inconsistencias \cite{brooks1986}. A medida que crece el número de reglas, la gestión y depuración se vuelven más difíciles .
+
+Manejo limitado de la incertidumbre: CLIPS no incorpora mecanismos nativos para representar información incierta o probabilística, lo que dificulta su uso en tareas de percepción donde los sensores proporcionan datos ruidosos .
+
+Integración compleja con subsistemas modernos: Aunque existen iniciativas como el *ROS 2 CLIPS-Executive* , la integración de CLIPS con pipelines de percepción basados en aprendizaje profundo requiere desarrollos ad hoc que no siempre son triviales \cite{savage2024}.
+
+Estas limitaciones han motivado la exploración de arquitecturas híbridas que combinen la robustez y transparencia de CLIPS con la flexibilidad y capacidad de adaptación de los modelos de lenguaje grande, como se discutirá en secciones posteriores de esta tesis \cite{shi2023}.
+
 \section{Enfoques Modernos: Aprendizaje Automático (ML) y Redes Neuronales en Robótica}
 \section{Sistemas Híbridos: Combinando la Predictibilidad de las Reglas con la Flexibilidad del ML}
