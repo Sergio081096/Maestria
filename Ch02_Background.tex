@@ -128,58 +128,76 @@ Los sistemas híbridos en robótica representan una tercera vía que busca integ
 
 Un sistema híbrido de planificación y control se define como aquella arquitectura que integra explícitamente componentes basados en reglas (deterministas, explicables, verificables) con componentes basados en aprendizaje (adaptativos, flexibles, basados en datos) . El objetivo no es sustituir un enfoque por otro, sino establecer mecanismos de coordinación que permitan a cada módulo operar en el ámbito donde es más competente.
 
-La motivación fundamental de los sistemas híbridos radica en la complementariedad de ambos paradigmas :
+La motivación fundamental de los sistemas híbridos radica en la complementariedad de ambos paradigmas:
 
-Los sistemas basados en reglas aportan predictibilidad, seguridad, explicabilidad y la capacidad de incorporar conocimiento experto explícito.
+\begin{itemize}
+\item Los sistemas basados en reglas aportan predictibilidad, seguridad, explicabilidad y la capacidad de incorporar conocimiento experto explícito.
 
-Los enfoques basados en ML aportan adaptabilidad, capacidad de generalización a situaciones novedosas, y la habilidad de procesar entradas complejas y ruidosas (como imágenes o lenguaje natural).
+\item Los enfoques basados en ML aportan adaptabilidad, capacidad de generalización a situaciones novedosas, y la habilidad de procesar entradas complejas y ruidosas (como imágenes o lenguaje natural).
+\end{itemize}
 
 \subsection{Tipologías de Integración Híbrida}
 
 En la literatura se identifican varios patrones arquitectónicos para la integración híbrida :
+\begin{enumerate}
 
-Arquitecturas de Dominio de Reglas con Complemento ML (Rule First + ML): En este enfoque, el sistema basado en reglas constituye el núcleo principal de toma de decisiones, y los componentes de ML se utilizan para extender sus capacidades en áreas específicas. Por ejemplo, un sistema CLIPS puede manejar la lógica de alto nivel de una tarea, mientras que una CNN se encarga de la detección de objetos necesaria para instanciar los hechos [citation:Savage2024]. Este es el caso de la integración de CLIPS con traductores de lenguaje natural en el robot Justina.
+\item \textbf{Arquitecturas de Dominio de Reglas con Complemento ML (Rule First + ML):} En este enfoque, el sistema basado en reglas constituye el núcleo principal de toma de decisiones, y los componentes de ML se utilizan para extender sus capacidades en áreas específicas. Por ejemplo, un sistema CLIPS puede manejar la lógica de alto nivel de una tarea, mientras que una CNN se encarga de la detección de objetos necesaria para instanciar los hechos. Este es el caso de la integración de CLIPS con traductores de lenguaje natural en el robot Justina.
 
-Arquitecturas de Dominio ML con Restricciones de Reglas (Model First + Rules): Aquí, un modelo de ML (como una política de RL o un LLM) genera las acciones principales, pero sus salidas son validadas y, si es necesario, corregidas por un conjunto de reglas de seguridad que actúan como "caja de seguridad" . Esto es común en navegación autónoma, donde el planificador basado en aprendizaje puede sugerir trayectorias, pero un módulo de reglas garantiza que se eviten obstáculos y se respeten límites de velocidad.
+\item \textbf{Arquitecturas de Dominio ML con Restricciones de Reglas (Model First + Rules):} Aquí, un modelo de ML (como una política de RL o un LLM) genera las acciones principales, pero sus salidas son validadas y, si es necesario, corregidas por un conjunto de reglas de seguridad que actúan como "caja de seguridad" . Esto es común en navegación autónoma, donde el planificador basado en aprendizaje puede sugerir trayectorias, pero un módulo de reglas garantiza que se eviten obstáculos y se respeten límites de velocidad.
 
-Arquitecturas de Fusión o Scheduling Paralelo: En este esquema, tanto el sistema basado en reglas como el modelo de ML generan acciones concurrentemente, y un módulo supervisor (scheduler) decide qué acción ejecutar basándose en el contexto, la confianza de cada módulo o criterios predefinidos . Este enfoque permite aprovechar la redundancia y seleccionar la mejor estrategia para cada situación.
+\item \textbf{Arquitecturas de Fusión o Scheduling Paralelo:} En este esquema, tanto el sistema basado en reglas como el modelo de ML generan acciones concurrentemente, y un módulo supervisor (scheduler) decide qué acción ejecutar basándose en el contexto, la confianza de cada módulo o criterios predefinidos . Este enfoque permite aprovechar la redundancia y seleccionar la mejor estrategia para cada situación.
 
-Arquitecturas de Aprendizaje para Adaptación de Reglas: En sistemas más avanzados, los componentes de ML se utilizan para adaptar o ajustar dinámicamente los parámetros del sistema basado en reglas. Por ejemplo, un meta-aprendizaje basado en Soft Actor-Critic (SAC) puede ajustar en línea los factores de escala de un controlador PID difuso, mejorando el rendimiento sin perder la estabilidad del lazo determinista de alto frecuencia .
+\item \textbf{Arquitecturas de Aprendizaje para Adaptación de Reglas:} En sistemas más avanzados, los componentes de ML se utilizan para adaptar o ajustar dinámicamente los parámetros del sistema basado en reglas. Por ejemplo, un meta-aprendizaje basado en Soft Actor-Critic (SAC) puede ajustar en línea los factores de escala de un controlador PID difuso, mejorando el rendimiento sin perder la estabilidad del lazo determinista de alto frecuencia .
+
+\end{enumerate}
 
 \subsection{Ejemplos de Sistemas Híbridos en Robótica}
 
-Navegación Híbrida: La tesis de Sadek  propone agentes autónomos que combinan técnicas geométricas tradicionales (modelado explícito del entorno) con políticas aprendidas mediante redes neuronales, demostrando que los enfoques híbridos pueden operar robustamente tanto en simulación como en entornos físicos reales.
+\begin{itemize}
 
-Análisis Semántico para Interacción Humano-Robot: Se han desarrollado enfoques híbridos de análisis semántico que combinan técnicas basadas en reglas con aprendizaje automático para interpretar comandos de lenguaje natural en asistentes robóticos, logrando una comprensión más robusta y contextual .
+\item \textbf{Navegación Híbrida:} La tesis de Sadek  propone agentes autónomos que combinan técnicas geométricas tradicionales (modelado explícito del entorno) con políticas aprendidas mediante redes neuronales, demostrando que los enfoques híbridos pueden operar robustamente tanto en simulación como en entornos físicos reales.
 
-Control de Robots Industriales: La combinación de controladores PID difusos (basados en 49 reglas) con meta-optimización mediante aprendizaje por refuerzo (SAC) ha demostrado reducciones significativas en error de seguimiento (46-52%) y consumo energético (28-30%) en manipuladores industriales, manteniendo la estabilidad y predictibilidad del lazo de control de alta frecuencia .
+\item \textbf{Análisis Semántico para Interacción Humano-Robot:} Se han desarrollado enfoques híbridos de análisis semántico que combinan técnicas basadas en reglas con aprendizaje automático para interpretar comandos de lenguaje natural en asistentes robóticos, logrando una comprensión más robusta y contextual .
 
-Planificación Híbrida (Hybrid Planning): El paradigma de Hybrid Planning integra explícitamente sistemas de reglas (árboles de tareas, máquinas de estado finito) con módulos de predicción basados en modelos (MPC, LLMs) para lograr comportamientos robustos en entornos complejos . Este enfoque se aplica en robótica de almacenes, interacción humano-robot y vehículos autónomos.
+\item \textbf{Control de Robots Industriales:} La combinación de controladores PID difusos (basados en 49 reglas) con meta-optimización mediante aprendizaje por refuerzo (SAC) ha demostrado reducciones significativas en error de seguimiento (46-52%) y consumo energético (28-30%) en manipuladores industriales, manteniendo la estabilidad y predictibilidad del lazo de control de alta frecuencia .
 
-Modelado Físico con Aprendizaje: En robótica de robots blandos y paralelos, se están explorando enfoques que combinan modelos físicos con aprendizaje automático (hybrid learning physics modeling) para mejorar la precisión del modelado cinemático y dinámico, aprovechando el conocimiento previo de la estructura del sistema mientras se aprenden compensaciones de datos .
+\item \textbf{Planificación Híbrida (Hybrid Planning):} El paradigma de Hybrid Planning integra explícitamente sistemas de reglas (árboles de tareas, máquinas de estado finito) con módulos de predicción basados en modelos (MPC, LLMs) para lograr comportamientos robustos en entornos complejos . Este enfoque se aplica en robótica de almacenes, interacción humano-robot y vehículos autónomos.
+
+\item \textbf{Modelado Físico con Aprendizaje:} En robótica de robots blandos y paralelos, se están explorando enfoques que combinan modelos físicos con aprendizaje automático (hybrid learning physics modeling) para mejorar la precisión del modelado cinemático y dinámico, aprovechando el conocimiento previo de la estructura del sistema mientras se aprenden compensaciones de datos .
+
+\end{itemize}
 
 \subsection{Ventajas y Desafíos de los Sistemas Híbridos}
 
-Ventajas :
+\subsubsection{Ventajas:} 
 
-Robustez mejorada: Al combinar múltiples fuentes de conocimiento, el sistema puede fallar de manera controlada y recurrir a estrategias alternativas.
+\begin{itemize}
 
-Seguridad preservada: Las reglas pueden actuar como cortafuegos que previenen comportamientos inseguros generados por modelos de ML.
+\item \textbf{Robustez mejorada:} Al combinar múltiples fuentes de conocimiento, el sistema puede fallar de manera controlada y recurrir a estrategias alternativas.
 
-Explicabilidad selectiva: Las decisiones críticas pueden ser explicadas mediante las reglas que las generaron, mientras que las decisiones rutinarias pueden delegarse a modelos opacos.
+\item \textbf{Seguridad preservada:} Las reglas pueden actuar como cortafuegos que previenen comportamientos inseguros generados por modelos de ML.
 
-Adaptabilidad sin sacrificar estabilidad: Los componentes de ML permiten adaptación a contextos cambiantes, mientras que las reglas mantienen un comportamiento base estable y verificado.
+\item \textbf{Explicabilidad selectiva:} Las decisiones críticas pueden ser explicadas mediante las reglas que las generaron, mientras que las decisiones rutinarias pueden delegarse a modelos opacos.
 
-Desafíos :
+\item \textbf{Adaptabilidad sin sacrificar estabilidad:} Los componentes de ML permiten adaptación a contextos cambiantes, mientras que las reglas mantienen un comportamiento base estable y verificado.
 
-Complejidad de integración: La coordinación entre módulos heterogéneos requiere diseños arquitectónicos cuidadosos y protocolos de comunicación eficientes.
+\end{itemize}
 
-Resolución de conflictos: Es necesario definir mecanismos claros para cuando las recomendaciones de reglas y modelos entren en conflicto.
 
-Validación y verificación: Los sistemas híbridos heredan la dificultad de verificar componentes de ML, aunque la presencia de reglas puede facilitar la validación del comportamiento global.
+\subsubsection*{Desafíos:}
 
-Sobrecarga computacional: Ejecutar múltiples motores de razonamiento concurrentemente puede aumentar los requisitos de cómputo a bordo.
+\begin{itemize}
+
+\item \textbf{Complejidad de integración:} La coordinación entre módulos heterogéneos requiere diseños arquitectónicos cuidadosos y protocolos de comunicación eficientes.
+
+\item \textbf{Resolución de conflictos:} Es necesario definir mecanismos claros para cuando las recomendaciones de reglas y modelos entren en conflicto.
+
+\item \textbf{Validación y verificación:} Los sistemas híbridos heredan la dificultad de verificar componentes de ML, aunque la presencia de reglas puede facilitar la validación del comportamiento global.
+
+\item \textbf{Sobrecarga computacional:} Ejecutar múltiples motores de razonamiento concurrentemente puede aumentar los requisitos de cómputo a bordo.
+
+\end{itemize}
 
 \subsection{Conexión con la Propuesta de Tesis}
 
-La arquitectura híbrida CLIPS-ChatGPT/Qwen propuesta en esta tesis se enmarca precisamente en esta categoría de sistemas, siguiendo un patrón de dominio de reglas con complemento ML para la traducción de lenguaje natural [citation:Savage2024], y extendiéndose hacia una arquitectura de planificación dual que permite tanto a CLIPS como a los LLMs generar planes concurrentemente [citation:Shi2023]. Esta aproximación busca capitalizar la predictibilidad y seguridad de CLIPS para tareas críticas y bien definidas, mientras que aprovecha la flexibilidad semántica y capacidad de generación contextual de ChatGPT/Qwen para interpretar comandos complejos y adaptarse a situaciones novedosas. La validación experimental de esta hipótesis de complementariedad constituye el núcleo de la contribución de esta investigación.
+La arquitectura híbrida CLIPS-ChatGPT propuesta en esta tesis se enmarca precisamente en esta categoría de sistemas, siguiendo un patrón de dominio de reglas con complemento ML para la traducción de lenguaje natural, y extendiéndose hacia una arquitectura de planificación dual que permite tanto a CLIPS como a los LLMs generar planes concurrentemente \cite{Shi2023}. Esta aproximación busca capitalizar la predictibilidad y seguridad de CLIPS para tareas críticas y bien definidas, mientras que aprovecha la flexibilidad semántica y capacidad de generación contextual de ChatGPT para interpretar comandos complejos y adaptarse a situaciones novedosas. La validación experimental de esta hipótesis de complementariedad constituye el núcleo de la contribución de esta investigación.
