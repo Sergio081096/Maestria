@@ -1,12 +1,12 @@
 \chapter{Antecedentes y Estado del Arte}
 
-Se realiza una revisión comprensiva de la evolución histórica de los sistemas basados en reglas en robótica, analizando aplicaciones tradicionales y limitaciones actuales. Se examinan las características técnicas de CLIPS y se contrastan con enfoques modernos de aprendizaje automático, culminando con el estudio de sistemas híbridos que combinan la predictibilidad de las reglas con la flexibilidad del ML para entornos dinámicos.
+Se realiza una revisión comprensiva de la evolución histórica de los sistemas basados en reglas en el área de la robótica, analizando aplicaciones tradicionales y limitaciones actuales. También se examinan las características técnicas de CLIPS y se contrastan con enfoques modernos de aprendizaje automático, culminando con el estudio de sistemas híbridos que combinan la predictibilidad de las reglas con la flexibilidad del \textit{(Machine Learning, ML)} para entornos dinámicos.
 
-\section{Sistemas Basados en Reglas en Robótica: Historia y Aplicaciones}
+\section{Sistemas Basados en Reglas: Historia y Aplicaciones}
 
-Los sistemas basados en reglas (Rule-Based Systems, RBS), constituyen uno de los paradigmas más antiguos y consolidados en inteligencia artificial y robótica \cite{Giarratano2005}. Su origen se remonta a los sistemas expertos de la década de 1970, donde se utilizaban para representar el conocimiento de especialistas humanos en dominios bien delimitados, como el diagnóstico médico o la configuración de sistemas complejos \cite{Russell2020}. En robótica, la adopción de estos sistemas se popularizó en los años 80 y 90, particularmente en entornos industriales estructurados, donde la previsibilidad y seguridad eran prioritarias.
+Los sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, constituyen uno de los paradigmas más antiguos y consolidados en inteligencia artificial \cite{Giarratano2005}. Su origen se remonta a los sistemas expertos de la década de 1970, donde se utilizaban para representar el conocimiento de especialistas humanos en dominios bien delimitados, como el diagnóstico médico o la configuración de sistemas complejos \cite{Russell2020}. En robótica, la adopción de estos sistemas se popularizó en los años 80 y 90, particularmente en entornos industriales estructurados, donde la previsibilidad y seguridad eran prioritarias.
 
-Históricamente, los RBS han sido fundamentales en arquitecturas de control robótico jerárquico, como la propuesta por Brooks \cite{Brooks1986}, donde capas de comportamientos reactivos podían ser coordinadas mediante reglas de supresión. Más adelante, motores de inferencia como CLIPS (C Language Integrated Production System), desarrollado por la NASA en 1985, se convirtieron en herramientas estándar para la implementación de sistemas de planificación y toma de decisiones en robots autónomos \cite{NASA_CLIPS}. CLIPS permitió la representación simbólica del conocimiento a través de hechos y reglas, y su ciclo de inferencia "reconocer-actuar" ofreció un marco eficiente para el razonamiento en tiempo real.
+Históricamente, los RBS han sido fundamentales en arquitecturas de control robótico jerárquico, como la propuesta por Brooks \cite{Brooks1986}, donde capas de comportamientos reactivos podían ser coordinadas mediante reglas de supresión. Más adelante, motores de inferencia como CLIPS \textit{(C Language Integrated Production System)}, desarrollado por la NASA en 1985, se convirtieron en herramientas estándar para la implementación de sistemas de planificación y toma de decisiones en robots autónomos \cite{NASA_CLIPS}. CLIPS permitió la representación simbólica del conocimiento a través de hechos, reglas, en conjunto con un ciclo de inferencia \textit{reconocer-actuar} que ofreció un marco eficiente para el razonamiento en tiempo real.
 
 En cuanto a aplicaciones, los sistemas basados en reglas han demostrado su utilidad en diversos dominios robóticos:
 
@@ -14,60 +14,172 @@ En cuanto a aplicaciones, los sistemas basados en reglas han demostrado su utili
 	\item \textbf{Robótica industrial:}
 	 En cadenas de montaje automatizadas, donde las tareas son repetitivas y el entorno está controlado. Los RBS se utilizan para secuenciar operaciones, gestionar excepciones y garantizar la seguridad de los operarios humanos \cite{Murphy2019}.
 	\item \textbf{Robótica de servicio y doméstica:}
-	En tareas como la entrega de objetos, navegación en interiores y asistencia a personas con movilidad reducida. 
+	En tareas simples como la entrega de objetos, navegación en interiores y asistencia a personas con movilidad reducida. 
 	\item \textbf{Robótica espacial y de exploración:}
 	Sistemas como Remote Agent de la NASA emplearon arquitecturas basadas en reglas para la planificación y ejecución autónoma de experimentos en misiones no tripuladas \cite{Pell1997}.
 	\item \textbf{Sistemas híbridos contemporáneos: }
-	Recientemente, los RBS se han integrado con técnicas de aprendizaje automático para compensar sus limitaciones en entornos dinámicos. Por ejemplo, en \cite{Zeng2020} se combina un RBS con un modelo de lenguaje natural para interpretar comandos verbales en tareas de manipulación.
+	Recientemente, los RBS se han integrado con técnicas de aprendizaje automático para compensar sus limitaciones en entornos dinámicos. Por ejemplo, en \textit{Robotic Pick-and-Place with Natural Language Commands} \cite{Zeng2020} se combina un RBS con un modelo de lenguaje natural para interpretar comandos verbales en tareas de manipulación.
 \end{enumerate}
 
 A pesar de la relevancia de enfoques basados en aprendizaje profundo, los sistemas basados en reglas mantienen su relevancia en aplicaciones donde la explicabilidad, verificabilidad y seguridad son críticas \cite{Shi2023}. Su capacidad para representar conocimiento simbólico de forma transparente los hace ideales para entornos regulados o donde se requiere auditoría de las decisiones del robot.
 
 \section{El Lenguaje CLIPS: Características, Ventajas y Limitaciones}
 
-CLIPS (C Language Integrated Production System) es un lenguaje de programación basado en reglas desarrollado por el NASA Johnson Space Center en 1985, diseñado específicamente para la construcción de sistemas expertos y aplicaciones basadas en conocimiento \cite{NASA_CLIPS}. Concebido originalmente como una alternativa a los costosos sistemas implementados en LISP y en estaciones de trabajo especializadas, CLIPS destacó por su portabilidad, eficiencia y su capacidad para ejecutarse en hardware de bajo costo \cite{Giarratano2005}. Su adopción se extendió rápidamente en la comunidad de robótica e inteligencia artificial, convirtiéndose en una herramienta de referencia para la implementación de sistemas de producción \cite{Russell2020}.
+CLIPS es un lenguaje de programación basado en reglas, diseñado específicamente para la construcción de sistemas expertos y aplicaciones basadas en conocimiento \cite{NASA_CLIPS}. Concebido originalmente como una alternativa a los costosos sistemas implementados en LISP y en estaciones de trabajo especializadas, CLIPS destacó por su portabilidad, eficiencia y su capacidad para ejecutarse en hardware de bajo costo \cite{Giarratano2005}. Su adopción se extendió rápidamente en la comunidad de robótica e inteligencia artificial, convirtiéndose en una herramienta de referencia para la implementación de sistemas de producción \cite{Russell2020}.
 
 \subsection{Características Fundamentales de CLIPS}
 
-CLIPS se fundamenta en el paradigma de los sistemas de producción, operando mediante un ciclo de inferencia "reconocer-actuar" que permite razonar sobre una base de hechos utilizando reglas del tipo if-then \cite{Giarratano2005}. Entre sus características más distintivas se encuentran:
+CLIPS se fundamenta en el paradigma de los sistemas de producción, operando mediante su ciclo de inferencia que permite razonar sobre una base de hechos utilizando reglas del tipo if-then \cite{Giarratano2005}. Entre sus características más distintivas se encuentran:
+\begin{enumerate}
+\item \textbf{Encadenamiento hacia adelante \textit{(forward chaining)}:} CLIPS utiliza predominantemente encadenamiento hacia adelante, lo que significa que, partiendo de un conjunto de hechos iniciales, el motor de inferencia aplica reglas para derivar nuevos hechos de manera iterativa \cite{NASA_CLIPS}. Este enfoque es especialmente adecuado para aplicaciones en tiempo real donde los cambios en el entorno deben reflejarse inmediatamente en la base de conocimiento \cite{Murphy2019}.
 
-Encadenamiento hacia adelante (forward chaining): CLIPS utiliza predominantemente encadenamiento hacia adelante, lo que significa que, partiendo de un conjunto de hechos iniciales, el motor de inferencia aplica reglas para derivar nuevos hechos de manera iterativa \cite{NASA_CLIPS}. Este enfoque es especialmente adecuado para aplicaciones en tiempo real donde los cambios en el entorno deben reflejarse inmediatamente en la base de conocimiento \cite{Murphy2019}.
+\item \textbf{Algoritmo RETE para emparejamiento de patrones:} CLIPS implementa una versión optimizada del algoritmo RETE, que permite un emparejamiento eficiente de patrones entre reglas y hechos, incluso cuando la base de conocimiento contiene miles de elementos \cite{Giarratano2005}. Esta característica es crítica en robótica, donde la velocidad de respuesta es determinante \cite{Brooks1986}.
 
-Algoritmo RETE para emparejamiento de patrones: CLIPS implementa una versión optimizada del algoritmo RETE, que permite un emparejamiento eficiente de patrones entre reglas y hechos, incluso cuando la base de conocimiento contiene miles de elementos \cite{Giarratano2005}. Esta característica es crítica en robótica, donde la velocidad de respuesta es determinante \cite{Brooks1986}.
+\item \textbf{Representación del conocimiento multifacética:} Además de reglas, CLIPS permite representar conocimiento mediante hechos ordenados y plantillas \textit{(deftemplate)}, así como mediante funciones definidas por el usuario en C \cite{NASA_CLIPS}. Esto facilita la integración con sistemas de percepción y control de bajo nivel \cite{Savage2024}.
 
-Representación del conocimiento multifacética: Además de reglas, CLIPS permite representar conocimiento mediante hechos ordenados y plantillas (deftemplate), así como mediante funciones definidas por el usuario en C \cite{NASA_CLIPS}. Esto facilita la integración con sistemas de percepción y control de bajo nivel \cite{Savage2024}.
+\item \textbf{Portabilidad y código abierto:} Escrito en C, CLIPS puede ejecutarse en prácticamente cualquier plataforma, desde microcontroladores hasta sistemas de alto rendimiento \cite{Giarratano2005}. Su naturaleza open source ha permitido su adaptación en múltiples contextos robóticos, como el control de robots de exploración y sistemas de inspección \cite{NASA_CLIPS}.
 
-Portabilidad y código abierto: Escrito en C, CLIPS puede ejecutarse en prácticamente cualquier plataforma, desde microcontroladores hasta sistemas de alto rendimiento \cite{Giarratano2005}. Su naturaleza open source ha permitido su adaptación en múltiples contextos robóticos, como el control de robots de exploración y sistemas de inspección \cite{NASA_CLIPS}.
+\item \textbf{Integración con otros lenguajes:} CLIPS ofrece una API en C y una librería en python, lo que le permite ser empleado en aplicaciones más grandes, posibilitado su integración con frameworks robóticos como ROS y entornos de simulación \cite{Murphy2019}.
+\end{enumerate}
 
-Integración con otros lenguajes: CLIPS ofrece una API en C que permite ser embebido en aplicaciones más grandes, lo que ha posibilitado su integración con frameworks robóticos como ROS \cite{Savage2024} y entornos de simulación \cite{Murphy2019}.
 
 \subsection{Ventajas de CLIPS en Robótica}
 
 La adopción de CLIPS en robótica de servicio y sistemas autónomos se justifica por varias ventajas clave:
+\begin{itemize}
+\item \textbf{Explicabilidad y transparencia:} Las decisiones tomadas por un sistema CLIPS pueden ser rastreadas y explicadas mediante la inspección de las reglas activadas y los hechos utilizados \cite{Giarratano2005}. Esto es fundamental en aplicaciones donde la seguridad y la auditoría son prioritarias, como en robótica médica o espacial \cite{Shi2023}.
 
-Explicabilidad y transparencia: Las decisiones tomadas por un sistema CLIPS pueden ser rastreadas y explicadas mediante la inspección de las reglas activadas y los hechos utilizados \cite{Giarratano2005}. Esto es fundamental en aplicaciones donde la seguridad y la auditoría son prioritarias, como en robótica médica o espacial \cite{Shi2023}.
+\item \textbf{Previsibilidad del comportamiento:} Dado que el conjunto de reglas es definido explícitamente, el comportamiento del sistema es determinista y verificable formalmente \cite{Russell2020}. Esta característica contrasta con los enfoques de deep learning, donde las decisiones pueden ser opacas y difíciles de validar \cite{Shi2023}.
 
-Previsibilidad del comportamiento: Dado que el conjunto de reglas es definido explícitamente, el comportamiento del sistema es determinista y verificable formalmente \cite{Russell2020}. Esta característica contrasta con los enfoques de deep learning, donde las decisiones pueden ser opacas y difíciles de validar \cite{Shi2023}.
+\item \textbf{Bajo consumo de recursos computacionales:} CLIPS puede ejecutarse en hardware con capacidades limitadas, como robots móviles embarcados, sin necesidad de GPUs o grandes cantidades de memoria \cite{Murphy2019}. Esto lo hace adecuado para plataformas robóticas con restricciones energéticas \cite{Savage2024}.
 
-Bajo consumo de recursos computacionales: CLIPS puede ejecutarse en hardware con capacidades limitadas, como robots móviles embarcados, sin necesidad de GPUs o grandes cantidades de memoria \cite{Murphy2019}. Esto lo hace adecuado para plataformas robóticas con restricciones energéticas \cite{Savage2024}.
+\item \textbf{Facilidad de mantenimiento y actualización:} La base de conocimiento puede ser modificada o extendida sin necesidad de recompilar el sistema completo, lo que facilita la adaptación a nuevos entornos o requisitos \cite{Giarratano2005}.
+\end{itemize}
 
-Facilidad de mantenimiento y actualización: La base de conocimiento puede ser modificada o extendida sin necesidad de recompilar el sistema completo, lo que facilita la adaptación a nuevos entornos o requisitos \cite{Giarratano2005}.
 
 \subsection{Limitaciones de CLIPS en Entornos Dinámicos}
 
 A pesar de sus fortalezas, CLIPS presenta limitaciones significativas cuando se aplica en entornos domésticos dinámicos y no estructurados:
+\begin{enumerate}
+\item \textbf{Rigidez semántica:} CLIPS no puede interpretar directamente comandos en lenguaje natural complejo o ambiguo; requiere que la entrada sea previamente estructurada en hechos formales \cite{Zeng2020}. Esto limita su capacidad para interactuar con usuarios no expertos de manera intuitiva \cite{Shi2023}.
 
-Rigidez semántica: CLIPS no puede interpretar directamente comandos en lenguaje natural complejo o ambiguo; requiere que la entrada sea previamente estructurada en hechos formales \cite{Zeng2020}. Esto limita su capacidad para interactuar con usuarios no expertos de manera intuitiva \cite{Shi2023}.
+\item \textbf{Falta de aprendizaje automático:} CLIPS es un sistema simbólico puro; no posee mecanismos intrínsecos para aprender de la experiencia o adaptar sus reglas automáticamente ante situaciones novedosas \cite{Russell2020}. Cualquier modificación debe ser realizada manualmente por un programador.
 
-Falta de aprendizaje automático: CLIPS es un sistema simbólico puro; no posee mecanismos intrínsecos para aprender de la experiencia o adaptar sus reglas automáticamente ante situaciones novedosas \cite{Russell2020}. Cualquier modificación debe ser realizada manualmente por un programador.
+\item \textbf{Escalabilidad del conocimiento:} Mantener una base de reglas que cubra todas las posibles situaciones en un hogar resulta complejo y propenso a inconsistencias \cite{Brooks1986}. A medida que crece el número de reglas, la gestión y depuración se vuelven más difíciles \cite{Giarratano2005}.
 
-Escalabilidad del conocimiento: Mantener una base de reglas que cubra todas las posibles situaciones en un hogar resulta complejo y propenso a inconsistencias \cite{Brooks1986}. A medida que crece el número de reglas, la gestión y depuración se vuelven más difíciles \cite{Giarratano2005}.
+\item \textbf{Manejo limitado de la incertidumbre:} CLIPS no incorpora mecanismos nativos para representar información incierta o probabilística, lo que dificulta su uso en tareas de percepción donde los sensores proporcionan datos ruidosos \cite{Murphy2019}.
 
-Manejo limitado de la incertidumbre: CLIPS no incorpora mecanismos nativos para representar información incierta o probabilística, lo que dificulta su uso en tareas de percepción donde los sensores proporcionan datos ruidosos \cite{Murphy2019}.
-
-Integración compleja con subsistemas modernos: Aunque existen iniciativas como el *ROS 2 CLIPS-Executive* \cite{Savage2024}, la integración de CLIPS con pipelines de percepción basados en aprendizaje profundo requiere desarrollos ad hoc que no siempre son triviales \cite{Zeng2020}.
+\item \textbf{Integración compleja con subsistemas modernos:} Aunque existen iniciativas como el \textit{*ROS 2 CLIPS-Executive*} \cite{Savage2024}, la integración de CLIPS con pipelines de percepción basados en aprendizaje profundo requiere desarrollos ad hoc que no siempre son triviales \cite{Zeng2020}.
 
 Estas limitaciones han motivado la exploración de arquitecturas híbridas que combinen la robustez y transparencia de CLIPS con la flexibilidad y capacidad de adaptación de los modelos de lenguaje grande, como se discutirá en secciones posteriores de esta tesis \cite{Shi2023}.
+\end{enumerate}
+
 
 \section{Enfoques Modernos: Aprendizaje Automático (ML) y Redes Neuronales en Robótica}
+
+El desarrollo del aprendizaje automático, y en particular del aprendizaje profundo, ha transformado radicalmente la robótica contemporánea, habilitando capacidades que eran difíciles de lograr con enfoques puramente simbólicos o geométricos. A diferencia de los sistemas basados en reglas, que requieren la especificación explícita de todo el conocimiento del dominio, los enfoques de ML permiten a los robots aprender directamente de los datos, extrayendo patrones complejos y adaptándose a entornos variables sin necesidad de programación explícita.
+
+\subsection{Principales Paradigmas de Aprendizaje Automático en Robótica}
+
+\textbf{Aprendizaje Supervisado y Visión por Computadora:} Las redes neuronales convolucionales (CNNs) se han convertido en el estándar de facto para tareas de percepción robótica, incluyendo detección y reconocimiento de objetos, segmentación semántica y estimación de poses . Arquitecturas como YOLO (You Only Look Once) y sus variantes permiten a robots como Justina identificar objetos en tiempo real con alta precisión, incluso en entornos domésticos desordenados . Las CNNs operan mediante capas de convolución que extraen jerárquicamente características visuales, desde bordes simples hasta formas complejas, permitiendo una representación robusta del entorno .
+
+\textbf{Aprendizaje por Refuerzo para Control y Navegación:} El aprendizaje por refuerzo profundo (Deep RL) ha emergido como una herramienta poderosa para desarrollar políticas de control en tareas secuenciales. Mediante la interacción con el entorno, los agentes aprenden a maximizar recompensas acumulativas, descubriendo estrategias óptimas para navegación, manipulación y evitación de obstáculos . En navegación robótica, se han desarrollado políticas híbridas que combinan representaciones aprendidas con modelos geométricos tradicionales para operar robustamente en entornos reales .
+
+\textbf{Redes Recurrentes y Modelado Secuencial:} Las redes neuronales recurrentes (RNNs) y sus variantes (LSTM, GRU) son fundamentales para tareas que requieren memoria temporal, como el seguimiento de objetos en movimiento, la predicción de trayectorias humanas o la interpretación de comandos verbales en contexto . Estas arquitecturas mantienen un estado interno que evoluciona con la secuencia de entradas, permitiendo modelar dependencias temporales de largo alcance.
+
+\textbf{Modelos de Lenguaje Grande (LLMs) en Robótica:} La irrupción de modelos transformadores, como los descritos por Vaswani et al. , ha dado lugar a los Large Language Models (LLMs), capaces de procesar y generar lenguaje natural con una fluidez sin precedentes. En robótica, estos modelos se utilizan para interpretar comandos complejos, traducir lenguaje natural a representaciones simbólicas, e incluso generar planes completos a partir de descripciones de alto nivel \cite{Shi2023}. Su capacidad para captar matices semánticos y contextuales los hace especialmente valiosos para la interacción humano-robot en entornos domésticos.
+
+\subsection{Aplicaciones Específicas en Robótica de Servicio}
+
+\begin{itemize}
+\item \textbf{Percepción y Reconocimiento:}  La integración de CNNs en pipelines de percepción permite a los robots identificar objetos, personas y gestos con alta precisión. Sistemas como YOLO y FastSAM (Segment Anything Model) se utilizan para segmentación en tiempo real y localización de objetos de interés .
+
+\item \textbf{Navegación Autónoma:} Los enfoques basados en aprendizaje profundo han demostrado superioridad frente a métodos geométricos tradicionales en entornos desconocidos, utilizando entradas como mapas locales de obstáculos (LOM) para generar comandos de velocidad directamente . La combinación de SLAM visual con redes neuronales permite una localización robusta incluso en escenarios dinámicos .
+
+\item \textbf{Manipulación y Control:} En robótica de manipulación, las redes neuronales se emplean para estimar propiedades físicas de objetos (rigidez, forma) a partir de señales propioceptivas, permitiendo agarres adaptativos y seguros . En robots paralelos y cables, el ML se utiliza para modelar cinemática compleja y compensar errores geométricos .
+
+\item \textbf{Planificación y Toma de Decisiones:} Los algoritmos de planificación de rutas y decisiones en vehículos autónomos combinan enfoques basados en conocimiento (reglas, teoría de juegos) con métodos basados en datos (imitación, RL) para lograr sistemas robustos y adaptativos .
+
+\end{itemize}
+
+\subsection{Limitaciones de los Enfoques Puramente Basados en ML}
+
+A pesar de sus ventajas, los enfoques puramente basados en ML presentan limitaciones significativas:
+
+\begin{enumerate}
+
+\item \textbf{Falta de garantías de seguridad:} Las redes neuronales pueden producir comportamientos impredecibles ante entradas fuera de la distribución de entrenamiento, lo que es crítico en aplicaciones donde la seguridad física es prioritaria \cite{Shi2023}.
+
+\item \textbf{Opacidad y falta de explicabilidad:} La naturaleza de "caja negra" de las redes profundas dificulta la interpretación de sus decisiones, limitando su adopción en entornos regulados donde se requiere auditoría [citation:Russell2020].
+
+\item \textbf{Dependencia de datos:} Los modelos de ML requieren grandes volúmenes de datos etiquetados o experiencias de interacción, cuyo costo de adquisición en robótica puede ser prohibitivo .
+
+\item \textbf{Dificultad para incorporar conocimiento previo:} A diferencia de los sistemas basados en reglas, las redes neuronales no pueden aprovechar fácilmente el conocimiento simbólico existente sobre el dominio [citation:Brooks1986].
+
+\end{enumerate}
+
+Estas limitaciones han motivado el desarrollo de arquitecturas híbridas que combinan lo mejor de ambos paradigmas.
+
 \section{Sistemas Híbridos: Combinando la Predictibilidad de las Reglas con la Flexibilidad del ML}
+
+Los sistemas híbridos en robótica representan una tercera vía que busca integrar sinérgicamente enfoques simbólicos (basados en reglas) y subsimbólicos (basados en aprendizaje), aprovechando las fortalezas de cada paradigma mientras se compensan sus debilidades respectivas .
+
+\subsection{Definición y Fundamentos de los Sistemas Híbridos}
+
+Un sistema híbrido de planificación y control se define como aquella arquitectura que integra explícitamente componentes basados en reglas (deterministas, explicables, verificables) con componentes basados en aprendizaje (adaptativos, flexibles, basados en datos) . El objetivo no es sustituir un enfoque por otro, sino establecer mecanismos de coordinación que permitan a cada módulo operar en el ámbito donde es más competente.
+
+La motivación fundamental de los sistemas híbridos radica en la complementariedad de ambos paradigmas :
+
+Los sistemas basados en reglas aportan predictibilidad, seguridad, explicabilidad y la capacidad de incorporar conocimiento experto explícito.
+
+Los enfoques basados en ML aportan adaptabilidad, capacidad de generalización a situaciones novedosas, y la habilidad de procesar entradas complejas y ruidosas (como imágenes o lenguaje natural).
+
+\subsection{Tipologías de Integración Híbrida}
+
+En la literatura se identifican varios patrones arquitectónicos para la integración híbrida :
+
+Arquitecturas de Dominio de Reglas con Complemento ML (Rule First + ML): En este enfoque, el sistema basado en reglas constituye el núcleo principal de toma de decisiones, y los componentes de ML se utilizan para extender sus capacidades en áreas específicas. Por ejemplo, un sistema CLIPS puede manejar la lógica de alto nivel de una tarea, mientras que una CNN se encarga de la detección de objetos necesaria para instanciar los hechos [citation:Savage2024]. Este es el caso de la integración de CLIPS con traductores de lenguaje natural en el robot Justina.
+
+Arquitecturas de Dominio ML con Restricciones de Reglas (Model First + Rules): Aquí, un modelo de ML (como una política de RL o un LLM) genera las acciones principales, pero sus salidas son validadas y, si es necesario, corregidas por un conjunto de reglas de seguridad que actúan como "caja de seguridad" . Esto es común en navegación autónoma, donde el planificador basado en aprendizaje puede sugerir trayectorias, pero un módulo de reglas garantiza que se eviten obstáculos y se respeten límites de velocidad.
+
+Arquitecturas de Fusión o Scheduling Paralelo: En este esquema, tanto el sistema basado en reglas como el modelo de ML generan acciones concurrentemente, y un módulo supervisor (scheduler) decide qué acción ejecutar basándose en el contexto, la confianza de cada módulo o criterios predefinidos . Este enfoque permite aprovechar la redundancia y seleccionar la mejor estrategia para cada situación.
+
+Arquitecturas de Aprendizaje para Adaptación de Reglas: En sistemas más avanzados, los componentes de ML se utilizan para adaptar o ajustar dinámicamente los parámetros del sistema basado en reglas. Por ejemplo, un meta-aprendizaje basado en Soft Actor-Critic (SAC) puede ajustar en línea los factores de escala de un controlador PID difuso, mejorando el rendimiento sin perder la estabilidad del lazo determinista de alto frecuencia .
+
+\subsection{Ejemplos de Sistemas Híbridos en Robótica}
+
+Navegación Híbrida: La tesis de Sadek  propone agentes autónomos que combinan técnicas geométricas tradicionales (modelado explícito del entorno) con políticas aprendidas mediante redes neuronales, demostrando que los enfoques híbridos pueden operar robustamente tanto en simulación como en entornos físicos reales.
+
+Análisis Semántico para Interacción Humano-Robot: Se han desarrollado enfoques híbridos de análisis semántico que combinan técnicas basadas en reglas con aprendizaje automático para interpretar comandos de lenguaje natural en asistentes robóticos, logrando una comprensión más robusta y contextual .
+
+Control de Robots Industriales: La combinación de controladores PID difusos (basados en 49 reglas) con meta-optimización mediante aprendizaje por refuerzo (SAC) ha demostrado reducciones significativas en error de seguimiento (46-52%) y consumo energético (28-30%) en manipuladores industriales, manteniendo la estabilidad y predictibilidad del lazo de control de alta frecuencia .
+
+Planificación Híbrida (Hybrid Planning): El paradigma de Hybrid Planning integra explícitamente sistemas de reglas (árboles de tareas, máquinas de estado finito) con módulos de predicción basados en modelos (MPC, LLMs) para lograr comportamientos robustos en entornos complejos . Este enfoque se aplica en robótica de almacenes, interacción humano-robot y vehículos autónomos.
+
+Modelado Físico con Aprendizaje: En robótica de robots blandos y paralelos, se están explorando enfoques que combinan modelos físicos con aprendizaje automático (hybrid learning physics modeling) para mejorar la precisión del modelado cinemático y dinámico, aprovechando el conocimiento previo de la estructura del sistema mientras se aprenden compensaciones de datos .
+
+\subsection{Ventajas y Desafíos de los Sistemas Híbridos}
+
+Ventajas :
+
+Robustez mejorada: Al combinar múltiples fuentes de conocimiento, el sistema puede fallar de manera controlada y recurrir a estrategias alternativas.
+
+Seguridad preservada: Las reglas pueden actuar como cortafuegos que previenen comportamientos inseguros generados por modelos de ML.
+
+Explicabilidad selectiva: Las decisiones críticas pueden ser explicadas mediante las reglas que las generaron, mientras que las decisiones rutinarias pueden delegarse a modelos opacos.
+
+Adaptabilidad sin sacrificar estabilidad: Los componentes de ML permiten adaptación a contextos cambiantes, mientras que las reglas mantienen un comportamiento base estable y verificado.
+
+Desafíos :
+
+Complejidad de integración: La coordinación entre módulos heterogéneos requiere diseños arquitectónicos cuidadosos y protocolos de comunicación eficientes.
+
+Resolución de conflictos: Es necesario definir mecanismos claros para cuando las recomendaciones de reglas y modelos entren en conflicto.
+
+Validación y verificación: Los sistemas híbridos heredan la dificultad de verificar componentes de ML, aunque la presencia de reglas puede facilitar la validación del comportamiento global.
+
+Sobrecarga computacional: Ejecutar múltiples motores de razonamiento concurrentemente puede aumentar los requisitos de cómputo a bordo.
+
+\subsection{Conexión con la Propuesta de Tesis}
+
+La arquitectura híbrida CLIPS-ChatGPT/Qwen propuesta en esta tesis se enmarca precisamente en esta categoría de sistemas, siguiendo un patrón de dominio de reglas con complemento ML para la traducción de lenguaje natural [citation:Savage2024], y extendiéndose hacia una arquitectura de planificación dual que permite tanto a CLIPS como a los LLMs generar planes concurrentemente [citation:Shi2023]. Esta aproximación busca capitalizar la predictibilidad y seguridad de CLIPS para tareas críticas y bien definidas, mientras que aprovecha la flexibilidad semántica y capacidad de generación contextual de ChatGPT/Qwen para interpretar comandos complejos y adaptarse a situaciones novedosas. La validación experimental de esta hipótesis de complementariedad constituye el núcleo de la contribución de esta investigación.
