@@ -96,7 +96,7 @@ El desarrollo del aprendizaje automático, y en particular del aprendizaje profu
 
 \item \textbf{Navegación Autónoma:} Los enfoques basados en aprendizaje profundo han demostrado superioridad frente a métodos geométricos tradicionales en entornos desconocidos, utilizando entradas como mapas locales de obstáculos (LOM) para generar comandos de velocidad directamente . La combinación de SLAM visual con redes neuronales permite una localización robusta incluso en escenarios dinámicos .
 
-\item \textbf{Manipulación y Control:} En robótica de manipulación, las redes neuronales se emplean para estimar propiedades físicas de objetos (rigidez, forma) a partir de señales propioceptivas, permitiendo agarres adaptativos y seguros . En robots paralelos y cables, el ML se utiliza para modelar cinemática compleja y compensar errores geométricos .
+\item \textbf{Manipulación y Control:} En robótica de manipulación, las redes neuronales se emplean para estimar propiedades físicas de objetos (rigidez, forma) a partir de señales propioceptivas, permitiendo agarres adaptativos y seguros . 
 
 \item \textbf{Planificación y Toma de Decisiones:} Los algoritmos de planificación de rutas y decisiones en vehículos autónomos combinan enfoques basados en conocimiento (reglas, teoría de juegos) con métodos basados en datos (imitación, RL) para lograr sistemas robustos y adaptativos .
 
@@ -110,11 +110,11 @@ A pesar de sus ventajas, los enfoques puramente basados en ML presentan limitaci
 
 \item \textbf{Falta de garantías de seguridad:} Las redes neuronales pueden producir comportamientos impredecibles ante entradas fuera de la distribución de entrenamiento, lo que es crítico en aplicaciones donde la seguridad física es prioritaria \cite{Shi2023}.
 
-\item \textbf{Opacidad y falta de explicabilidad:} La naturaleza de "caja negra" de las redes profundas dificulta la interpretación de sus decisiones, limitando su adopción en entornos regulados donde se requiere auditoría [citation:Russell2020].
+\item \textbf{Opacidad y falta de explicabilidad:} La naturaleza de \textit{"caja negra"} de las redes profundas dificulta la interpretación de sus decisiones, limitando su adopción en entornos regulados donde se requiere auditoría \cite{Russell2020}.
 
-\item \textbf{Dependencia de datos:} Los modelos de ML requieren grandes volúmenes de datos etiquetados o experiencias de interacción, cuyo costo de adquisición en robótica puede ser prohibitivo .
+\item \textbf{Dependencia de datos:} Los modelos de ML requieren grandes volúmenes de datos etiquetados o experiencias de interacción, cuyo costo de adquisición en robótica suele ser complejo.
 
-\item \textbf{Dificultad para incorporar conocimiento previo:} A diferencia de los sistemas basados en reglas, las redes neuronales no pueden aprovechar fácilmente el conocimiento simbólico existente sobre el dominio [citation:Brooks1986].
+\item \textbf{Dificultad para incorporar conocimiento previo:} A diferencia de los sistemas basados en reglas, las redes neuronales no pueden aprovechar fácilmente el conocimiento simbólico existente sobre el dominio \cite{Brooks1986}.
 
 \end{enumerate}
 
@@ -126,7 +126,7 @@ Los sistemas híbridos en robótica representan una tercera vía que busca integ
 
 \subsection{Definición y Fundamentos de los Sistemas Híbridos}
 
-Un sistema híbrido de planificación y control se define como aquella arquitectura que integra explícitamente componentes basados en reglas (deterministas, explicables, verificables) con componentes basados en aprendizaje (adaptativos, flexibles, basados en datos) . El objetivo no es sustituir un enfoque por otro, sino establecer mecanismos de coordinación que permitan a cada módulo operar en el ámbito donde es más competente.
+Un sistema híbrido de planificación y control esta definido como aquella arquitectura que integra explícitamente componentes basados en reglas (deterministas, explicables, verificables) con componentes basados en aprendizaje (adaptativos, flexibles, basados en datos) . El objetivo no es sustituir un enfoque por otro, sino establecer mecanismos de coordinación que permitan a cada módulo operar en el ámbito donde es más competente.
 
 La motivación fundamental de los sistemas híbridos radica en la complementariedad de ambos paradigmas:
 
@@ -141,7 +141,7 @@ La motivación fundamental de los sistemas híbridos radica en la complementarie
 En la literatura se identifican varios patrones arquitectónicos para la integración híbrida :
 \begin{enumerate}
 
-\item \textbf{Arquitecturas de Dominio de Reglas con Complemento ML (Rule First + ML):} En este enfoque, el sistema basado en reglas constituye el núcleo principal de toma de decisiones, y los componentes de ML se utilizan para extender sus capacidades en áreas específicas. Por ejemplo, un sistema CLIPS puede manejar la lógica de alto nivel de una tarea, mientras que una CNN se encarga de la detección de objetos necesaria para instanciar los hechos. Este es el caso de la integración de CLIPS con traductores de lenguaje natural en el robot Justina.
+\item \textbf{Arquitecturas de Dominio de Reglas con Complemento ML (Rule First + ML):} En este enfoque, el sistema basado en reglas constituye el núcleo principal de toma de decisiones, y los componentes de ML se utilizan para extender sus capacidades en áreas específicas. Por ejemplo, un sistema CLIPS puede manejar la lógica de alto nivel de una tarea, mientras que una CNN se encarga de la detección de objetos necesaria para instanciar los hechos.
 
 \item \textbf{Arquitecturas de Dominio ML con Restricciones de Reglas (Model First + Rules):} Aquí, un modelo de ML (como una política de RL o un LLM) genera las acciones principales, pero sus salidas son validadas y, si es necesario, corregidas por un conjunto de reglas de seguridad que actúan como "caja de seguridad" . Esto es común en navegación autónoma, donde el planificador basado en aprendizaje puede sugerir trayectorias, pero un módulo de reglas garantiza que se eviten obstáculos y se respeten límites de velocidad.
 
@@ -159,7 +159,7 @@ En la literatura se identifican varios patrones arquitectónicos para la integra
 
 \item \textbf{Análisis Semántico para Interacción Humano-Robot:} Se han desarrollado enfoques híbridos de análisis semántico que combinan técnicas basadas en reglas con aprendizaje automático para interpretar comandos de lenguaje natural en asistentes robóticos, logrando una comprensión más robusta y contextual .
 
-\item \textbf{Control de Robots Industriales:} La combinación de controladores PID difusos (basados en 49 reglas) con meta-optimización mediante aprendizaje por refuerzo (SAC) ha demostrado reducciones significativas en error de seguimiento (46-52%) y consumo energético (28-30%) en manipuladores industriales, manteniendo la estabilidad y predictibilidad del lazo de control de alta frecuencia .
+\item \textbf{Control de Robots Industriales:} La combinación de controladores PID difusos (basados en 49 reglas) con meta-optimización mediante aprendizaje por refuerzo (SAC) ha demostrado reducciones significativas en error de seguimiento $(46-52\%)$ y consumo energético $(28-30\%)$ en manipuladores industriales, manteniendo la estabilidad y predictibilidad del lazo de control de alta frecuencia .
 
 \item \textbf{Planificación Híbrida (Hybrid Planning):} El paradigma de Hybrid Planning integra explícitamente sistemas de reglas (árboles de tareas, máquinas de estado finito) con módulos de predicción basados en modelos (MPC, LLMs) para lograr comportamientos robustos en entornos complejos . Este enfoque se aplica en robótica de almacenes, interacción humano-robot y vehículos autónomos.
 
