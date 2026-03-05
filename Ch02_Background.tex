@@ -77,28 +77,28 @@ Estas limitaciones han motivado la exploración de arquitecturas híbridas que c
 
 \section{Enfoques Modernos: Aprendizaje Automático (ML) y Redes Neuronales en Robótica}
 
-El desarrollo del aprendizaje automático, y en particular del aprendizaje profundo, ha transformado radicalmente la robótica contemporánea, habilitando capacidades que eran difíciles de lograr con enfoques puramente simbólicos o geométricos. A diferencia de los sistemas basados en reglas, que requieren la especificación explícita de todo el conocimiento del dominio, los enfoques de ML permiten a los robots aprender directamente de los datos, extrayendo patrones complejos y adaptándose a entornos variables sin necesidad de programación explícita.
+El desarrollo del aprendizaje automático, y en particular del aprendizaje profundo, ha transformado radicalmente la robótica contemporánea, habilitando capacidades que eran difíciles de lograr con enfoques puramente simbólicos o geométricos \cite{Cheng2025}. A diferencia de los sistemas basados en reglas, que requieren la especificación explícita de todo el conocimiento del dominio, los enfoques de ML permiten a los robots aprender directamente de los datos, extrayendo patrones complejos y adaptándose a entornos variables sin necesidad de programación explícita  \cite{Russell2020}.
 
 \subsection{Principales Paradigmas de Aprendizaje Automático en Robótica}
 
-\textbf{Aprendizaje Supervisado y Visión por Computadora:} Las redes neuronales convolucionales (CNNs) se han convertido en el estándar de facto para tareas de percepción robótica, incluyendo detección y reconocimiento de objetos, segmentación semántica y estimación de poses . Arquitecturas como YOLO (You Only Look Once) y sus variantes permiten a robots como Justina identificar objetos en tiempo real con alta precisión, incluso en entornos domésticos desordenados . Las CNNs operan mediante capas de convolución que extraen jerárquicamente características visuales, desde bordes simples hasta formas complejas, permitiendo una representación robusta del entorno .
+\textbf{Aprendizaje Supervisado y Visión por Computadora:} Las redes neuronales convolucionales (CNNs) se han convertido en el estándar de facto para tareas de percepción robótica, incluyendo detección y reconocimiento de objetos, segmentación semántica y estimación de poses \cite{Raj2025}. Arquitecturas como YOLO (You Only Look Once) y sus variantes permiten a robots como Justina identificar objetos en tiempo real con alta precisión, incluso en entornos domésticos desordenados . Las CNNs operan mediante capas de convolución que extraen jerárquicamente características visuales, desde bordes simples hasta formas complejas, permitiendo una representación robusta del entorno \cite{Raj2025}.
 
-\textbf{Aprendizaje por Refuerzo para Control y Navegación:} El aprendizaje por refuerzo profundo (Deep RL) ha emergido como una herramienta poderosa para desarrollar políticas de control en tareas secuenciales. Mediante la interacción con el entorno, los agentes aprenden a maximizar recompensas acumulativas, descubriendo estrategias óptimas para navegación, manipulación y evitación de obstáculos . En navegación robótica, se han desarrollado políticas híbridas que combinan representaciones aprendidas con modelos geométricos tradicionales para operar robustamente en entornos reales .
+\textbf{Aprendizaje por Refuerzo para Control y Navegación:} El aprendizaje por refuerzo profundo (Deep RL) ha emergido como una herramienta poderosa para desarrollar políticas de control en tareas secuenciales. Mediante la interacción con el entorno, los agentes aprenden a maximizar recompensas acumulativas, descubriendo estrategias óptimas para navegación, manipulación y evitación de obstáculos \cite{Sadek2024}. En navegación robótica, se han desarrollado políticas híbridas que combinan representaciones aprendidas con modelos geométricos tradicionales para operar robustamente en entornos reales \cite{Sadek2024}.
 
-\textbf{Redes Recurrentes y Modelado Secuencial:} Las redes neuronales recurrentes (RNNs) y sus variantes (LSTM, GRU) son fundamentales para tareas que requieren memoria temporal, como el seguimiento de objetos en movimiento, la predicción de trayectorias humanas o la interpretación de comandos verbales en contexto . Estas arquitecturas mantienen un estado interno que evoluciona con la secuencia de entradas, permitiendo modelar dependencias temporales de largo alcance.
+\textbf{Redes Recurrentes y Modelado Secuencial:} Las redes neuronales recurrentes (RNNs) y sus variantes (LSTM, GRU) son fundamentales para tareas que requieren memoria temporal, como el seguimiento de objetos en movimiento, la predicción de trayectorias humanas o la interpretación de comandos verbales en contexto \cite{Cheng2025}. Estas arquitecturas mantienen un estado interno que evoluciona con la secuencia de entradas, permitiendo modelar dependencias temporales de largo alcance.
 
-\textbf{Modelos de Lenguaje Grande (LLMs) en Robótica:} La irrupción de modelos transformadores, como los descritos por Vaswani et al. , ha dado lugar a los Large Language Models (LLMs), capaces de procesar y generar lenguaje natural con una fluidez sin precedentes. En robótica, estos modelos se utilizan para interpretar comandos complejos, traducir lenguaje natural a representaciones simbólicas, e incluso generar planes completos a partir de descripciones de alto nivel \cite{Shi2023}. Su capacidad para captar matices semánticos y contextuales los hace especialmente valiosos para la interacción humano-robot en entornos domésticos.
+\textbf{Modelos de Lenguaje Grande (LLMs) en Robótica:} La irrupción de modelos transformadores, como los descritos por  \cite{Vaswani2017}, han dado lugar a los Large Language Models (LLMs), capaces de procesar y generar lenguaje natural con una fluidez sin precedentes. En robótica, estos modelos se utilizan para interpretar comandos complejos, traducir lenguaje natural a representaciones simbólicas, e incluso generar planes completos a partir de descripciones de alto nivel \cite{Shi2023}. Su capacidad para captar matices semánticos y contextuales los hace especialmente valiosos para la interacción humano-robot en entornos domésticos.
 
 \subsection{Aplicaciones Específicas en Robótica de Servicio}
 
 \begin{itemize}
-\item \textbf{Percepción y Reconocimiento:}  La integración de CNNs en pipelines de percepción permite a los robots identificar objetos, personas y gestos con alta precisión. Sistemas como YOLO y FastSAM (Segment Anything Model) se utilizan para segmentación en tiempo real y localización de objetos de interés .
+\item \textbf{Percepción y Reconocimiento:}  La integración de CNNs en pipelines de percepción permite a los robots identificar objetos, personas y gestos con alta precisión. Sistemas como YOLO y FastSAM (Segment Anything Model) se utilizan para segmentación en tiempo real y localización de objetos de interés \cite{Raj2025}.
 
-\item \textbf{Navegación Autónoma:} Los enfoques basados en aprendizaje profundo han demostrado superioridad frente a métodos geométricos tradicionales en entornos desconocidos, utilizando entradas como mapas locales de obstáculos (LOM) para generar comandos de velocidad directamente . La combinación de SLAM visual con redes neuronales permite una localización robusta incluso en escenarios dinámicos .
+\item \textbf{Navegación Autónoma:} Los enfoques basados en aprendizaje profundo han demostrado superioridad frente a métodos geométricos tradicionales en entornos desconocidos, utilizando entradas como mapas locales de obstáculos (LOM) para generar comandos de velocidad directamente \cite{Sadek2024}. La combinación de SLAM visual con redes neuronales permite una localización robusta incluso en escenarios dinámicos \cite{Cheng2025}.
 
-\item \textbf{Manipulación y Control:} En robótica de manipulación, las redes neuronales se emplean para estimar propiedades físicas de objetos (rigidez, forma) a partir de señales propioceptivas, permitiendo agarres adaptativos y seguros . 
+\item \textbf{Manipulación y Control:} En robótica de manipulación, las redes neuronales se emplean para estimar propiedades físicas de objetos (rigidez, forma) a partir de señales propioceptivas, permitiendo agarres adaptativos y seguros \cite{Bernabei2025}. 
 
-\item \textbf{Planificación y Toma de Decisiones:} Los algoritmos de planificación de rutas y decisiones en vehículos autónomos combinan enfoques basados en conocimiento (reglas, teoría de juegos) con métodos basados en datos (imitación, RL) para lograr sistemas robustos y adaptativos .
+\item \textbf{Planificación y Toma de Decisiones:} Los algoritmos de planificación de rutas y decisiones en vehículos autónomos combinan enfoques basados en conocimiento (reglas, teoría de juegos) con métodos basados en datos (imitación, RL) para lograr sistemas robustos y adaptativos \cite{HybridPlanning2024}.
 
 \end{itemize}
 
@@ -112,7 +112,7 @@ A pesar de sus ventajas, los enfoques puramente basados en ML presentan limitaci
 
 \item \textbf{Opacidad y falta de explicabilidad:} La naturaleza de \textit{"caja negra"} de las redes profundas dificulta la interpretación de sus decisiones, limitando su adopción en entornos regulados donde se requiere auditoría \cite{Russell2020}.
 
-\item \textbf{Dependencia de datos:} Los modelos de ML requieren grandes volúmenes de datos etiquetados o experiencias de interacción, cuyo costo de adquisición en robótica suele ser complejo.
+\item \textbf{Dependencia de datos:} Los modelos de ML requieren grandes volúmenes de datos etiquetados o experiencias de interacción, cuyo costo de adquisición en robótica suele ser complejo \cite{Cheng2025}.
 
 \item \textbf{Dificultad para incorporar conocimiento previo:} A diferencia de los sistemas basados en reglas, las redes neuronales no pueden aprovechar fácilmente el conocimiento simbólico existente sobre el dominio \cite{Brooks1986}.
 
@@ -122,13 +122,13 @@ Estas limitaciones han motivado el desarrollo de arquitecturas híbridas que com
 
 \section{Sistemas Híbridos: Combinando la Predictibilidad de las Reglas con la Flexibilidad del ML}
 
-Los sistemas híbridos en robótica representan una tercera vía que busca integrar sinérgicamente enfoques simbólicos (basados en reglas) y subsimbólicos (basados en aprendizaje), aprovechando las fortalezas de cada paradigma mientras se compensan sus debilidades respectivas .
+Los sistemas híbridos en robótica representan una tercera vía que busca integrar sinérgicamente enfoques simbólicos (basados en reglas) y subsimbólicos (basados en aprendizaje), aprovechando las fortalezas de cada paradigma mientras se compensan sus debilidades respectivas \cite{Cheng2025}.
 
 \subsection{Definición y Fundamentos de los Sistemas Híbridos}
 
-Un sistema híbrido de planificación y control esta definido como aquella arquitectura que integra explícitamente componentes basados en reglas (deterministas, explicables, verificables) con componentes basados en aprendizaje (adaptativos, flexibles, basados en datos) . El objetivo no es sustituir un enfoque por otro, sino establecer mecanismos de coordinación que permitan a cada módulo operar en el ámbito donde es más competente.
+Un sistema híbrido de planificación y control esta definido como aquella arquitectura que integra explícitamente componentes basados en reglas (deterministas, explicables, verificables) con componentes basados en aprendizaje (adaptativos, flexibles, basados en datos) \cite{Sadek2024}. El objetivo no es sustituir un enfoque por otro, sino establecer mecanismos de coordinación que permitan a cada módulo operar en el ámbito donde es más competente.
 
-La motivación fundamental de los sistemas híbridos radica en la complementariedad de ambos paradigmas:
+La motivación fundamental de los sistemas híbridos radica en la complementariedad de ambos paradigmas \cite{HybridPlanning2024}:
 
 \begin{itemize}
 \item Los sistemas basados en reglas aportan predictibilidad, seguridad, explicabilidad y la capacidad de incorporar conocimiento experto explícito.
@@ -138,16 +138,16 @@ La motivación fundamental de los sistemas híbridos radica en la complementarie
 
 \subsection{Tipologías de Integración Híbrida}
 
-En la literatura se identifican varios patrones arquitectónicos para la integración híbrida :
+En la literatura se identifican varios patrones arquitectónicos para la integración híbrida \cite{HybridPlanning2024}:
 \begin{enumerate}
 
 \item \textbf{Arquitecturas de Dominio de Reglas con Complemento ML (Rule First + ML):} En este enfoque, el sistema basado en reglas constituye el núcleo principal de toma de decisiones, y los componentes de ML se utilizan para extender sus capacidades en áreas específicas. Por ejemplo, un sistema CLIPS puede manejar la lógica de alto nivel de una tarea, mientras que una CNN se encarga de la detección de objetos necesaria para instanciar los hechos.
 
-\item \textbf{Arquitecturas de Dominio ML con Restricciones de Reglas (Model First + Rules):} Aquí, un modelo de ML (como una política de RL o un LLM) genera las acciones principales, pero sus salidas son validadas y, si es necesario, corregidas por un conjunto de reglas de seguridad que actúan como "caja de seguridad" . Esto es común en navegación autónoma, donde el planificador basado en aprendizaje puede sugerir trayectorias, pero un módulo de reglas garantiza que se eviten obstáculos y se respeten límites de velocidad.
+\item \textbf{Arquitecturas de Dominio ML con Restricciones de Reglas (Model First + Rules):} Aquí, un modelo de ML (como una política de RL o un LLM) genera las acciones principales, pero sus salidas son validadas y, si es necesario, corregidas por un conjunto de reglas de seguridad que actúan como \textit{"caja de seguridad"} \cite{Shi2023}. Esto es común en navegación autónoma, donde el planificador basado en aprendizaje puede sugerir trayectorias, pero un módulo de reglas garantiza que se eviten obstáculos y se respeten límites de velocidad.
 
-\item \textbf{Arquitecturas de Fusión o Scheduling Paralelo:} En este esquema, tanto el sistema basado en reglas como el modelo de ML generan acciones concurrentemente, y un módulo supervisor (scheduler) decide qué acción ejecutar basándose en el contexto, la confianza de cada módulo o criterios predefinidos . Este enfoque permite aprovechar la redundancia y seleccionar la mejor estrategia para cada situación.
+\item \textbf{Arquitecturas de Fusión o Scheduling Paralelo:} En este esquema, tanto el sistema basado en reglas como el modelo de ML generan acciones concurrentemente, y un módulo supervisor (scheduler) decide qué acción ejecutar basándose en el contexto, la confianza de cada módulo o criterios predefinidos \cite{Sadek2024}. Este enfoque permite aprovechar la redundancia y seleccionar la mejor estrategia para cada situación.
 
-\item \textbf{Arquitecturas de Aprendizaje para Adaptación de Reglas:} En sistemas más avanzados, los componentes de ML se utilizan para adaptar o ajustar dinámicamente los parámetros del sistema basado en reglas. Por ejemplo, un meta-aprendizaje basado en Soft Actor-Critic (SAC) puede ajustar en línea los factores de escala de un controlador PID difuso, mejorando el rendimiento sin perder la estabilidad del lazo determinista de alto frecuencia .
+\item \textbf{Arquitecturas de Aprendizaje para Adaptación de Reglas:} En sistemas más avanzados, los componentes de ML se utilizan para adaptar o ajustar dinámicamente los parámetros del sistema basado en reglas. Por ejemplo, un meta-aprendizaje basado en Soft Actor-Critic (SAC) puede ajustar en línea los factores de escala de un controlador PID difuso, mejorando el rendimiento sin perder la estabilidad del lazo determinista de alto frecuencia \cite{Zhang2025}.
 
 \end{enumerate}
 
@@ -155,22 +155,22 @@ En la literatura se identifican varios patrones arquitectónicos para la integra
 
 \begin{itemize}
 
-\item \textbf{Navegación Híbrida:} La tesis de Sadek  propone agentes autónomos que combinan técnicas geométricas tradicionales (modelado explícito del entorno) con políticas aprendidas mediante redes neuronales, demostrando que los enfoques híbridos pueden operar robustamente tanto en simulación como en entornos físicos reales.
+\item \textbf{Navegación Híbrida:} La tesis de \cite{Sadek2024}  propone agentes autónomos que combinan técnicas geométricas tradicionales (modelado explícito del entorno) con políticas aprendidas mediante redes neuronales, demostrando que los enfoques híbridos pueden operar robustamente tanto en simulación como en entornos físicos reales.
 
-\item \textbf{Análisis Semántico para Interacción Humano-Robot:} Se han desarrollado enfoques híbridos de análisis semántico que combinan técnicas basadas en reglas con aprendizaje automático para interpretar comandos de lenguaje natural en asistentes robóticos, logrando una comprensión más robusta y contextual .
+\item \textbf{Análisis Semántico para Interacción Humano-Robot:} Se han desarrollado enfoques híbridos de análisis semántico que combinan técnicas basadas en reglas con aprendizaje automático para interpretar comandos de lenguaje natural en asistentes robóticos, logrando una comprensión más robusta y contextual \cite{HRI2024}.
 
-\item \textbf{Control de Robots Industriales:} La combinación de controladores PID difusos (basados en 49 reglas) con meta-optimización mediante aprendizaje por refuerzo (SAC) ha demostrado reducciones significativas en error de seguimiento $(46-52\%)$ y consumo energético $(28-30\%)$ en manipuladores industriales, manteniendo la estabilidad y predictibilidad del lazo de control de alta frecuencia .
+\item \textbf{Control de Robots Industriales:} La combinación de controladores PID difusos (basados en 49 reglas) con meta-optimización mediante aprendizaje por refuerzo (SAC) ha demostrado reducciones significativas en error de seguimiento $(46-52\%)$ y consumo energético $(28-30\%)$ en manipuladores industriales, manteniendo la estabilidad y predictibilidad del lazo de control de alta frecuencia \cite{Zhang2025}.
 
-\item \textbf{Planificación Híbrida (Hybrid Planning):} El paradigma de Hybrid Planning integra explícitamente sistemas de reglas (árboles de tareas, máquinas de estado finito) con módulos de predicción basados en modelos (MPC, LLMs) para lograr comportamientos robustos en entornos complejos . Este enfoque se aplica en robótica de almacenes, interacción humano-robot y vehículos autónomos.
+\item \textbf{Planificación Híbrida (Hybrid Planning):} El paradigma de Hybrid Planning integra explícitamente sistemas de reglas (árboles de tareas, máquinas de estado finito) con módulos de predicción basados en modelos (MPC, LLMs) para lograr comportamientos robustos en entornos complejos cite{HybridPlanning2024}. Este enfoque se aplica en robótica de almacenes, interacción humano-robot y vehículos autónomos.
 
-\item \textbf{Modelado Físico con Aprendizaje:} En robótica de robots blandos y paralelos, se están explorando enfoques que combinan modelos físicos con aprendizaje automático (hybrid learning physics modeling) para mejorar la precisión del modelado cinemático y dinámico, aprovechando el conocimiento previo de la estructura del sistema mientras se aprenden compensaciones de datos .
+\item \textbf{Modelado Físico con Aprendizaje:} En robótica de robots blandos y paralelos, se están explorando enfoques que combinan modelos físicos con aprendizaje automático (hybrid learning physics modeling) para mejorar la precisión del modelado cinemático y dinámico, aprovechando el conocimiento previo de la estructura del sistema mientras se aprenden compensaciones de datos \cite{Bernabei2025}.
 
 \end{itemize}
 
 \subsection{Ventajas y Desafíos de los Sistemas Híbridos}
 
 \subsubsection{Ventajas:} 
-
+\cite{Sadek2024, Shi2023}
 \begin{itemize}
 
 \item \textbf{Robustez mejorada:} Al combinar múltiples fuentes de conocimiento, el sistema puede fallar de manera controlada y recurrir a estrategias alternativas.
@@ -185,7 +185,7 @@ En la literatura se identifican varios patrones arquitectónicos para la integra
 
 
 \subsubsection*{Desafíos:}
-
+\cite{Cheng2025}
 \begin{itemize}
 
 \item \textbf{Complejidad de integración:} La coordinación entre módulos heterogéneos requiere diseños arquitectónicos cuidadosos y protocolos de comunicación eficientes.
@@ -200,4 +200,4 @@ En la literatura se identifican varios patrones arquitectónicos para la integra
 
 \subsection{Conexión con la Propuesta de Tesis}
 
-La arquitectura híbrida CLIPS-ChatGPT propuesta en esta tesis se enmarca precisamente en esta categoría de sistemas, siguiendo un patrón de dominio de reglas con complemento ML para la traducción de lenguaje natural, y extendiéndose hacia una arquitectura de planificación dual que permite tanto a CLIPS como a los LLMs generar planes concurrentemente \cite{Shi2023}. Esta aproximación busca capitalizar la predictibilidad y seguridad de CLIPS para tareas críticas y bien definidas, mientras que aprovecha la flexibilidad semántica y capacidad de generación contextual de ChatGPT para interpretar comandos complejos y adaptarse a situaciones novedosas. La validación experimental de esta hipótesis de complementariedad constituye el núcleo de la contribución de esta investigación.
+La arquitectura híbrida CLIPS-ChatGPT propuesta en esta tesis se enmarca precisamente en esta categoría de sistemas, siguiendo un patrón de dominio de reglas con complemento ML para la traducción de lenguaje natural \cite{Savage2024},, y extendiéndose hacia una arquitectura de planificación dual que permite tanto a CLIPS como a los LLMs generar planes concurrentemente \cite{Shi2023}. Esta aproximación busca capitalizar la predictibilidad y seguridad de CLIPS para tareas críticas y bien definidas, mientras que aprovecha la flexibilidad semántica y capacidad de generación contextual de ChatGPT para interpretar comandos complejos y adaptarse a situaciones novedosas. La validación experimental de esta hipótesis de complementariedad constituye el núcleo de la contribución de esta investigación.
