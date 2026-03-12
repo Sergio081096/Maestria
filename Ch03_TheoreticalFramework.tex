@@ -42,7 +42,75 @@ La arquitectura VIRBOT de Justina se organiza en cuatro capas principales:
 
 \section{Arquitectura de un Sistema de Planeación de Acciones Jerárquico}
 
-Descripción del diseño escalonado del sistema de planificación, donde las decisiones de alto nivel (estrategias) se descomponen en acciones ejecutables de bajo nivel, por ejemplo ("servir la cena") se descomponen en tareas intermedias ("ir a la cocina", "tomar platos", "colocar en mesa") y finalmente en acciones primitivas ejecutables por el robot.
+La planificación de acciones aborda el problema de generar secuencias de pasos u operaciones que permitan a un robot alcanzar objetivos de alto nivel en entornos parcialmente observables y dinámicos \cite{Russell2020}. Entre los paradigmas más consolidados para abordar este desafío se encuentra la planificación jerárquica, que descompone tareas complejas en subtareas más simples siguiendo una estructura de abstracción progresiva \cite{Nau2004}, Por ejemplo ("servir la cena") se descomponen en tareas intermedias ("ir a la cocina", "tomar platos", "colocar en mesa") y finalmente en acciones primitivas ejecutables por el robot. Este enfoque reduce significativamente la complejidad computacional del problema de planificación al explotar el conocimiento experto sobre cómo descomponer tareas, en contraste con los planificadores clásicos de primer principio que exploran espacios de estados sin guía estructural \cite{Erol1994}.
+
+\subsection{Fundamentos de la Planificación Jerárquica: HTN}
+El método más influyente de planificación jerárquica es el paradigma de \textbf{Redes de Tareas Jerárquicas} \textit{(Hierarchical Task Networks, HTN)} \cite{Georgievski2016}. En HTN, el problema de planificación no se define mediante un estado objetivo, sino mediante una tarea inicial (task network) que representa el objetivo de alto nivel a alcanzar \cite{Nau2004}. El conocimiento del dominio se codifica mediante dos elementos fundamentales:
+
+\begin{itemize}
+
+\item \textbf{Operadores (Operators):} Describen acciones primitivas ejecutables directamente por el robot, especificando sus precondiciones y efectos sobre el estado del mundo \cite{Fikes1971}. Son análogos a las acciones en STRIPS (Stanford Research Institute Problem Solver), el primer planificador clásico ampliamente adoptado \cite{Geffner2020}.
+
+\item \textbf{Métodos (Methods):} Constituyen el núcleo de la jerarquía. Cada método especifica cómo descomponer una tarea compuesta (abstracta) en una red de subtareas, que pueden ser a su vez compuestas o primitivas \cite{Lallement2014}. Los métodos incluyen precondiciones que determinan cuándo es aplicable una determinada descomposición, permitiendo que el planificador elija entre múltiples formas de realizar una misma tarea según el contexto \cite{deSilva2016}.
+
+\end{itemize}
+
+
+El proceso de planificación HTN opera mediante descomposición recursiva: partiendo de la tarea inicial, el planificador selecciona métodos aplicables cuyas precondiciones se satisfacen en el estado actual, y reemplaza las tareas compuestas por sus subtareas, generando progresivamente una red completamente expandida en acciones primitivas \cite{Nau2003}. Cuando se alcanza una secuencia de acciones primitivas cuyas precondiciones pueden encadenarse consistentemente desde el estado inicial, se ha encontrado un plan solución.
+
+Una ventaja distintiva de HTN es su capacidad para generar planes explicables y alineados con el conocimiento experto, ya que la jerarquía de métodos refleja cómo un diseñador humano concebiría la realización de tareas complejas \cite{Lallement2014}. Esto contrasta con enfoques puramente basados en búsqueda o aprendizaje, cuyas soluciones pueden ser opacas o contraintuitivas \cite{Shi2023}.
+
+\subsection{El Planificador HATP (Hierarchical Agent-Based Task Planner)}
+
+Dentro de la familia de planificadores HTN orientados a robótica, destaca HATP (Hierarchical Agent-based Task Planner) , desarrollado en LAAS-CNRS para entornos de interacción humano-robot \cite{Lallement2014, deSilva2017}. HATP extiende el paradigma HTN tradicional con características específicamente diseñadas para robótica de servicio:
+
+\begin{itemize}
+
+\item \textbf{Tratamiento de agentes como entidades de primera clase:} HATP distingue explícitamente entre diferentes agentes (robots, humanos) en la representación del dominio, permitiendo asignar tareas a distintos ejecutores y generar planes multi-agente sincronizados \cite{Alami2013}.
+
+\item \textbf{Reglas sociales (social rules):} Incorpora mecanismos para especificar restricciones sobre comportamientos aceptables en contextos de interacción humano-robot, como límites de tiempo de espera o secuencias de acciones que deben evitarse por razones de comodidad o seguridad \cite{Lallement2014}.
+
+\item \textbf{Integración con razonamiento geométrico:} HATP puede intercalar planificación simbólica con validación geométrica mediante planificadores de movimiento (ej. Move3D), verificando en tiempo de planificación si las acciones consideradas son factibles en el mundo físico modelado con detalle 3D \cite{deSilva2017}. Esta integración entre capas heterogéneas permite resolver clases de problemas de planificación que ninguno de los dos enfoques podría abordar por separado \cite{Alami2013}.
+
+\end{itemize}
+
+\subsection{Taxonomía de Arquitecturas Jerárquicas en Robótica}
+
+Más allá de HTN, la literatura identifica diversas aproximaciones a la planificación jerárquica en robótica:
+
+Planificación Jerárquica con Lógica Temporal (HTL): Una línea reciente de investigación extiende la planificación jerárquica al dominio de especificaciones de lógica temporal. Luo et al. \cite{Luo2024} proponen un framework de descomposición jerárquica basado en LTL (Linear Temporal Logic) jerárquico, donde cada especificación de alto nivel se descompone en subtareas atómicas, infiriendo relaciones temporales entre ellas para construir una red de tareas. Este enfoque, validado experimentalmente en dominios de navegación y manipulación, permite manejar especificaciones complejas que resultarían inmanejables con una única fórmula LTL monolítica.
+
+Arquitecturas de Tres Capas (Three-Layer Architectures): Un patrón arquitectónico ampliamente adoptado en robótica autónoma es la separación en capas deliberativa, de ejecución y reactiva \cite{Gat1998}. En el contexto de rehabilitación robótica, esta estructura se manifiesta como:
+
+\begin{itemize}
+
+\item \textbf{Capa física (Physical Layer):} Maneja la interacción directa con el entorno mediante sensores y actuadores.
+
+\item \textbf{Capa reactiva (Reactive Layer):} Ajusta en tiempo real parámetros de control (ej. asistencia, dificultad) basándose en retroalimentación sensorial.
+
+\item \textbf{Capa deliberativa (Deliberative Layer):} Utiliza planificadores como HTN o planificación basada en línea temporal para generar estrategias de intervención personalizadas a largo plazo \cite{Morales2025}.
+
+\end{itemize}
+
+Planificación Jerárquica con Representaciones Ontológicas: Investigaciones recientes exploran la integración de ontologías para enriquecer la representación del conocimiento en planificadores jerárquicos \cite{Pang2022}. Las ontologías permiten modelar relaciones semánticas entre objetos, agentes y tareas, facilitando el razonamiento sobre contextos no explícitamente programados y mejorando la adaptabilidad del planificador a situaciones novedosas.
+
+\subsection{Relevancia para el Sistema Propuesto}
+
+La arquitectura de planificación jerárquica presentada constituye el fundamento teórico sobre el cual se construye el sistema híbrido CLIPS-ChatGPT/Qwen propuesto en esta tesis. Específicamente:
+
+\begin{itemize}
+
+\item El motor CLIPS implementa un sistema de producción que, aunque no sigue estrictamente el formalismo HTN, puede organizarse jerárquicamente mediante reglas de prioridad y descomposición secuencial, como se detalla en la sección 4.1.1 \cite{Savage2024}.
+
+\item La integración con ChatGPT/Qwen para planificación dual (sección 4.3) puede entenderse como una extensión de las arquitecturas híbridas que combinan planificadores simbólicos (como HATP) con módulos de razonamiento geométrico o semántico, pero sustituyendo estos últimos por modelos de lenguaje de gran escala con capacidad de generar planes contextualmente adaptativos \cite{Shi2023}.
+
+\item La arquitectura ViRoot del robot Justina (Figura \ref{fig:viroot}) sigue explícitamente una organización jerárquica en capas de entradas, planificación, gestión de conocimiento y ejecución, alineándose con los principios de las arquitecturas de tres capas discutidas \cite{Savage2024}.
+
+\end{itemize}
+
+
+
+Esta base teórica proporciona el marco necesario para comprender cómo la combinación de razonamiento simbólico jerárquico y procesamiento flexible de lenguaje natural puede superar las limitaciones de ambos paradigmas por separado, constituyendo la hipótesis central de esta investigación.
 
 \section{Fundamentos de los Sistemas de Producción (Rule-Based Systems)}
 
