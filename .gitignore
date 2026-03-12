@@ -7,7 +7,7 @@
 # Neither these files...
 
 !*.bib
-!*.pdf
+#!*.pdf
 !*.bst
 !*.cls
 !*.tex

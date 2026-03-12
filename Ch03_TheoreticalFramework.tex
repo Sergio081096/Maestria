@@ -1,13 +1,6 @@
 \chapter{Marco Teórico y Conceptual}
 
-El fundamento teórico del sistema propuesto consiste en una arquitectura de planeación jerárquica. Se introduce el funcionamiento de los modelos de lenguaje grande y se detalla la integración de traductores de lenguaje natural con sistemas basados en reglas, estableciendo las bases tecnológicas para la implementación del sistema híbrido CLIPS-ChatGPT/Qwen y su uso en la arquitectura ViRoot descrita a continuación (ver Figura \ref{fig:viroot}).
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.8\textwidth]{Figures/virbot.png}
-    \caption{Arquitectura ViRoot.}
-    \label{fig:viroot}
-\end{figure}
+El fundamento teórico del sistema propuesto consiste en una arquitectura de planeación jerárquica. Se introduce el funcionamiento de los modelos de lenguaje grande y se detalla la integración de traductores de lenguaje natural con sistemas basados en reglas, estableciendo las bases tecnológicas para la implementación del sistema híbrido CLIPS-ChatGPT/Qwen y su uso en la arquitectura ViRoot \textit{(Virtual Real Robot)} descrita a continuación (ver Figura \ref{fig:viroot}).
 
 \subsection*{Arquitectura del Sistema}
 
@@ -40,25 +33,110 @@ La arquitectura VIRBOT de Justina se organiza en cuatro capas principales:
     \end{itemize}
 \end{itemize}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figures/virbot.png}
+    \caption{Arquitectura ViRoot.}
+    \label{fig:viroot}
+\end{figure}
+
+\subsection*{Arquitectura Funcional de ViRbot}
+
+Esta arquitectura organiza los módulos funcionales del robot de manera interconectada, lo que permiten integrar la percepción, comprensión del lenguaje, planeación simbólica y control físico del robot. La Figura \ref{fig:viroot2} muestra la interacción entre los distintos subsistemas del robot Justina.
+
+Dentro de la arquitectura se distinguen los cuatro grupos principales: percepción, comprensión e interacción, planificación y supervisión, y control de hardware.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figures/virbot.jpg}
+    \caption{Arquitectura Funcional ViRoot.}
+    \label{fig:viroot2}
+\end{figure}
+
+\subsubsection*{Módulos de Percepción}
+
+Los módulos de percepción permiten al robot obtener información del entorno físico mediante sensores y algoritmos de interpretación.
+
+\begin{itemize}
+
+\item \textbf{Vision:} Este módulo procesa información proveniente de cámaras y sensores visuales \textit{(nubes de puntos)}. Permite la detección y reconocimiento de objetos, personas y características del entorno. La información visual es utilizada principalmente por el sistema de navegación y por el planificador de tareas para tomar decisiones sobre la interacción con el entorno.
+
+\item \textbf{Cartographer:} El módulo Cartographer implementa algoritmos de \textbf{SLAM} \textit{(Simultaneous Localization and Mapping)} para construir mapas del entorno y estimar la posición del robot dentro de ellos. Este módulo proporciona información fundamental para la navegación autónoma.
+
+\item \textbf{Speech Recognition:} Este módulo procesa las señales de audio capturadas por los micrófonos del robot y las convierte en texto. El resultado es utilizado por el sistema de \textit{Natural Language Understanding} para interpretar instrucciones del usuario.
+
+\end{itemize}
+
+\subsubsection*{Módulos de Comprensión e Interacción}
+
+Estos módulos permiten que el robot interactúe con los humanos mediante lenguaje natural.
+
+\begin{itemize}
+
+\item \textbf{Natural Language Understanding (NLU):} Este componente interpreta las instrucciones del usuario en lenguaje natural. Utiliza modelos lingüísticos y reglas semánticas para transformar frases en representaciones estructuradas que puedan ser utilizadas por el sistema de planificación.
+
+\item \textbf{LLMs:} Los Large Language Models (LLMs) se emplean como complemento para mejorar la interpretación semántica de las instrucciones. Estos modelos permiten generar representaciones simbólicas o estructuras intermedias que posteriormente son procesadas por el sistema de planificación basado en reglas.
+
+\item \textbf{Speech Generation:} Este módulo permite al robot generar respuestas habladas. Convierte texto generado por el sistema en señales de voz, facilitando la interacción natural con los usuarios.
+
+\end{itemize}
+
+\subsubsection*{Módulos de Planificación y Gestión del Conocimiento}
+
+Estos módulos constituyen el núcleo de la toma de decisiones del sistema.
+
+\begin{itemize}
+
+\item \textbf{CLIPS Knowledge Base:} La base de conocimiento implementada en CLIPS almacena hechos y reglas que representan el conocimiento del entorno, los objetos, las tareas y las capacidades del robot. Esta base de conocimiento se actualiza continuamente conforme el robot percibe el entorno.
+
+\item \textbf{CLIPS Planner:} Este módulo utiliza reglas de producción para generar planes de acción a partir de objetivos definidos. El planificador determina qué acciones deben ejecutarse y en qué orden para alcanzar una meta específica.
+
+\item \textbf{Simple Task Planner State Machine:} Este componente implementa una máquina de estados que coordina la ejecución de tareas simples. Funciona como un nivel intermedio entre la planificación simbólica y la ejecución de acciones físicas.
+
+\item \textbf{Supervisor:} El supervisor monitorea la ejecución de los planes y gestiona errores o situaciones inesperadas. También se encarga de coordinar la interacción entre los distintos módulos del sistema.
+
+\item \textbf{Executor:} El ejecutor recibe los planes generados por el planificador y los convierte en comandos concretos para los diferentes actuadores del robot.
+
+\end{itemize}
+
+\subsubsection*{Módulos de Control del Robot}
+
+Estos módulos controlan directamente los sistemas físicos del robot.
+
+\begin{itemize}
+
+\item \textbf{Navigation:} El sistema de navegación calcula trayectorias y controla el desplazamiento del robot utilizando información del mapa y de los sensores.
+
+\item \textbf{Mobile Base:} Este módulo controla la base móvil del robot, permitiendo su desplazamiento en el entorno.
+
+\item \textbf{Manipulator:} Controla el brazo robótico utilizado para manipular objetos en el entorno.
+
+\item \textbf{Torso:} Permite el movimiento vertical del cuerpo del robot para alcanzar objetos a diferentes alturas.
+
+\item \textbf{Mechatronic Head:} Controla los movimientos de la cabeza del robot, permitiendo orientar sensores como cámaras y micrófonos hacia puntos de interés.
+
+\end{itemize}
+
+
 \section{Arquitectura de un Sistema de Planeación de Acciones Jerárquico}
 
-La planificación de acciones aborda el problema de generar secuencias de pasos u operaciones que permitan a un robot alcanzar objetivos de alto nivel en entornos parcialmente observables y dinámicos \cite{Russell2020}. Entre los paradigmas más consolidados para abordar este desafío se encuentra la planificación jerárquica, que descompone tareas complejas en subtareas más simples siguiendo una estructura de abstracción progresiva \cite{Nau2004}, Por ejemplo ("servir la cena") se descomponen en tareas intermedias ("ir a la cocina", "tomar platos", "colocar en mesa") y finalmente en acciones primitivas ejecutables por el robot. Este enfoque reduce significativamente la complejidad computacional del problema de planificación al explotar el conocimiento experto sobre cómo descomponer tareas, en contraste con los planificadores clásicos de primer principio que exploran espacios de estados sin guía estructural \cite{Erol1994}.
+La planificación de acciones aborda el problema de generar secuencias de pasos u operaciones que permitan a un robot alcanzar objetivos de alto nivel en entornos parcialmente observables y dinámicos \cite{Russell2020}. Entre los paradigmas más consolidados para abordar este desafío se encuentra la planificación jerárquica, que descompone tareas complejas en subtareas más simples \cite{Nau2004}, Por ejemplo ("servir la cena") se descomponen en tareas intermedias ("ir a la cocina", "tomar platos", "colocar en mesa") y finalmente en acciones primitivas ejecutables por el robot. Este enfoque reduce significativamente la complejidad computacional del problema de planificación al explotar el conocimiento experto sobre cómo descomponer tareas, en contraste con los planificadores clásicos de primer principio que exploran espacios de estados sin guía estructural \cite{Erol1994}.
 
 \subsection{Fundamentos de la Planificación Jerárquica: HTN}
 El método más influyente de planificación jerárquica es el paradigma de \textbf{Redes de Tareas Jerárquicas} \textit{(Hierarchical Task Networks, HTN)} \cite{Georgievski2016}. En HTN, el problema de planificación no se define mediante un estado objetivo, sino mediante una tarea inicial (task network) que representa el objetivo de alto nivel a alcanzar \cite{Nau2004}. El conocimiento del dominio se codifica mediante dos elementos fundamentales:
 
 \begin{itemize}
 
-\item \textbf{Operadores (Operators):} Describen acciones primitivas ejecutables directamente por el robot, especificando sus precondiciones y efectos sobre el estado del mundo \cite{Fikes1971}. Son análogos a las acciones en STRIPS (Stanford Research Institute Problem Solver), el primer planificador clásico ampliamente adoptado \cite{Geffner2020}.
+\item \textbf{Operadores:} Describen acciones primitivas ejecutables directamente por el robot, especificando sus precondiciones y efectos sobre el estado del mundo \cite{Fikes1971}. Son análogos a las acciones en \textbf{STRIPS} \textit{(Stanford Research Institute Problem Solver)}, el primer planificador clásico ampliamente adoptado \cite{Geffner2020}.
 
-\item \textbf{Métodos (Methods):} Constituyen el núcleo de la jerarquía. Cada método especifica cómo descomponer una tarea compuesta (abstracta) en una red de subtareas, que pueden ser a su vez compuestas o primitivas \cite{Lallement2014}. Los métodos incluyen precondiciones que determinan cuándo es aplicable una determinada descomposición, permitiendo que el planificador elija entre múltiples formas de realizar una misma tarea según el contexto \cite{deSilva2016}.
+\item \textbf{Métodos :} Constituyen el núcleo de la jerarquía. Cada método especifica cómo descomponer una tarea compuesta (abstracta) en una red de subtareas, que pueden ser a su vez compuestas o primitivas \cite{Lallement2014}. Los métodos incluyen precondiciones que determinan cuándo es aplicable una determinada descomposición, permitiendo que el planificador elija entre múltiples formas de realizar una misma tarea según el contexto \cite{deSilva2016}.
 
 \end{itemize}
 
 
-El proceso de planificación HTN opera mediante descomposición recursiva: partiendo de la tarea inicial, el planificador selecciona métodos aplicables cuyas precondiciones se satisfacen en el estado actual, y reemplaza las tareas compuestas por sus subtareas, generando progresivamente una red completamente expandida en acciones primitivas \cite{Nau2003}. Cuando se alcanza una secuencia de acciones primitivas cuyas precondiciones pueden encadenarse consistentemente desde el estado inicial, se ha encontrado un plan solución.
+El proceso de planificación HTN funciona mediante la descomposición recursiva: partiendo de la tarea inicial, el planificador selecciona métodos aplicables cuyas precondiciones se satisfacen en el estado actual, y reemplaza las tareas compuestas por sus subtareas, generando progresivamente una red completamente expandida en acciones primitivas \cite{Nau2003}. Cuando se alcanza una secuencia de acciones primitivas cuyas precondiciones pueden encadenarse consistentemente desde el estado inicial, se ha encontrado un plan solución.
 
-Una ventaja distintiva de HTN es su capacidad para generar planes explicables y alineados con el conocimiento experto, ya que la jerarquía de métodos refleja cómo un diseñador humano concebiría la realización de tareas complejas \cite{Lallement2014}. Esto contrasta con enfoques puramente basados en búsqueda o aprendizaje, cuyas soluciones pueden ser opacas o contraintuitivas \cite{Shi2023}.
+Una ventaja distintiva de HTN es su capacidad para generar planes explicables y alineados con el conocimiento experto, ya que la jerarquía de métodos refleja cómo un diseñador humano concebiría la realización de tareas complejas \cite{Lallement2014}. 
 
 \subsection{El Planificador HATP (Hierarchical Agent-Based Task Planner)}
 
@@ -70,29 +148,32 @@ Dentro de la familia de planificadores HTN orientados a robótica, destaca HATP 
 
 \item \textbf{Reglas sociales (social rules):} Incorpora mecanismos para especificar restricciones sobre comportamientos aceptables en contextos de interacción humano-robot, como límites de tiempo de espera o secuencias de acciones que deben evitarse por razones de comodidad o seguridad \cite{Lallement2014}.
 
-\item \textbf{Integración con razonamiento geométrico:} HATP puede intercalar planificación simbólica con validación geométrica mediante planificadores de movimiento (ej. Move3D), verificando en tiempo de planificación si las acciones consideradas son factibles en el mundo físico modelado con detalle 3D \cite{deSilva2017}. Esta integración entre capas heterogéneas permite resolver clases de problemas de planificación que ninguno de los dos enfoques podría abordar por separado \cite{Alami2013}.
-
+\item \textbf{Integración con razonamiento geométrico:} HATP puede intercalar planificación simbólica con validación geométrica mediante planificadores de movimiento (ej. Move3D), verificando en tiempo de planificación si las acciones consideradas son factibles en el mundo físico modelado con detalle 3D \cite{deSilva2017}. 
 \end{itemize}
 
 \subsection{Taxonomía de Arquitecturas Jerárquicas en Robótica}
 
 Más allá de HTN, la literatura identifica diversas aproximaciones a la planificación jerárquica en robótica:
 
-Planificación Jerárquica con Lógica Temporal (HTL): Una línea reciente de investigación extiende la planificación jerárquica al dominio de especificaciones de lógica temporal. Luo et al. \cite{Luo2024} proponen un framework de descomposición jerárquica basado en LTL (Linear Temporal Logic) jerárquico, donde cada especificación de alto nivel se descompone en subtareas atómicas, infiriendo relaciones temporales entre ellas para construir una red de tareas. Este enfoque, validado experimentalmente en dominios de navegación y manipulación, permite manejar especificaciones complejas que resultarían inmanejables con una única fórmula LTL monolítica.
+\begin{itemize}
 
-Arquitecturas de Tres Capas (Three-Layer Architectures): Un patrón arquitectónico ampliamente adoptado en robótica autónoma es la separación en capas deliberativa, de ejecución y reactiva \cite{Gat1998}. En el contexto de rehabilitación robótica, esta estructura se manifiesta como:
+\item \textbf{Planificación Jerárquica con Lógica Temporal (HTL):} Una línea reciente de investigación extiende la planificación jerárquica al dominio de especificaciones de lógica temporal proponiendo un framework de descomposición jerárquica basado en \textbf{LTL} \textit{(Linear Temporal Logic)} jerárquico \cite{Luo2024}, donde cada especificación de alto nivel se descompone en subtareas atómicas, infiriendo relaciones temporales entre ellas para construir una red de tareas. Este enfoque, validado experimentalmente en dominios de navegación y manipulación, permite manejar especificaciones complejas que resultarían inmanejables con una única fórmula LTL monolítica.
+
+\item \textbf{Arquitecturas de Tres Capas (Three-Layer Architectures):} Un patrón arquitectónico ampliamente adoptado en robótica autónoma es la separación en capas deliberativa, de ejecución y reactiva \cite{Gat1998}. En el contexto de rehabilitación robótica, esta estructura se manifiesta como:
 
 \begin{itemize}
 
-\item \textbf{Capa física (Physical Layer):} Maneja la interacción directa con el entorno mediante sensores y actuadores.
+\item \textbf{Capa física:} Maneja la interacción directa con el entorno mediante sensores y actuadores.
 
-\item \textbf{Capa reactiva (Reactive Layer):} Ajusta en tiempo real parámetros de control (ej. asistencia, dificultad) basándose en retroalimentación sensorial.
+\item \textbf{Capa reactiva:} Ajusta en tiempo real parámetros de control (ej. asistencia, dificultad) basándose en retroalimentación sensorial.
 
-\item \textbf{Capa deliberativa (Deliberative Layer):} Utiliza planificadores como HTN o planificación basada en línea temporal para generar estrategias de intervención personalizadas a largo plazo \cite{Morales2025}.
+\item \textbf{Capa deliberativa:} Utiliza planificadores como HTN o planificación basada en línea temporal para generar estrategias de intervención personalizadas a largo plazo \cite{Morales2025}.
 
 \end{itemize}
 
-Planificación Jerárquica con Representaciones Ontológicas: Investigaciones recientes exploran la integración de ontologías para enriquecer la representación del conocimiento en planificadores jerárquicos \cite{Pang2022}. Las ontologías permiten modelar relaciones semánticas entre objetos, agentes y tareas, facilitando el razonamiento sobre contextos no explícitamente programados y mejorando la adaptabilidad del planificador a situaciones novedosas.
+\item \textbf{Planificación Jerárquica con Representaciones Ontológicas:} Investigaciones recientes exploran la integración de ontologías para enriquecer la representación del conocimiento en planificadores jerárquicos \cite{Pang2022}. Las ontologías permiten modelar relaciones semánticas entre objetos, agentes y tareas, facilitando el razonamiento sobre contextos no explícitamente programados y mejorando la adaptabilidad del planificador a situaciones novedosas.
+
+\end{itemize}
 
 \subsection{Relevancia para el Sistema Propuesto}
 
@@ -109,12 +190,116 @@ La arquitectura de planificación jerárquica presentada constituye el fundament
 \end{itemize}
 
 
-
 Esta base teórica proporciona el marco necesario para comprender cómo la combinación de razonamiento simbólico jerárquico y procesamiento flexible de lenguaje natural puede superar las limitaciones de ambos paradigmas por separado, constituyendo la hipótesis central de esta investigación.
 
 \section{Fundamentos de los Sistemas de Producción (Rule-Based Systems)}
 
-Análisis teórico de los sistemas basados en reglas, centrándose en el ciclo de inferencia "reconocer-actuar" y el algoritmo RETE para emparejamiento eficiente de patrones. Se detalla cómo CLIPS implementa estos conceptos mediante su motor de inferencia y memoria de trabajo.
+Los sistemas de producción, también conocidos como sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, constituyen uno de los paradigmas más establecidos en inteligencia artificial para la representación del conocimiento y el razonamiento automatizado \cite{MDX_Rete}. Su fundamento teórico reside en la representación del conocimiento mediante reglas del tipo if-then \textit{(condición-acción)}, que operan sobre una base de hechos que describe el estado actual del mundo \cite{Donnell1994}. En robótica, estos sistemas han demostrado particular utilidad para la planificación de acciones en entornos estructurados, donde la previsibilidad y la capacidad de explicación son requisitos fundamentales \cite{MDX_Rete}.
+
+\subsection{Estructura y Componentes de un Sistema de Producción}
+
+Un sistema de producción se compone de tres elementos fundamentales que interactúan de manera cíclica \cite{MDX_Rete}:
+
+\begin{enumerate}
+
+\item \textbf{Base de Hechos:}  Almacena la información relevante sobre el estado actual del entorno y del propio robot. Estos hechos representan afirmaciones atómicas sobre el mundo, como la ubicación de objetos, el estado de los actuadores o las percepciones sensoriales . En el contexto del robot Justina, la memoria de trabajo contendría hechos como \textit{(ubicacion robot cocina)} o \textit{(objeto vaso mesa)}.
+
+\item \textbf{Base de Reglas:} Contiene el conjunto de reglas de producción que codifican el conocimiento del dominio. Cada regla presenta la forma general \cite{Donnell1994}:
+
+$$
+(condition 1) (condition 2) ... (condition m)
+\Rightarrow (action 1) (action 2) ... (action n)
+$$
+
+La parte izquierda \textit{(Left-Hand Side, LHS)} especifica las condiciones que deben satisfacerse para que la regla sea aplicable, mientras que la parte derecha \textit{(Right-Hand Side, RHS)} define las acciones a ejecutar, que típicamente modifican la memoria de trabajo o producen efectos externos \cite{MDX_Rete}.
+
+\item \textbf{Motor de Inferencia (Inference Engine):} Constituye el mecanismo de control que gobierna la aplicación de las reglas. Es responsable de determinar qué reglas son aplicables en cada momento, seleccionar una entre las posibles, y ejecutar sus acciones \cite{MDX_Rete}. El motor de inferencia implementa el ciclo fundamental de operación: el ciclo reconocer-actuar \textit{(recognize-act cycle)} \cite{Russell2020}.
+
+\end{enumerate}
+
+\subsection{El Ciclo Reconocer-Actuar (Recognize-Act Cycle)}
+
+El ciclo reconocer-actuar constituye el corazón operativo de todo sistema basado en reglas. Este proceso iterativo se desarrolla en las siguientes fases :
+
+\begin{enumerate}
+
+\item \textbf{Reconocimiento:} El motor de inferencia compara el contenido actual de la memoria de trabajo con las condiciones de todas las reglas en la base de conocimiento. Aquellas reglas cuyas condiciones se satisfacen completamente con los hechos existentes se consideran "activadas" (firable) y pasan a formar parte del conjunto de conflictos (conflict set) .
+
+\item \textbf{Resolución de Conflictos:} Cuando múltiples reglas resultan aplicables simultáneamente, el motor debe seleccionar una para su ejecución. Esta decisión se realiza mediante estrategias de resolución de conflictos, que pueden basarse en prioridades explícitas de las reglas, especificidad de las condiciones, orden de activación, o políticas específicas del dominio .
+
+\item \textbf{Actuación:} La regla seleccionada se ejecuta (fire), realizando las acciones especificadas en su parte derecha. Estas acciones típicamente modifican la memoria de trabajo (añadiendo, eliminando o actualizando hechos) y pueden tener efectos secundarios sobre el entorno, como el movimiento de actuadores robóticos .
+
+\item \textbf{Terminación:} El ciclo se repite hasta que se cumple un criterio de terminación, que puede ser la ausencia de reglas aplicables, la consecución del objetivo deseado, o una condición explícita de parada .
+
+
+\end{enumerate}
+
+\begin{table}[h]
+\centering
+\caption{Ejemplo de ciclo reconocer-actuar en un sistema de producción}
+\label{tab:ciclo-produccion}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Regla Ejecutada} & \textbf{Estado de la Memoria de Trabajo tras la Ejecución} \\ \hline
+r4 & ((ventana estado cerrada)(cerrado relacionado caliente)...) \\ \hline
+r3 & ((temperatura estado caliente)(ventana estado cerrada)(cerrado relacionado caliente)...) \\ \hline
+r1 & ((ventana estado abierta)(temperatura estado caliente)...) \\ \hline
+r2 & ((temperatura estado fría)(ventana estado abierta)...) \\ \hline
+\end{tabular}
+\end{table}
+
+\subsection{El Algoritmo RETE para Emparejamiento Eficiente de Patrones}
+
+Una implementación ingenua del ciclo reconocer-actuar comprobaría cada regla contra todos los hechos en cada ciclo, resultando en una complejidad computacional prohibitiva incluso para sistemas de tamaño moderado . Para abordar esta limitación, Charles Forgy desarrolló el algoritmo RETE durante su doctorado en Carnegie Mellon University (1979), cuya publicación seminal apareció en Artificial Intelligence en 1982 . El nombre "RETE" proviene del latín y significa "red", reflejando la estructura de red que constituye su esencia .
+
+\subsubsection{Principios Fundamentales del Algoritmo RETE}
+
+El algoritmo RETE optimiza el proceso de emparejamiento patrón-objeto mediante dos estrategias clave :
+
+\begin{enumerate}
+
+\item \textbf{Almacenamiento de Estado (State Saving):} RETE mantiene en memoria los resultados de emparejamientos previos, de modo que solo es necesario procesar los cambios incrementales en la memoria de trabajo, en lugar de reevaluar todas las reglas desde cero en cada ciclo.
+
+\item \textbf{Compartición de Subcálculos (Sharing of Subcomputations):} Cuando múltiples reglas comparten condiciones comunes, RETE evalúa dichas condiciones una sola vez y reutiliza los resultados para todas las reglas que las contienen.
+
+\end{enumerate}
+
+Estos principios se implementan mediante la construcción de una red de nodos (RETE network) que representa las condiciones de todas las reglas del sistema .
+
+\subsubsection{Estructura de la Red RETE}
+
+La red RETE se organiza jerárquicamente desde el nodo raíz hasta las hojas que representan reglas completas :
+
+\begin{itemize}
+
+\item \textbf{Nodo Raíz (Root Node):} Punto de entrada por el que fluyen todos los hechos introducidos en el sistema .
+
+\item \textbf{Nodos Alfa (Alpha Nodes):} Realizan pruebas simples sobre hechos individuales, como comprobaciones de tipo o igualdad de atributos. Cada nodo alfa corresponde a un patrón atómico dentro de las condiciones de las reglas . Estos nodos operan de manera independiente y almacenan en su memoria los hechos que satisfacen su prueba .
+
+\item \textbf{Nodos Beta (Beta Nodes):} Implementan operaciones de unión (join) entre conjuntos de hechos procedentes de diferentes caminos en la red. Cada nodo beta combina los resultados de dos nodos anteriores (típicamente uno alfa y otro beta) verificando que las variables compartidas tengan vinculaciones consistentes . La memoria de los nodos beta almacena los pares o tuplas que han superado la condición de unión .
+
+\item \textbf{Nodos Terminales (Terminal Nodes):} Representan reglas completas. Cuando un token alcanza un nodo terminal, significa que se ha encontrado una combinación de hechos que satisface todas las condiciones de la regla correspondiente, quedando esta activada para su ejecución .
+
+\end{itemize}
+
+\subsubsection{Funcionamiento Incremental}
+
+El proceso de evaluación en RETE es incremental . Cuando se añade, modifica o elimina un hecho en la memoria de trabajo:
+
+\begin{enumerate}
+
+\item El hecho ingresa por el nodo raíz y se propaga hacia abajo a través de los nodos alfa cuyas pruebas supera .
+
+\item Los nodos alfa actualizan sus memorias y propagan los cambios a los nodos beta conectados.
+
+\item Los nodos beta evalúan las nuevas combinaciones posibles con los tokens almacenados en sus memorias izquierda y derecha, actualizando sus propias memorias y propagando los resultados .
+
+\item Finalmente, los cambios alcanzan los nodos terminales, actualizando dinámicamente el conjunto de reglas activadas .
+
+\end{enumerate}
+
+Este enfoque incremental reduce drásticamente el trabajo computacional, ya que solo se procesan los cambios efectivos en lugar de reevaluar todo el sistema en cada ciclo . La complejidad temporal del algoritmo RETE es, en promedio, independiente del número total de reglas en el sistema, dependiendo principalmente del número de hechos y de la estructura de las condiciones .
+
 
 \section{Introducción a los Modelos de Lenguaje Grande (LLMs) y ChatGPT/Qwen}
 
