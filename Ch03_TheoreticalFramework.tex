@@ -219,91 +219,215 @@ La parte izquierda \textit{(Left-Hand Side, LHS)} especifica las condiciones que
 
 \subsection{El Ciclo Reconocer-Actuar (Recognize-Act Cycle)}
 
-El ciclo reconocer-actuar constituye el corazón operativo de todo sistema basado en reglas. Este proceso iterativo se desarrolla en las siguientes fases :
+El ciclo reconocer-actuar constituye el corazón operativo de todo sistema basado en reglas. Este proceso iterativo se desarrolla en las siguientes fases \cite{Russell2020} \cite{MDX_Rete}:
 
 \begin{enumerate}
 
-\item \textbf{Reconocimiento:} El motor de inferencia compara el contenido actual de la memoria de trabajo con las condiciones de todas las reglas en la base de conocimiento. Aquellas reglas cuyas condiciones se satisfacen completamente con los hechos existentes se consideran "activadas" (firable) y pasan a formar parte del conjunto de conflictos (conflict set) .
+\item \textbf{Reconocimiento:} El motor de inferencia compara el contenido actual de la memoria de trabajo con las condiciones de todas las reglas en la base de conocimiento. Aquellas reglas cuyas condiciones se satisfacen completamente con los hechos existentes se consideran \textit{"activadas"} y pasan a formar parte del conjunto de conflictos \cite{Russell2020}.
 
-\item \textbf{Resolución de Conflictos:} Cuando múltiples reglas resultan aplicables simultáneamente, el motor debe seleccionar una para su ejecución. Esta decisión se realiza mediante estrategias de resolución de conflictos, que pueden basarse en prioridades explícitas de las reglas, especificidad de las condiciones, orden de activación, o políticas específicas del dominio .
+\item \textbf{Resolución de Conflictos:} Cuando múltiples reglas resultan aplicables simultáneamente, el motor debe seleccionar una para su ejecución. Esta decisión se realiza mediante estrategias de resolución de conflictos, que pueden basarse en prioridades explícitas de las reglas, especificidad de las condiciones, orden de activación, o políticas específicas del dominio \cite{MDX_Rete}.
 
-\item \textbf{Actuación:} La regla seleccionada se ejecuta (fire), realizando las acciones especificadas en su parte derecha. Estas acciones típicamente modifican la memoria de trabajo (añadiendo, eliminando o actualizando hechos) y pueden tener efectos secundarios sobre el entorno, como el movimiento de actuadores robóticos .
+\item \textbf{Actuación:} La regla seleccionada se ejecuta, realizando las acciones especificadas en su parte derecha. Estas acciones típicamente modifican la memoria de trabajo (añadiendo, eliminando o actualizando hechos) y pueden tener efectos secundarios sobre el entorno, y robot \cite{Russell2020} \cite{MDX_Rete}.
 
-\item \textbf{Terminación:} El ciclo se repite hasta que se cumple un criterio de terminación, que puede ser la ausencia de reglas aplicables, la consecución del objetivo deseado, o una condición explícita de parada .
+\item \textbf{Terminación:} El ciclo se repite hasta que se cumple un criterio de terminación, que puede ser la ausencia de reglas aplicables, la consecución del objetivo deseado, o una condición explícita de parada \cite{MDX_Rete}.
 
 
 \end{enumerate}
-
-\begin{table}[h]
-\centering
-\caption{Ejemplo de ciclo reconocer-actuar en un sistema de producción}
-\label{tab:ciclo-produccion}
-\begin{tabular}{|l|p{10cm}|}
-\hline
-\textbf{Regla Ejecutada} & \textbf{Estado de la Memoria de Trabajo tras la Ejecución} \\ \hline
-r4 & ((ventana estado cerrada)(cerrado relacionado caliente)...) \\ \hline
-r3 & ((temperatura estado caliente)(ventana estado cerrada)(cerrado relacionado caliente)...) \\ \hline
-r1 & ((ventana estado abierta)(temperatura estado caliente)...) \\ \hline
-r2 & ((temperatura estado fría)(ventana estado abierta)...) \\ \hline
-\end{tabular}
-\end{table}
 
 \subsection{El Algoritmo RETE para Emparejamiento Eficiente de Patrones}
 
-Una implementación ingenua del ciclo reconocer-actuar comprobaría cada regla contra todos los hechos en cada ciclo, resultando en una complejidad computacional prohibitiva incluso para sistemas de tamaño moderado . Para abordar esta limitación, Charles Forgy desarrolló el algoritmo RETE durante su doctorado en Carnegie Mellon University (1979), cuya publicación seminal apareció en Artificial Intelligence en 1982 . El nombre "RETE" proviene del latín y significa "red", reflejando la estructura de red que constituye su esencia .
+Una implementación ingenua del ciclo reconocer-actuar comprobaría cada regla contra todos los hechos en cada ciclo, resultando en una complejidad computacional prohibitiva incluso para sistemas de tamaño moderado \cite{Fanning1990}. Para abordar esta limitación, Charles Forgy desarrolló el \textbf{algoritmo RETE} durante su doctorado en \textit{Carnegie Mellon University (1979)}, cuya publicación apareció en Artificial Intelligence en 1982. El nombre "RETE" proviene del latín y significa "red", reflejando la estructura de red que constituye su esencia \cite{Fanning1990}.
 
-\subsubsection{Principios Fundamentales del Algoritmo RETE}
+\subsubsection*{Principios Fundamentales del Algoritmo RETE}
 
-El algoritmo RETE optimiza el proceso de emparejamiento patrón-objeto mediante dos estrategias clave :
+El algoritmo RETE optimiza el proceso de emparejamiento patrón-objeto mediante dos estrategias clave \cite{Fanning1990}:
 
 \begin{enumerate}
 
-\item \textbf{Almacenamiento de Estado (State Saving):} RETE mantiene en memoria los resultados de emparejamientos previos, de modo que solo es necesario procesar los cambios incrementales en la memoria de trabajo, en lugar de reevaluar todas las reglas desde cero en cada ciclo.
+\item \textbf{Almacenamiento de Estado:} RETE mantiene en memoria los resultados de emparejamientos previos, de modo que solo es necesario procesar los cambios incrementales en la memoria de trabajo, en lugar de reevaluar todas las reglas desde cero en cada ciclo.
 
-\item \textbf{Compartición de Subcálculos (Sharing of Subcomputations):} Cuando múltiples reglas comparten condiciones comunes, RETE evalúa dichas condiciones una sola vez y reutiliza los resultados para todas las reglas que las contienen.
+\item \textbf{Compartición de subcálculos:} Cuando múltiples reglas comparten condiciones comunes, RETE evalúa dichas condiciones una sola vez y reutiliza los resultados para todas las reglas que las contienen.
 
 \end{enumerate}
 
-Estos principios se implementan mediante la construcción de una red de nodos (RETE network) que representa las condiciones de todas las reglas del sistema .
+Estos principios se implementan mediante la construcción de una red de nodos (RETE network) que representa las condiciones de todas las reglas del sistema \cite{Fanning1990} \cite{Giarratano2005}.
 
-\subsubsection{Estructura de la Red RETE}
+\subsubsection*{Estructura de la Red RETE}
 
-La red RETE se organiza jerárquicamente desde el nodo raíz hasta las hojas que representan reglas completas :
+La red RETE se organiza jerárquicamente desde el nodo raíz hasta las hojas que representan reglas completas \cite{Fanning1990}:
 
 \begin{itemize}
 
-\item \textbf{Nodo Raíz (Root Node):} Punto de entrada por el que fluyen todos los hechos introducidos en el sistema .
+\item \textbf{Nodo Raíz:} Punto de entrada por el que fluyen todos los hechos introducidos en el sistema 	\cite{Giarratano2005}.
 
-\item \textbf{Nodos Alfa (Alpha Nodes):} Realizan pruebas simples sobre hechos individuales, como comprobaciones de tipo o igualdad de atributos. Cada nodo alfa corresponde a un patrón atómico dentro de las condiciones de las reglas . Estos nodos operan de manera independiente y almacenan en su memoria los hechos que satisfacen su prueba .
+\item \textbf{Nodos Alfa:} Realizan pruebas simples sobre hechos individuales, como comprobaciones de tipo o igualdad de atributos. Cada nodo alfa corresponde a un patrón atómico dentro de las condiciones de las reglas \cite{UNIZA_RBS}. Estos nodos operan de manera independiente y almacenan en su memoria los hechos que satisfacen su prueba \cite{Fanning1990}.
 
-\item \textbf{Nodos Beta (Beta Nodes):} Implementan operaciones de unión (join) entre conjuntos de hechos procedentes de diferentes caminos en la red. Cada nodo beta combina los resultados de dos nodos anteriores (típicamente uno alfa y otro beta) verificando que las variables compartidas tengan vinculaciones consistentes . La memoria de los nodos beta almacena los pares o tuplas que han superado la condición de unión .
+\item \textbf{Nodos Beta:} Implementan operaciones de unión entre conjuntos de hechos procedentes de diferentes caminos en la red. Cada nodo beta combina los resultados de dos nodos anteriores (típicamente uno alfa y otro beta) verificando que las variables compartidas tengan vinculaciones consistentes \cite{ScienceDirect_Production} \cite{UNIZA_RBS}. La memoria de los nodos beta almacena los pares o tuplas que han superado la condición de unión \cite{Fanning1990}.
 
-\item \textbf{Nodos Terminales (Terminal Nodes):} Representan reglas completas. Cuando un token alcanza un nodo terminal, significa que se ha encontrado una combinación de hechos que satisface todas las condiciones de la regla correspondiente, quedando esta activada para su ejecución .
+\item \textbf{Nodos Terminales:} Representan reglas completas. Cuando un token alcanza un nodo terminal, significa que se ha encontrado una combinación de hechos que satisface todas las condiciones de la regla correspondiente, quedando esta activada para su ejecución \cite{Fanning1990} \cite{Giarratano2005}.
 
 \end{itemize}
 
-\subsubsection{Funcionamiento Incremental}
+\subsubsection*{Funcionamiento Incremental}
 
 El proceso de evaluación en RETE es incremental . Cuando se añade, modifica o elimina un hecho en la memoria de trabajo:
 
 \begin{enumerate}
 
-\item El hecho ingresa por el nodo raíz y se propaga hacia abajo a través de los nodos alfa cuyas pruebas supera .
+\item El hecho ingresa por el nodo raíz y se propaga hacia abajo a través de los nodos alfa cuyas pruebas supera \cite{Fanning1990}.
 
 \item Los nodos alfa actualizan sus memorias y propagan los cambios a los nodos beta conectados.
 
-\item Los nodos beta evalúan las nuevas combinaciones posibles con los tokens almacenados en sus memorias izquierda y derecha, actualizando sus propias memorias y propagando los resultados .
+\item Los nodos beta evalúan las nuevas combinaciones posibles con los tokens almacenados en sus memorias izquierda y derecha, actualizando sus propias memorias y propagando los resultados \cite{ScienceDirect_Production} \cite{Giarratano2005}.
 
-\item Finalmente, los cambios alcanzan los nodos terminales, actualizando dinámicamente el conjunto de reglas activadas .
+\item Finalmente, los cambios alcanzan los nodos terminales, actualizando dinámicamente el conjunto de reglas activadas \cite{Fanning1990}.
 
 \end{enumerate}
 
-Este enfoque incremental reduce drásticamente el trabajo computacional, ya que solo se procesan los cambios efectivos en lugar de reevaluar todo el sistema en cada ciclo . La complejidad temporal del algoritmo RETE es, en promedio, independiente del número total de reglas en el sistema, dependiendo principalmente del número de hechos y de la estructura de las condiciones .
+Este enfoque incremental reduce drásticamente el trabajo computacional, ya que solo se procesan los cambios efectivos en lugar de reevaluar todo el sistema en cada ciclo. La complejidad temporal del algoritmo RETE es, en promedio, independiente del número total de reglas en el sistema, dependiendo principalmente del número de hechos y de la estructura de las condiciones \cite{Forgy1982}.
 
+\subsection{Implementación de RETE en CLIPS}
+
+CLIPS implementa una versión optimizada del algoritmo RETE adaptada a sus necesidades específicas como sistema de producción de propósito general .
+
+\subsubsection*{Estructura de Memoria en CLIPS}
+CLIPS mantiene dos tipos principales de memoria :
+
+\begin{itemize}
+
+\item \textbf{Memoria de Trabajo:} Almacena los hechos que representan el estado actual del sistema. Cada hecho puede ser simple (ordenado) o estructurado mediante plantillas (deftemplate).
+
+\item \textbf{Memoria de Hechos:} Una estructura interna que permite el acceso eficiente a los hechos durante el proceso de emparejamiento.
+
+\end{itemize}
+
+
+\subsubsection*{El Motor de Inferencia de CLIPS}
+
+El motor de inferencia de CLIPS implementa el ciclo reconocer-actuar completo, utilizando la red RETE para la fase de reconocimiento \cite{Forgy1979}:
+
+\begin{enumerate}
+
+\item \textbf{Fase de Reconocimiento:} Los cambios en la memoria de trabajo se propagan a través de la red RETE precompilada a partir de las reglas del sistema. La red mantiene información sobre qué condiciones se satisfacen parcial o completamente.
+
+\item \textbf{Fase de Resolución de Conflictos:} CLIPS ofrece múltiples estrategias de resolución de conflictos, incluyendo prioridad (salience), profundidad (depth-first), amplitud (breadth-first), y estrategias basadas en la especificidad de las reglas 	\cite{Forgy1979}.
+
+\item \textbf{Fase de Actuación:} La regla seleccionada ejecuta sus acciones, que pueden incluir la modificación de la memoria de trabajo, la ejecución de funciones externas, o la interacción con el entorno a través de la API de CLIPS.
+
+\end{enumerate}
+
+
+
+\subsubsection*{Funciones Objeto en CLIPS}
+ 
+A partir de CLIPS 6.0, el sistema incorpora capacidades de programación orientada a objetos mediante el módulo COOL (CLIPS Object-Oriented Language) 	\cite{Forgy1979}. Esta extensión permite:
+
+\begin{itemize}
+
+\item Definir clases con atributos y métodos.
+
+\item Crear instancias de objetos que residen en una memoria de objetos separada.
+
+\item Realizar emparejamiento de patrones sobre objetos mediante la función \textit{object-pattern-match}.
+
+\end{itemize}
+
+
+La implementación del algoritmo RETE en CLIPS 6.0 se extendió para soportar el emparejamiento sobre objetos, manteniendo la eficiencia del algoritmo original pero permitiendo representaciones de conocimiento más ricas y estructuradas. Los objetos se tratan como hechos especiales que pueden ser referenciados desde las condiciones de las reglas, y la red RETE maneja tanto hechos tradicionales como objetos de manera unificada \cite{Forgy1979}.
+
+\subsubsection*{Consideraciones de Rendimiento}
+
+Estudios sobre implementaciones de CLIPS en entornos empotrados han identificado cinco parámetros clave que afectan el rendimiento del motor de inferencia :
+
+\begin{enumerate}
+
+\item El número de objetos en la memoria de trabajo.
+
+\item La complejidad estructural de los objetos y las reglas.
+
+\item El número de reglas que comparten patrones de emparejamiento comunes.
+
+\item El número de patrones por regla.
+
+\item El número de objetos vinculados a cada patrón.
+
+\end{enumerate}
+
+En aplicaciones de tiempo real el tiempo de respuesta del motor de inferencia puede ser adecuado, aunque los requisitos de memoria pueden ser significativos dependiendo de la complejidad de la red RETE \cite{Murphy2019}. Esta característica hace que CLIPS sea particularmente adecuado para plataformas robóticas con restricciones computacionales moderadas.
+
+
+\subsection{Ventajas y Limitaciones de los Sistemas de Producción}
+
+Los sistemas basados en reglas presentan ventajas significativas que los hacen útiles en robótica 	\cite{MDX_Rete}:
+
+\begin{itemize}
+
+\item \textbf{Ventajas:}
+	
+\begin{itemize}
+	
+	\item \textbf{Modularidad:} Las reglas pueden añadirse, modificarse o eliminarse independientemente, facilitando el mantenimiento y la 	evolución del sistema.
+
+	\item \textbf{Explicabilidad:} El razonamiento puede rastrearse y explicarse mediante la inspección de las reglas activadas, lo que es crucial para la auditoría y la confianza en sistemas críticos.
+
+	\item \textbf{Naturalidad:} Las reglas expresadas en formato if-then se aproximan a la forma en que los humanos describen procedimientos y conocimientos.
+
+	\item \textbf{Separación conocimiento-control:} El conocimiento del dominio (reglas) está claramente separado del mecanismo de control (motor de inferencia), permitiendo modificaciones sin afectar la arquitectura subyacente.
+	
+\end{itemize}
+	
+\item \textbf{Limitaciones:}
+
+\begin{itemize}
+
+\item \textbf{Dificultad de análisis:} El flujo de control puede ser difícil de predecir cuando múltiples reglas interactúan de maneras complejas.
+
+\item \textbf{Ausencia de aprendizaje:} Los sistemas clásicos de producción no incorporan capacidades de aprendizaje automático, requiriendo que todo el conocimiento sea explícitamente programado.
+
+\item \textbf{Ineficiencia potencial:} Aunque RETE optimiza el emparejamiento, sistemas con miles de reglas pueden presentar problemas de rendimiento.
+
+\item \textbf{Gestión de conflictos:} La resolución de conflictos requiere diseños cuidadosos para evitar comportamientos indeseados.
+
+\end{itemize}
+
+\end{itemize}
+
+Estas limitaciones, particularmente la rigidez semántica y la ausencia de aprendizaje, motivan la integración con modelos de lenguaje grande propuesta en esta tesis, buscando combinar la robustez y transparencia de los sistemas basados en reglas con la flexibilidad y capacidad adaptativa de los enfoques subsimbólicos modernos \cite{MDX_Rete}.
 
 \section{Introducción a los Modelos de Lenguaje Grande (LLMs) y ChatGPT/Qwen}
 
-Exposición de los principios arquitectónicos de los transformadores y el mecanismo de atención que fundamenta los LLMs. Se contrastan las capacidades de ChatGPT (modelo propietario) frente a Qwen2.5-0.5B (modelo open-source), destacando ventajas computacionales y de personalización para entornos robóticos.
+Los Modelos de Lenguaje Grande (Large Language Models, LLMs) han emergido como una de las tecnologías más transformadoras en el campo de la inteligencia artificial, revolucionando la manera en que las máquinas procesan y generan lenguaje natural \cite{Shi2023}. Su aplicación en robótica de servicio abre nuevas posibilidades para la interacción humano-robot, permitiendo que usuarios no expertos comuniquen sus intenciones mediante comandos verbales complejos sin necesidad de conocer lenguajes de programación estructurados \cite{Zeng2020}. Esta sección expone los fundamentos arquitectónicos de los LLMs, centrándose en el mecanismo de atención y la arquitectura Transformer, para posteriormente contrastar dos modelos representativos: ChatGPT (modelo propietario) y Qwen2.5-0.5B (modelo de código abierto), evaluando su idoneidad para entornos robóticos con recursos computacionales limitados.
+
+\subsection{Fundamentos Arquitectónicos: Transformers y Mecanismo de Atención}
+
+\subsubsection*{Limitaciones de los Modelos Secuenciales Previos}
+
+Antes de la introducción de la arquitectura Transformer en 2017, el procesamiento de lenguaje natural estaba dominado por redes neuronales recurrentes (RNN) y sus variantes, como LSTM (Long Short-Term Memory) y GRU (Gated Recurrent Units) \cite{Russell2020}. Estos modelos procesan el texto de manera secuencial, token por token, lo que presenta dos limitaciones fundamentales \cite{Vaswani2017}:
+
+\begin{enumerate}
+
+\item \textbf{Dificultad para el paralelismo:} La naturaleza secuencial de las RNN impide el aprovechamiento eficiente de hardware paralelo como GPUs, resultando en tiempos de entrenamiento prolongados \cite{UNIZA_RBS}.
+
+\item \textbf{Problema de dependencias de largo alcance:} Aunque LSTM y GRU mitigan parcialmente el problema del gradiente evanescente, la información sobre palabras distantes tiende a diluirse a medida que la secuencia se alarga, dificultando el modelado de relaciones semánticas entre elementos lejanos \cite{Albert1989}.
+
+\end{enumerate}
+
+\subsubsection*{La Arquitectura Transformer}
+
+El artículo seminal "Attention Is All You Need", publicado por investigadores de Google en 2017, introdujo la arquitectura Transformer, que prescinde por completo de recurrencia y convoluciones, basándose únicamente en mecanismos de atención \cite{Vaswani2017}. Esta arquitectura se ha convertido en el fundamento de todos los LLMs modernos, incluyendo GPT, BERT, y sus derivados \cite{Shi2023}.
+
+La arquitectura Transformer sigue una estructura codificador-decodificador (encoder-decoder) con las siguientes características principales \cite{Vaswani2017}:
+
+\begin{itemize}
+
+\item \textbf{Codificador (Encoder):} Compuesto por una pila de $N=6$ capas idénticas. Cada capa contiene dos subcapas: un mecanismo de autoatención multi-cabeza (multi-head self-attention) y una red feed-forward posicional totalmente conectada. Alrededor de cada subcapa se emplean conexiones residuales seguidas de normalización por capas (layer normalization).
+
+\item \textbf{Decodificador (Decoder):} Similar al codificador, pero con una tercera subcapa que realiza atención cruzada (cross-attention) sobre la salida del codificador. Además, incorpora un enmascaramiento para evitar que las posiciones futuras influyan en la predicción actual, preservando la propiedad autorregresiva del modelo.
+
+\end{itemize}
+
+\subsubsection*{El Mecanismo de Atención}
+
 
 \section{Integración de Traductores de Lenguaje Natural con Sistemas Basados en Reglas}
 \subsection{Utilidad y Función de la Integración}
