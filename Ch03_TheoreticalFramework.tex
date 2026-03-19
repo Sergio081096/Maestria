@@ -428,6 +428,213 @@ La arquitectura Transformer sigue una estructura codificador-decodificador (enco
 
 \subsubsection*{El Mecanismo de Atención}
 
+El núcleo de la arquitectura Transformer es el mecanismo de atención, que permite al modelo ponderar dinámicamente la importancia de diferentes elementos de la secuencia de entrada al generar cada representación de salida \cite{Vaswani2017}. Formalmente, la atención puede describirse como una función que mapea una consulta (query) y un conjunto de pares clave-valor (key-value) hacia una salida \cite{citation:2}.
+
+\textbf{Atención Escalada por Producto Punto (Scaled Dot-Product Attention):} La forma de atención utilizada en Transformer se define mediante la siguiente ecuación \cite{Vaswani2017}:
+
+\begin{equation}
+\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right) V
+\end{equation}
+
+\textbf{Interpretación intuitiva del mecanismo de atención:} Una analogía útil para comprender este mecanismo es la de una biblioteca \cite{citation:1}. La biblioteca (Source) contiene muchos libros (Value), cada uno con un código de clasificación (Key). Cuando un usuario desea información sobre un tema específico (Query), el sistema busca los códigos más relevantes y recupera los libros correspondientes, prestando más atención (pesos mayores) a aquellos que mejor coinciden con la consulta.
+
+\textbf{Autoatención (Self-Attention):} Cuando $Q, K y V$ se generan a partir de la misma secuencia de entrada, el mecanismo se denomina autoatención. Esto permite que cada token de la secuencia "atienda" a todos los demás tokens, capturando relaciones contextuales globales independientemente de la distancia entre ellos \cite{Vaswani2017}.
+
+\textbf{Atención Multi-Cabeza (Multi-Head Attention):} En lugar de realizar una única función de atención, Transformer proyecta $Q, K y V h$ veces con proyecciones lineales aprendidas diferentes, permitiendo al modelo atender conjuntamente a información procedente de distintos subespacios representacionales \cite{Vaswani2017}:
+
+% Atención multi-cabeza
+\begin{equation}
+\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h) W^O
+\label{eq:multihead}
+\end{equation}
+donde \(\text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)\).
+\\
+\\
+
+\textbf{Codificación Posicional (Positional Encoding):} Dado que la autoatención es inherentemente invariante al orden de los tokens (permutar la secuencia produce el mismo conjunto de atenciones), es necesario inyectar información sobre la posición relativa o absoluta de los tokens. Transformer utiliza codificaciones posicionales sinusoidales \cite{Vaswani2017}:
+
+% Codificación posicional sinusoidal
+\begin{equation}
+PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
+
+\end{equation}
+\begin{equation}
+PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
+\label{eq:pos2}
+\end{equation}
+
+
+Modelos más recientes han adoptado variantes como RoPE (Rotary Positional Embeddings), que codifica posiciones relativas mediante rotaciones de los vectores 
+$Q y K$, mejorando la extrapolación a longitudes de secuencia superiores a las vistas durante el entrenamiento \cite{citation:5}\cite{citation:9}.
+
+\subsubsection*{Evolución hacia Modelos de Lenguaje Grande}
+
+A partir de la arquitectura Transformer, la investigación en NLP se bifurcó en dos direcciones principales \cite{citation:5}:
+
+\begin{enumerate}
+
+\item \textbf{Modelos tipo codificador (Encoder-only):} Como BERT (Bidirectional Encoder Representations from Transformers), que aprovecha la bidireccionalidad del codificador para tareas de comprensión del lenguaje, como clasificación o reconocimiento de entidades \cite{citation:1}. Estos modelos se pre-entrenan con objetivos como el modelado de lenguaje enmascarado (Masked Language Modeling, MLM).
+
+\item \textbf{Modelos tipo decodificador (Decoder-only):} Como la serie GPT (Generative Pre-trained Transformer), que utilizan únicamente la parte decodificadora con enmascaramiento causal, optimizados para generación de texto autorregresiva \cite{citation:5}. Estos modelos se pre-entrenan con el objetivo de predicción del siguiente token (Causal Language Modeling, CLM). Los LLMs actuales, incluyendo ChatGPT y Qwen, pertenecen predominantemente a esta categoría.
+
+\end{enumerate}
+
+\subsection{ChatGPT: Modelo Propietario para Interacción Conversacional}
+
+ChatGPT, desarrollado por OpenAI, es un modelo de lenguaje grande basado en la arquitectura GPT (Generative Pre-trained Transformer), específicamente optimizado para tareas de diálogo mediante técnicas de ajuste fino con aprendizaje por refuerzo a partir de retroalimentación humana (RLHF) \cite{Shi2023}. Su integración en robótica ha demostrado ser prometedora para interpretar comandos complejos en lenguaje natural y generar planes de acción contextualmente apropiados.
+
+\begin{itemize}
+
+\item \textbf{Características principales de ChatGPT:}
+
+\begin{itemize}
+
+\item \textbf{Arquitectura:} Basada en Transformer con decodificador causal, escalada a cientos de miles de millones de parámetros en sus versiones más avanzadas \cite{Shi2023}. Aunque los detalles arquitectónicos precisos no son públicos, sigue los principios fundamentales establecidos en \cite{Vaswani2017}.
+
+\item \textbf{Capacidades conversacionales:} Optimizado para mantener diálogos coherentes y contextualmente relevantes, manejar ambigüedades y solicitar aclaraciones cuando es necesario \cite{Zeng2020}.
+
+\item \textbf{Acceso mediante API:} OpenAI proporciona interfaces de programación que permiten integrar ChatGPT en sistemas robóticos mediante llamadas a servicios web, facilitando su adopción sin necesidad de infraestructura local costosa \cite{citation:4}\cite{citation:8}.
+
+\end{itemize}
+
+\item \textbf{Ventajas para robótica:}
+
+\begin{itemize}
+
+\item \textbf{Alta calidad de comprensión:} Demuestra una capacidad superior para interpretar comandos complejos y ambiguos, con tasas de éxito del 100% en estudios recientes de navegación robótica \cite{citation:8}.
+
+\item \textbf{Flexibilidad semántica:} Puede generar planes adaptativos para situaciones novedosas que no están explícitamente programadas en sistemas basados en reglas \cite{Shi2023}.
+
+\item \textbf{Reducción de latencia:} Investigaciones recientes muestran que la integración directa de ChatGPT con ROS 2 puede reducir la latencia de comunicación en un 7.01\% en promedio, facilitando operaciones robóticas en tiempo real \cite{citation:4}\cite{citation:8}.
+
+\end{itemize}
+
+
+\item \textbf{Limitaciones en entornos robóticos:}
+
+\begin{itemize}
+
+\item \textbf{Dependencia de conectividad:} Requiere acceso a internet para consultar la API de OpenAI, lo que puede ser problemático en entornos con conectividad limitada o requisitos de seguridad que impidan la transmisión de datos a la nube \cite{citation:3}.
+
+\item \textbf{Costos operativos:} El uso de API propietarias implica costos por consulta que pueden ser prohibitivos en despliegues a gran escala o con alta frecuencia de interacción \cite{citation:7}.
+
+\item \textbf{Latencia variable:} Los tiempos de respuesta dependen de la calidad de la conexión y la carga de los servidores de OpenAI, lo que puede introducir variabilidad indeseable en sistemas de tiempo real \cite{citation:4}.
+
+\item \textbf{Privacidad de datos:} El envío de comandos de voz y datos contextuales a servidores externos puede plantear problemas de confidencialidad en aplicaciones sensibles \cite{citation:7}.
+
+\end{itemize}
+
+\end{itemize}
+
+\subsection{Qwen2.5-0.5B: Modelo Open-Source para Cómputo en el Borde}
+
+Qwen (QwenLM) es una familia de modelos de lenguaje grande desarrollada por Alibaba, con versiones que abarcan desde modelos masivos hasta variantes extremadamente compactas diseñadas para despliegue en entornos con recursos limitados \cite{citation:3}. Qwen2.5-0.5B-Instruct, la versión con 0.5 mil millones de parámetros, representa un punto óptimo entre capacidad lingüística y eficiencia computacional, siendo particularmente relevante para robótica de servicio embarcada.
+
+\begin{itemize}
+
+\item \textbf{Características principales de Qwen2.5-0.5B:}
+
+% Tabla de características de Qwen2.5-0.5B
+\begin{table}[H]
+\centering
+\caption{Características principales de Qwen2.5-0.5B-Instruct}
+\label{tab:qwen}
+\begin{tabular}{|l|p{10cm}|}
+\hline
+\textbf{Característica} & \textbf{Descripción} \\
+\hline
+Parámetros & 0.5 mil millones (aproximadamente 1 GB en pesos del modelo) \cite{citation:3} \\
+\hline
+Arquitectura & Transformer con decodificador causal, similar a GPT \cite{citation:3} \\
+\hline
+Soporte de inferencia & CPU nativo, memoria < 2 GB, sin necesidad de GPU \cite{citation:3}\cite{citation:7} \\
+\hline
+Idiomas & Optimizado para chino, con capacidades funcionales en inglés \cite{citation:3} \\
+\hline
+Ajuste & Instrucción fine-tuning (versión Instruct) para diálogo y seguimiento de comandos \cite{citation:7} \\
+\hline
+Formato de despliegue & Disponible en GGUF (llama.cpp), ONNX, y formatos nativos de PyTorch \cite{citation:3} \\
+\hline
+\end{tabular}
+\end{table}
+
+\item \textbf{Ventajas para robótica embarcada:}
+
+\begin{itemize}
+
+\item \textbf{Ejecución local y privada:} Todo el procesamiento ocurre en el dispositivo, eliminando dependencias de red y garantizando la privacidad de los datos \cite{citation:7}.
+
+\item \textbf{Bajos requisitos computacionales:} Puede ejecutarse en procesadores ARM (como Raspberry Pi 4/5) y x86 de gama baja, con consumo de memoria inferior a 2 GB tras cuantización INT8 \cite{citation:3}. Tiempos de inferencia típicos: 300-800 ms para primer token en CPU de 4 núcleos \cite{citation:3}.
+
+\item \textbf{Costo cero por consulta:} Al ser código abierto y ejecutarse localmente, no hay costos asociados al número de interacciones.
+
+\item \textbf{Personalización:} Posibilidad de fine-tuning con datos específicos del dominio (por ejemplo, vocabulario de un laboratorio o nombres de objetos domésticos) sin dependencia de proveedores externos \cite{citation:7}.
+
+\item \textbf{Integración con ROS 2:} Experiencias documentadas muestran la viabilidad de integrar Qwen2.5-0.5B con ROS 2 para aplicaciones como guías inteligentes en entornos educativos, donde el modelo procesa consultas en lenguaje natural y genera respuestas que se traducen en comandos de navegación \cite{citation:7}.
+
+\end{itemize}
+
+\item \textbf{Limitaciones:}
+
+\begin{itemize}
+
+\item \textbf{Capacidad lingüística reducida:} Con solo 0.5B parámetros, su comprensión y generación son inferiores a modelos como ChatGPT, especialmente para comandos muy complejos o ambiguos \cite{citation:7}. Sin embargo, para dominios restringidos (vocabulario de un hogar o laboratorio), el rendimiento puede ser suficiente tras personalización.
+
+\item \textbf{Requiere optimización:} Para alcanzar latencias aceptables en CPU, es necesario aplicar técnicas de cuantización (INT8, INT4) y utilizar motores de inferencia eficientes como llama.cpp u ONNX Runtime \cite{citation:3}.
+
+\item \textbf{Menor capacidad de diálogo:} La gestión de contextos largos y la coherencia en diálogos extendidos son inferiores a las de modelos con más parámetros \cite{citation:9}.
+
+\end{itemize}
+
+\end{itemize}
+
+\subsection{Comparativa y Selección para Robótica de Servicio}
+
+La Tabla 3.2 resume las principales diferencias entre ChatGPT (representante de modelos propietarios) y Qwen2.5-0.5B (representante de modelos open-source ligeros), proporcionando criterios para la selección según las necesidades de la aplicación robótica.
+
+% Tabla comparativa ChatGPT vs Qwen2.5-0.5B
+\begin{table}[h]
+\centering
+\caption{Comparativa entre ChatGPT y Qwen2.5-0.5B para robótica de servicio}
+\label{tab:comparativa}
+\begin{tabular}{|l|p{5.5cm}|p{5.5cm}|}
+\hline
+\textbf{Aspecto} & \textbf{ChatGPT} & \textbf{Qwen2.5-0.5B} \\
+\hline
+Parámetros & >100B (estimado) & 0.5B \\
+\hline
+Ejecución & Nube (API) & Local (edge) \\
+\hline
+Latencia típica & 500-2000 ms (variable) & 300-800 ms (consistente) \cite{citation:3} \\
+\hline
+Dependencia de red & Obligatoria & Ninguna \\
+\hline
+Privacidad & Datos enviados a terceros & Datos locales \\
+\hline
+Costo por consulta & Sí (por token) & No \\
+\hline
+Personalización & Limitada (fine-tuning no disponible) & Completa (fine-tuning local) \\
+\hline
+Calidad lingüística & Muy alta & Moderada (suficiente para dominios restringidos) \cite{citation:7} \\
+\hline
+Consumo energético & Alto (servidores) & Bajo (CPU) \\
+\hline
+Idoneidad & Tareas complejas, investigación, prototipado & Despliegue en producción, dispositivos con recursos limitados, privacidad crítica \\
+\hline
+\end{tabular}
+\end{table}
+
+En el contexto de esta tesis, la selección entre ambos modelos responde a una estrategia complementaria \cite{Savage2024}:
+
+\begin{itemize}
+
+\item \textbf{Qwen2.5-0.5B} se emplea como módulo de traducción de lenguaje natural a hechos CLIPS directamente en el robot, aprovechando su capacidad para ejecutarse localmente con latencias predecibles y sin dependencia de conectividad. Esto es particularmente útil para tareas rutinarias donde el vocabulario está acotado al entorno doméstico.
+
+\item \textbf{ChatGPT} se utiliza en el módulo de planificación dual como generador de planes alternativos para situaciones complejas o novedosas, cuando el sistema basado en reglas no puede resolver la tarea. En estos casos, la latencia adicional se justifica por la necesidad de flexibilidad semántica.
+
+\end{itemize}
+
+Esta arquitectura híbrida capitaliza las ventajas de ambos paradigmas: la eficiencia y privacidad de la ejecución local con Qwen para tareas estándar, y la potencia lingüística de ChatGPT para casos excepcionales, manteniendo siempre la supervisión del sistema basado en reglas como garante de seguridad \cite{Shi2023}.
 
 \section{Integración de Traductores de Lenguaje Natural con Sistemas Basados en Reglas}
 \subsection{Utilidad y Función de la Integración}
