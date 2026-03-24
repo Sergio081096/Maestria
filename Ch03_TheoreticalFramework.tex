@@ -194,15 +194,15 @@ Esta base teórica proporciona el marco necesario para comprender cómo la combi
 
 \section{Fundamentos de los Sistemas de Producción (Rule-Based Systems)}
 
-Los sistemas de producción, también conocidos como sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, constituyen uno de los paradigmas más establecidos en inteligencia artificial para la representación del conocimiento y el razonamiento automatizado \cite{MDX_Rete}. Su fundamento teórico reside en la representación del conocimiento mediante reglas del tipo if-then \textit{(condición-acción)}, que operan sobre una base de hechos que describe el estado actual del mundo \cite{Donnell1994}. En robótica, estos sistemas han demostrado particular utilidad para la planificación de acciones en entornos estructurados, donde la previsibilidad y la capacidad de explicación son requisitos fundamentales \cite{MDX_Rete}.
+Los sistemas de producción, también conocidos como sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, constituyen uno de los paradigmas más implementados en inteligencia artificial para la representación del conocimiento y el razonamiento automatizado \cite{MDX_Rete}. Su fundamento teórico reside en la representación del conocimiento mediante reglas del tipo if-then \textit{(condición-acción)}, que operan sobre una base de hechos que describe el estado actual del mundo \cite{Donnell1994}. En robótica, estos sistemas han demostrado particular utilidad para la planificación de acciones en entornos estructurados, donde la previsibilidad y la capacidad de explicación son requisitos fundamentales \cite{MDX_Rete}.
 
 \subsection{Estructura y Componentes de un Sistema de Producción}
 
-Un sistema de producción se compone de tres elementos fundamentales que interactúan de manera cíclica \cite{MDX_Rete}:
+El sistema se compone de tres elementos fundamentales que interactúan de manera cíclica \cite{MDX_Rete}:
 
 \begin{enumerate}
 
-\item \textbf{Base de Hechos:}  Almacena la información relevante sobre el estado actual del entorno y del propio robot. Estos hechos representan afirmaciones atómicas sobre el mundo, como la ubicación de objetos, el estado de los actuadores o las percepciones sensoriales . En el contexto del robot Justina, la memoria de trabajo contendría hechos como \textit{(ubicacion robot cocina)} o \textit{(objeto vaso mesa)}.
+\item \textbf{Base de Hechos:}  Almacena la información relevante sobre el estado actual del entorno y del propio robot. Estos hechos representan afirmaciones sobre el mundo, como la ubicación de objetos, el estado de los actuadores o las percepciones sensoriales. En el contexto del robot Justina, la memoria de trabajo contendría hechos como \textit{(ubicacion robot cocina)} o \textit{(objeto vaso mesa)}.
 
 \item \textbf{Base de Reglas:} Contiene el conjunto de reglas de producción que codifican el conocimiento del dominio. Cada regla presenta la forma general \cite{Donnell1994}:
 
@@ -211,46 +211,46 @@ $$
 \Rightarrow (action 1) (action 2) ... (action n)
 $$
 
-La parte izquierda \textit{(Left-Hand Side, LHS)} especifica las condiciones que deben satisfacerse para que la regla sea aplicable, mientras que la parte derecha \textit{(Right-Hand Side, RHS)} define las acciones a ejecutar, que típicamente modifican la memoria de trabajo o producen efectos externos \cite{MDX_Rete}.
+La parte izquierda especifica las condiciones que deben satisfacerse para que la regla sea aplicable, mientras que la parte derecha define las acciones a ejecutar, que típicamente modifican la memoria de trabajo o producen efectos externos \cite{MDX_Rete}.
 
-\item \textbf{Motor de Inferencia (Inference Engine):} Constituye el mecanismo de control que gobierna la aplicación de las reglas. Es responsable de determinar qué reglas son aplicables en cada momento, seleccionar una entre las posibles, y ejecutar sus acciones \cite{MDX_Rete}. El motor de inferencia implementa el ciclo fundamental de operación: el ciclo reconocer-actuar \textit{(recognize-act cycle)} \cite{Russell2020}.
+\item \textbf{Motor de Inferencia:} Constituye el mecanismo de control que gobierna la aplicación de las reglas. Es responsable de determinar qué reglas son aplicables en cada momento, seleccionando una entre las posibles, y ejecutando sus acciones \cite{MDX_Rete}. El motor de inferencia implementa el ciclo fundamental de operación, es decir, el ciclo reconocer-actuar \textit{(recognize-act cycle)} \cite{Russell2020}.
 
 \end{enumerate}
 
-\subsection{El Ciclo Reconocer-Actuar (Recognize-Act Cycle)}
+\subsection{El Ciclo Reconocer-Actuar}
 
-El ciclo reconocer-actuar constituye el corazón operativo de todo sistema basado en reglas. Este proceso iterativo se desarrolla en las siguientes fases \cite{Russell2020} \cite{MDX_Rete}:
+Este ciclo constituye el corazón operativo de todo sistema basado en reglas. El proceso iterativo se desarrolla en las siguientes fases \cite{Russell2020} \cite{MDX_Rete}:
 
 \begin{enumerate}
 
-\item \textbf{Reconocimiento:} El motor de inferencia compara el contenido actual de la memoria de trabajo con las condiciones de todas las reglas en la base de conocimiento. Aquellas reglas cuyas condiciones se satisfacen completamente con los hechos existentes se consideran \textit{"activadas"} y pasan a formar parte del conjunto de conflictos \cite{Russell2020}.
+\item \textbf{Reconocimiento:} El motor de inferencia compara el contenido actual de la memoria de trabajo con las condiciones de todas las reglas en la base de conocimiento. Aquellas reglas cuyas condiciones se satisfacen completamente con los hechos existentes se consideran $"activadas"$ y pasan a formar parte del conjunto de conflictos \cite{Russell2020}.
 
 \item \textbf{Resolución de Conflictos:} Cuando múltiples reglas resultan aplicables simultáneamente, el motor debe seleccionar una para su ejecución. Esta decisión se realiza mediante estrategias de resolución de conflictos, que pueden basarse en prioridades explícitas de las reglas, especificidad de las condiciones, orden de activación, o políticas específicas del dominio \cite{MDX_Rete}.
 
-\item \textbf{Actuación:} La regla seleccionada se ejecuta, realizando las acciones especificadas en su parte derecha. Estas acciones típicamente modifican la memoria de trabajo (añadiendo, eliminando o actualizando hechos) y pueden tener efectos secundarios sobre el entorno, y robot \cite{Russell2020} \cite{MDX_Rete}.
+\item \textbf{Actuación:} La regla seleccionada se ejecuta, realizando las acciones especificadas en su parte derecha. Estas acciones típicamente modifican la memoria de trabajo (añadiendo, eliminando o actualizando hechos) y pueden tener efectos secundarios sobre el entorno, y el robot \cite{Russell2020} \cite{MDX_Rete}.
 
 \item \textbf{Terminación:} El ciclo se repite hasta que se cumple un criterio de terminación, que puede ser la ausencia de reglas aplicables, la consecución del objetivo deseado, o una condición explícita de parada \cite{MDX_Rete}.
 
 
 \end{enumerate}
 
-\subsection{El Algoritmo RETE para Emparejamiento Eficiente de Patrones}
+\subsection{El Algoritmo RETE}
 
-Una implementación ingenua del ciclo reconocer-actuar comprobaría cada regla contra todos los hechos en cada ciclo, resultando en una complejidad computacional prohibitiva incluso para sistemas de tamaño moderado \cite{Fanning1990}. Para abordar esta limitación, Charles Forgy desarrolló el \textbf{algoritmo RETE} durante su doctorado en \textit{Carnegie Mellon University (1979)}, cuya publicación apareció en Artificial Intelligence en 1982. El nombre "RETE" proviene del latín y significa "red", reflejando la estructura de red que constituye su esencia \cite{Fanning1990}.
+Una implementación ingenua del ciclo \textit{reconocer-actuar} comprobaría cada regla contra todos los hechos en cada ciclo, resultando en una complejidad computacional prohibitiva incluso para sistemas de tamaño moderado \cite{Fanning1990}. Para abordar esta limitación, Charles Forgy desarrolló el \textbf{algoritmo RETE} durante su doctorado en \textit{Carnegie Mellon University (1979)}, cuya publicación apareció en Artificial Intelligence en 1982. El nombre $"RETE"$ proviene del latín y significa $"red"$, reflejando la estructura de red que constituye su esencia \cite{Fanning1990}.
 
 \subsubsection*{Principios Fundamentales del Algoritmo RETE}
 
-El algoritmo RETE optimiza el proceso de emparejamiento patrón-objeto mediante dos estrategias clave \cite{Fanning1990}:
+El algoritmo RETE optimiza el proceso de emparejamiento \textit{patrón-objeto} mediante dos estrategias clave \cite{Fanning1990}:
 
 \begin{enumerate}
 
-\item \textbf{Almacenamiento de Estado:} RETE mantiene en memoria los resultados de emparejamientos previos, de modo que solo es necesario procesar los cambios incrementales en la memoria de trabajo, en lugar de reevaluar todas las reglas desde cero en cada ciclo.
+\item \textbf{Almacenamiento de Estado:} \textbf{RETE} mantiene en memoria los resultados de emparejamientos previos, de modo que solo es necesario procesar los cambios incrementales en la memoria de trabajo, en lugar de reevaluar todas las reglas desde cero en cada ciclo.
 
-\item \textbf{Compartición de subcálculos:} Cuando múltiples reglas comparten condiciones comunes, RETE evalúa dichas condiciones una sola vez y reutiliza los resultados para todas las reglas que las contienen.
+\item \textbf{Compartición de subcálculos:} Cuando múltiples reglas comparten condiciones comunes, \textbf{RETE} evalúa dichas condiciones una sola vez y reutiliza los resultados para todas las reglas que las contienen.
 
 \end{enumerate}
 
-Estos principios se implementan mediante la construcción de una red de nodos (RETE network) que representa las condiciones de todas las reglas del sistema \cite{Fanning1990} \cite{Giarratano2005}.
+Estos principios se implementan mediante la construcción de una red de nodos \textit{(RETE network)} que representa las condiciones de todas las reglas del sistema \cite{Fanning1990} \cite{Giarratano2005}.
 
 \subsubsection*{Estructura de la Red RETE}
 
@@ -270,7 +270,7 @@ La red RETE se organiza jerárquicamente desde el nodo raíz hasta las hojas que
 
 \subsubsection*{Funcionamiento Incremental}
 
-El proceso de evaluación en RETE es incremental . Cuando se añade, modifica o elimina un hecho en la memoria de trabajo:
+El proceso de evaluación en \textbf{RETE} es incremental \cite{ScienceDirect_Production}. Cuando se añade, modifica o elimina un hecho en la memoria de trabajo:
 
 \begin{enumerate}
 
@@ -284,14 +284,14 @@ El proceso de evaluación en RETE es incremental . Cuando se añade, modifica o 
 
 \end{enumerate}
 
-Este enfoque incremental reduce drásticamente el trabajo computacional, ya que solo se procesan los cambios efectivos en lugar de reevaluar todo el sistema en cada ciclo. La complejidad temporal del algoritmo RETE es, en promedio, independiente del número total de reglas en el sistema, dependiendo principalmente del número de hechos y de la estructura de las condiciones \cite{Forgy1982}.
+Este enfoque incremental reduce drásticamente el trabajo computacional, ya que solo se procesan los cambios efectivos en lugar de reevaluar todo el sistema en cada ciclo. La complejidad temporal del algoritmo \textbf{RETE} es, en promedio, independiente del número total de reglas en el sistema, dependiendo principalmente del número de hechos y de la estructura de las condiciones \cite{Forgy1982}.
 
 \subsection{Implementación de RETE en CLIPS}
 
 CLIPS implementa una versión optimizada del algoritmo RETE adaptada a sus necesidades específicas como sistema de producción de propósito general .
 
 \subsubsection*{Estructura de Memoria en CLIPS}
-CLIPS mantiene dos tipos principales de memoria :
+CLIPS mantiene dos tipos principales de memoria \cite{Forgy1979}:
 
 \begin{itemize}
 
@@ -304,40 +304,21 @@ CLIPS mantiene dos tipos principales de memoria :
 
 \subsubsection*{El Motor de Inferencia de CLIPS}
 
-El motor de inferencia de CLIPS implementa el ciclo reconocer-actuar completo, utilizando la red RETE para la fase de reconocimiento \cite{Forgy1979}:
+Se implementa el ciclo \textit{reconocer-actuar} completo, utilizando la red \textbf{RETE} para la fase de reconocimiento \cite{Forgy1979}:
 
 \begin{enumerate}
 
-\item \textbf{Fase de Reconocimiento:} Los cambios en la memoria de trabajo se propagan a través de la red RETE precompilada a partir de las reglas del sistema. La red mantiene información sobre qué condiciones se satisfacen parcial o completamente.
+\item \textbf{Fase de Reconocimiento:} Los cambios en la memoria de trabajo se propagan a través de la red \textbf{RETE} precompilada a partir de las reglas del sistema. La red mantiene información sobre qué condiciones se satisfacen parcial o completamente.
 
 \item \textbf{Fase de Resolución de Conflictos:} CLIPS ofrece múltiples estrategias de resolución de conflictos, incluyendo prioridad (salience), profundidad (depth-first), amplitud (breadth-first), y estrategias basadas en la especificidad de las reglas 	\cite{Forgy1979}.
 
-\item \textbf{Fase de Actuación:} La regla seleccionada ejecuta sus acciones, que pueden incluir la modificación de la memoria de trabajo, la ejecución de funciones externas, o la interacción con el entorno a través de la API de CLIPS.
+\item \textbf{Fase de Actuación:} La regla seleccionada ejecuta sus acciones, que pueden incluir la modificación de la memoria de trabajo, la ejecución de funciones externas.
 
 \end{enumerate}
 
-
-
-\subsubsection*{Funciones Objeto en CLIPS}
- 
-A partir de CLIPS 6.0, el sistema incorpora capacidades de programación orientada a objetos mediante el módulo COOL (CLIPS Object-Oriented Language) 	\cite{Forgy1979}. Esta extensión permite:
-
-\begin{itemize}
-
-\item Definir clases con atributos y métodos.
-
-\item Crear instancias de objetos que residen en una memoria de objetos separada.
-
-\item Realizar emparejamiento de patrones sobre objetos mediante la función \textit{object-pattern-match}.
-
-\end{itemize}
-
-
-La implementación del algoritmo RETE en CLIPS 6.0 se extendió para soportar el emparejamiento sobre objetos, manteniendo la eficiencia del algoritmo original pero permitiendo representaciones de conocimiento más ricas y estructuradas. Los objetos se tratan como hechos especiales que pueden ser referenciados desde las condiciones de las reglas, y la red RETE maneja tanto hechos tradicionales como objetos de manera unificada \cite{Forgy1979}.
-
 \subsubsection*{Consideraciones de Rendimiento}
 
-Estudios sobre implementaciones de CLIPS en entornos empotrados han identificado cinco parámetros clave que afectan el rendimiento del motor de inferencia :
+Estudios sobre implementaciones de CLIPS en entornos empotrados han identificado cinco parámetros clave que afectan el rendimiento del motor de inferencia \cite{Murphy2019}:
 
 \begin{enumerate}
 
@@ -353,7 +334,7 @@ Estudios sobre implementaciones de CLIPS en entornos empotrados han identificado
 
 \end{enumerate}
 
-En aplicaciones de tiempo real el tiempo de respuesta del motor de inferencia puede ser adecuado, aunque los requisitos de memoria pueden ser significativos dependiendo de la complejidad de la red RETE \cite{Murphy2019}. Esta característica hace que CLIPS sea particularmente adecuado para plataformas robóticas con restricciones computacionales moderadas.
+En aplicaciones de tiempo real el tiempo de respuesta del motor de inferencia suele ser adecuado, aunque los requisitos de memoria pueden ser significativos dependiendo de la complejidad de la red \textbf{RETE} \cite{Murphy2019}. Esta característica hace que CLIPS sea particularmente eficiente para plataformas robóticas con restricciones computacionales.
 
 
 \subsection{Ventajas y Limitaciones de los Sistemas de Producción}
@@ -370,9 +351,9 @@ Los sistemas basados en reglas presentan ventajas significativas que los hacen �
 
 	\item \textbf{Explicabilidad:} El razonamiento puede rastrearse y explicarse mediante la inspección de las reglas activadas, lo que es crucial para la auditoría y la confianza en sistemas críticos.
 
-	\item \textbf{Naturalidad:} Las reglas expresadas en formato if-then se aproximan a la forma en que los humanos describen procedimientos y conocimientos.
+	\item \textbf{Naturalidad:} Las reglas expresadas en formato \textit{if-then} se aproximan a la forma en que los humanos describen procedimientos y conocimientos.
 
-	\item \textbf{Separación conocimiento-control:} El conocimiento del dominio (reglas) está claramente separado del mecanismo de control (motor de inferencia), permitiendo modificaciones sin afectar la arquitectura subyacente.
+	\item \textbf{Separación conocimiento-control:} El conocimiento del dominio \textit{(reglas)} está claramente separado del mecanismo de control \textit{(motor de inferencia)}, permitiendo modificaciones sin afectar la arquitectura subyacente.
 	
 \end{itemize}
 	
@@ -384,7 +365,7 @@ Los sistemas basados en reglas presentan ventajas significativas que los hacen �
 
 \item \textbf{Ausencia de aprendizaje:} Los sistemas clásicos de producción no incorporan capacidades de aprendizaje automático, requiriendo que todo el conocimiento sea explícitamente programado.
 
-\item \textbf{Ineficiencia potencial:} Aunque RETE optimiza el emparejamiento, sistemas con miles de reglas pueden presentar problemas de rendimiento.
+\item \textbf{Ineficiencia potencial:} Aunque \textbf{RETE} optimiza el emparejamiento, sistemas con miles de reglas pueden presentar problemas de rendimiento.
 
 \item \textbf{Gestión de conflictos:} La resolución de conflictos requiere diseños cuidadosos para evitar comportamientos indeseados.
 
@@ -392,96 +373,108 @@ Los sistemas basados en reglas presentan ventajas significativas que los hacen �
 
 \end{itemize}
 
-Estas limitaciones, particularmente la rigidez semántica y la ausencia de aprendizaje, motivan la integración con modelos de lenguaje grande propuesta en esta tesis, buscando combinar la robustez y transparencia de los sistemas basados en reglas con la flexibilidad y capacidad adaptativa de los enfoques subsimbólicos modernos \cite{MDX_Rete}.
+Estas limitaciones, particularmente la rigidez semántica y la ausencia de aprendizaje, motivan la integración con modelos de lenguaje grande propuesta en esta tesis, buscando combinar la robustez y transparencia de los sistemas basados en reglas con la flexibilidad y capacidad adaptativa de los enfoques subsimbólicos modernos.
 
 \section{Introducción a los Modelos de Lenguaje Grande (LLMs) y ChatGPT/Qwen}
 
-Los Modelos de Lenguaje Grande (Large Language Models, LLMs) han emergido como una de las tecnologías más transformadoras en el campo de la inteligencia artificial, revolucionando la manera en que las máquinas procesan y generan lenguaje natural \cite{Shi2023}. Su aplicación en robótica de servicio abre nuevas posibilidades para la interacción humano-robot, permitiendo que usuarios no expertos comuniquen sus intenciones mediante comandos verbales complejos sin necesidad de conocer lenguajes de programación estructurados \cite{Zeng2020}. Esta sección expone los fundamentos arquitectónicos de los LLMs, centrándose en el mecanismo de atención y la arquitectura Transformer, para posteriormente contrastar dos modelos representativos: ChatGPT (modelo propietario) y Qwen2.5-0.5B (modelo de código abierto), evaluando su idoneidad para entornos robóticos con recursos computacionales limitados.
+Los Modelos de Lenguaje Grande \textit{(Large Language Models, \textbf{LLMs})} han emergido como una de las tecnologías más transformadoras en el campo de la inteligencia artificial, revolucionando la manera en que las máquinas procesan y generan lenguaje natural \cite{Shi2023}. Su aplicación en robótica de servicio abre nuevas posibilidades para la interacción humano-robot, permitiendo que usuarios no expertos comuniquen sus intenciones mediante comandos verbales complejos sin necesidad de conocer lenguajes de programación estructurados \cite{Zeng2020}. Se exploran los fundamentos de la arquitectura de los LLMs, centrándose en el mecanismo de atención y la arquitectura Transformer, para posteriormente contrastar dos modelos representativos: ChatGPT (modelo propietario) y Qwen2.5-0.5B (modelo de código abierto), evaluando su idoneidad para entornos robóticos con recursos computacionales limitados.
 
-\subsection{Fundamentos Arquitectónicos: Transformers y Mecanismo de Atención}
+\subsection{Transformers y Mecanismo de Atención}
 
 \subsubsection*{Limitaciones de los Modelos Secuenciales Previos}
 
-Antes de la introducción de la arquitectura Transformer en 2017, el procesamiento de lenguaje natural estaba dominado por redes neuronales recurrentes (RNN) y sus variantes, como LSTM (Long Short-Term Memory) y GRU (Gated Recurrent Units) \cite{Russell2020}. Estos modelos procesan el texto de manera secuencial, token por token, lo que presenta dos limitaciones fundamentales \cite{Vaswani2017}:
+Antes de la introducción de la arquitectura Transformer en 2017, el procesamiento de lenguaje natural estaba dominado por redes neuronales recurrentes \textit{(RNN)} y sus variantes, como \textbf{LSTM} \textit{(Long Short-Term Memory)} y \textbf{GRU} \textit{(Gated Recurrent Units)} \cite{Russell2020}. Estos modelos procesan el texto de manera secuencial, token por token, lo que presenta dos limitaciones fundamentales \cite{Vaswani2017}:
 
 \begin{enumerate}
 
-\item \textbf{Dificultad para el paralelismo:} La naturaleza secuencial de las RNN impide el aprovechamiento eficiente de hardware paralelo como GPUs, resultando en tiempos de entrenamiento prolongados \cite{UNIZA_RBS}.
+\item \textbf{Dificultad para el paralelismo:} La naturaleza secuencial de las \textbf{RNN} impide el aprovechamiento eficiente de hardware paralelo como GPUs, resultando en tiempos de entrenamiento prolongados \cite{UNIZA_RBS}.
 
-\item \textbf{Problema de dependencias de largo alcance:} Aunque LSTM y GRU mitigan parcialmente el problema del gradiente evanescente, la información sobre palabras distantes tiende a diluirse a medida que la secuencia se alarga, dificultando el modelado de relaciones semánticas entre elementos lejanos \cite{Albert1989}.
+\item \textbf{Problema de dependencias de largo alcance:} Aunque \textbf{LSTM} y \textbf{GRU} mitigan parcialmente el problema del gradiente descendente, la información sobre palabras distantes tiende a diluirse a medida que la secuencia se alarga, dificultando el modelado de relaciones semánticas entre elementos lejanos \cite{Albert1989}.
 
 \end{enumerate}
 
 \subsubsection*{La Arquitectura Transformer}
 
-El artículo seminal "Attention Is All You Need", publicado por investigadores de Google en 2017, introdujo la arquitectura Transformer, que prescinde por completo de recurrencia y convoluciones, basándose únicamente en mecanismos de atención \cite{Vaswani2017}. Esta arquitectura se ha convertido en el fundamento de todos los LLMs modernos, incluyendo GPT, BERT, y sus derivados \cite{Shi2023}.
+El artículo \guillemotleft Attention Is All You Need\guillemotright, publicado por investigadores de Google en 2017, introdujo la arquitectura Transformer, que prescinde por completo de recurrencia y convoluciones, basándose únicamente en mecanismos de atención \cite{Vaswani2017}. Esta arquitectura se ha convertido en el fundamento de todos los \textbf{LLMs} modernos, incluyendo \textbf{GPT}, \textbf{BERT}, y sus derivados \cite{Shi2023}.
 
-La arquitectura Transformer sigue una estructura codificador-decodificador (encoder-decoder) con las siguientes características principales \cite{Vaswani2017}:
+La arquitectura Transformer sigue una estructura \textbf{codificador-decodificador} \textit{(encoder-decoder)} con las siguientes características principales \cite{Vaswani2017}:
 
 \begin{itemize}
 
-\item \textbf{Codificador (Encoder):} Compuesto por una pila de $N=6$ capas idénticas. Cada capa contiene dos subcapas: un mecanismo de autoatención multi-cabeza (multi-head self-attention) y una red feed-forward posicional totalmente conectada. Alrededor de cada subcapa se emplean conexiones residuales seguidas de normalización por capas (layer normalization).
+\item \textbf{Codificador (Encoder):} Compuesto por una pila de $N=6$ capas idénticas. Cada capa contiene dos subcapas: un mecanismo de autoatención multi-cabeza y una red feed-forward posicional totalmente conectada. Alrededor de cada subcapa se emplean conexiones residuales seguidas de normalización por capas.
 
-\item \textbf{Decodificador (Decoder):} Similar al codificador, pero con una tercera subcapa que realiza atención cruzada (cross-attention) sobre la salida del codificador. Además, incorpora un enmascaramiento para evitar que las posiciones futuras influyan en la predicción actual, preservando la propiedad autorregresiva del modelo.
+\item \textbf{Decodificador (Decoder):} Similar al codificador, pero con una tercera subcapa que realiza atención cruzada sobre la salida del codificador. Además, incorpora un enmascaramiento para evitar que las posiciones futuras influyan en la predicción actual, preservando la propiedad autorregresiva del modelo.
 
 \end{itemize}
 
 \subsubsection*{El Mecanismo de Atención}
 
-El núcleo de la arquitectura Transformer es el mecanismo de atención, que permite al modelo ponderar dinámicamente la importancia de diferentes elementos de la secuencia de entrada al generar cada representación de salida \cite{Vaswani2017}. Formalmente, la atención puede describirse como una función que mapea una consulta (query) y un conjunto de pares clave-valor (key-value) hacia una salida \cite{citation:2}.
+El núcleo de la arquitectura Transformer es el mecanismo de atención, que permite al modelo ponderar dinámicamente la importancia de diferentes elementos de la secuencia de entrada al generar cada representación de salida \cite{Vaswani2017}. Formalmente, la atención puede describirse como una función que mapea una consulta y un conjunto de pares clave-valor hacia una salida \cite{citation:2}.
 
-\textbf{Atención Escalada por Producto Punto (Scaled Dot-Product Attention):} La forma de atención utilizada en Transformer se define mediante la siguiente ecuación \cite{Vaswani2017}:
+\textbf{Atención Escalada por Producto Punto:} La forma de atención utilizada en Transformer se define mediante la siguiente ecuación \cite{Vaswani2017}:
 
 \begin{equation}
 \text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right) V
 \end{equation}
 
-\textbf{Interpretación intuitiva del mecanismo de atención:} Una analogía útil para comprender este mecanismo es la de una biblioteca \cite{citation:1}. La biblioteca (Source) contiene muchos libros (Value), cada uno con un código de clasificación (Key). Cuando un usuario desea información sobre un tema específico (Query), el sistema busca los códigos más relevantes y recupera los libros correspondientes, prestando más atención (pesos mayores) a aquellos que mejor coinciden con la consulta.
 
-\textbf{Autoatención (Self-Attention):} Cuando $Q, K y V$ se generan a partir de la misma secuencia de entrada, el mecanismo se denomina autoatención. Esto permite que cada token de la secuencia "atienda" a todos los demás tokens, capturando relaciones contextuales globales independientemente de la distancia entre ellos \cite{Vaswani2017}.
+Donde:
 
-\textbf{Atención Multi-Cabeza (Multi-Head Attention):} En lugar de realizar una única función de atención, Transformer proyecta $Q, K y V h$ veces con proyecciones lineales aprendidas diferentes, permitiendo al modelo atender conjuntamente a información procedente de distintos subespacios representacionales \cite{Vaswani2017}:
+\begin{itemize}
+
+\item $Q$ (Query) es la representación del token actual que ''pregunta'' por información relevante.
+
+\item $K$ (Key) representa las ''etiquetas'' de todos los tokens que pueden responder a la consulta.
+
+\item $V$ (Value) contiene la información real de cada token que será agregada.
+
+\item $d_{k}$ es la dimensión de las claves, y la división por $\sqrt{d_{k}}$ actúa como factor de escalamiento para evitar que los productos punto crezcan excesivamente, lo que llevaría a gradientes extremadamente pequeños en la función softmax \cite{Vaswani2017}.
+
+\end{itemize}
+$ $
+
+
+\textbf{Interpretación intuitiva del mecanismo de atención:} Una analogía útil para comprender este mecanismo es la de una biblioteca \cite{citation:1}. La biblioteca \textit{(Source)} contiene muchos libros \textit{(Value)}, cada uno con un código de clasificación \textit{(Key)}. Cuando un usuario desea información sobre un tema específico \textit{(Query)}, el sistema busca los códigos más relevantes y recupera los libros correspondientes, prestando más atención \textit{(pesos mayores)} a aquellos que mejor coinciden con la consulta.
+
+\textbf{Autoatención:} Cuando $Q, K$ y $V$ se generan a partir de la misma secuencia de entrada, el mecanismo se denomina autoatención. Esto permite que cada token de la secuencia ''atienda'' a todos los demás tokens, capturando relaciones contextuales globales independientemente de la distancia entre ellos \cite{Vaswani2017}.
+
+\textbf{Atención Multi-Cabeza:} En lugar de realizar una única función de atención, Transformer proyecta $Q, K$ y $V h$ veces con proyecciones lineales aprendidas diferentes, permitiendo al modelo atender conjuntamente a información procedente de distintos subespacios representacionales \cite{Vaswani2017}:
 
 % Atención multi-cabeza
 \begin{equation}
 \text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h) W^O
-\label{eq:multihead}
 \end{equation}
-donde \(\text{head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)\).
-\\
-\\
+$$ \text{donde head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V) $$
 
-\textbf{Codificación Posicional (Positional Encoding):} Dado que la autoatención es inherentemente invariante al orden de los tokens (permutar la secuencia produce el mismo conjunto de atenciones), es necesario inyectar información sobre la posición relativa o absoluta de los tokens. Transformer utiliza codificaciones posicionales sinusoidales \cite{Vaswani2017}:
+\textbf{Codificación Posicional (Positional Encoding):} Dado que la autoatención es inherentemente invariante al orden de los tokens \textit{(permutar la secuencia produce el mismo conjunto de atenciones)}, es necesario inyectar información sobre la posición relativa o absoluta de los tokens. Transformer utiliza codificaciones posicionales sinusoidales \cite{Vaswani2017}:
 
 % Codificación posicional sinusoidal
 \begin{equation}
 PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
-
 \end{equation}
 \begin{equation}
 PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
-\label{eq:pos2}
 \end{equation}
 
 
-Modelos más recientes han adoptado variantes como RoPE (Rotary Positional Embeddings), que codifica posiciones relativas mediante rotaciones de los vectores 
+Modelos más recientes han adoptado variantes como \textbf{RoPE} \textit{(Rotary Positional Embeddings)}, que codifica posiciones relativas mediante rotaciones de los vectores 
 $Q y K$, mejorando la extrapolación a longitudes de secuencia superiores a las vistas durante el entrenamiento \cite{citation:5}\cite{citation:9}.
 
 \subsubsection*{Evolución hacia Modelos de Lenguaje Grande}
 
-A partir de la arquitectura Transformer, la investigación en NLP se bifurcó en dos direcciones principales \cite{citation:5}:
+A partir de la arquitectura Transformer, la investigación en \textbf{NLP} se bifurcó en dos direcciones principales \cite{citation:5}:
 
 \begin{enumerate}
 
-\item \textbf{Modelos tipo codificador (Encoder-only):} Como BERT (Bidirectional Encoder Representations from Transformers), que aprovecha la bidireccionalidad del codificador para tareas de comprensión del lenguaje, como clasificación o reconocimiento de entidades \cite{citation:1}. Estos modelos se pre-entrenan con objetivos como el modelado de lenguaje enmascarado (Masked Language Modeling, MLM).
+\item \textbf{Modelos tipo codificador (Encoder-only):} Como \textbf{BERT} \textit{(Bidirectional Encoder Representations from Transformers)}, que aprovecha la bidireccionalidad del codificador para tareas de comprensión del lenguaje, como clasificación o reconocimiento de entidades \cite{citation:1}. Estos modelos se pre-entrenan con objetivos como el modelado de lenguaje enmascarado \textit{(Masked Language Modeling, \textbf{MLM})}.
 
-\item \textbf{Modelos tipo decodificador (Decoder-only):} Como la serie GPT (Generative Pre-trained Transformer), que utilizan únicamente la parte decodificadora con enmascaramiento causal, optimizados para generación de texto autorregresiva \cite{citation:5}. Estos modelos se pre-entrenan con el objetivo de predicción del siguiente token (Causal Language Modeling, CLM). Los LLMs actuales, incluyendo ChatGPT y Qwen, pertenecen predominantemente a esta categoría.
+\item \textbf{Modelos tipo decodificador (Decoder-only):} Como la serie \textbf{GPT} \textit{(Generative Pre-trained Transformer)}, que utilizan únicamente la parte decodificadora con enmascaramiento causal, optimizados para generación de texto autorregresiva \cite{citation:5}. Estos modelos se pre-entrenan con el objetivo de predecir el siguiente token t\textbf{(Causal Language Modeling, \textbf{CLM})}. Los \textbf{LLMs} actuales, incluyendo \textbf{ChatGPT} y \textbf{Qwen}, pertenecen predominantemente a esta categoría.
 
 \end{enumerate}
 
 \subsection{ChatGPT: Modelo Propietario para Interacción Conversacional}
 
-ChatGPT, desarrollado por OpenAI, es un modelo de lenguaje grande basado en la arquitectura GPT (Generative Pre-trained Transformer), específicamente optimizado para tareas de diálogo mediante técnicas de ajuste fino con aprendizaje por refuerzo a partir de retroalimentación humana (RLHF) \cite{Shi2023}. Su integración en robótica ha demostrado ser prometedora para interpretar comandos complejos en lenguaje natural y generar planes de acción contextualmente apropiados.
+\textbf{ChatGPT}, desarrollado por \textbf{OpenAI}, es un modelo de lenguaje grande basado en la arquitectura \textbf{GPT} descrita anteriormente, específicamente optimizado para tareas de diálogo mediante técnicas de ajuste fino con aprendizaje por refuerzo a partir de retroalimentación humana \textbf{(RLHF)} \cite{Shi2023}. Su integración en robótica ha demostrado ser prometedora para interpretar comandos complejos en lenguaje natural y generar planes de acción contextualmente apropiados.
 
 \begin{itemize}
 
@@ -489,11 +482,11 @@ ChatGPT, desarrollado por OpenAI, es un modelo de lenguaje grande basado en la a
 
 \begin{itemize}
 
-\item \textbf{Arquitectura:} Basada en Transformer con decodificador causal, escalada a cientos de miles de millones de parámetros en sus versiones más avanzadas \cite{Shi2023}. Aunque los detalles arquitectónicos precisos no son públicos, sigue los principios fundamentales establecidos en \cite{Vaswani2017}.
+\item \textbf{Arquitectura:} Basada en Transformer con decodificador causales, escala a cientos de miles de millones de parámetros en sus versiones más avanzadas \cite{Shi2023}. Aunque los detalles arquitectónicos precisos no son públicos, sigue los principios fundamentales establecidos.
 
-\item \textbf{Capacidades conversacionales:} Optimizado para mantener diálogos coherentes y contextualmente relevantes, manejar ambigüedades y solicitar aclaraciones cuando es necesario \cite{Zeng2020}.
+\item \textbf{Capacidades conversacionales:} Esta optimizado para mantener diálogos coherentes y contextualmente relevantes, manejar ambigüedades y solicitar aclaraciones cuando es necesario \cite{Zeng2020}.
 
-\item \textbf{Acceso mediante API:} OpenAI proporciona interfaces de programación que permiten integrar ChatGPT en sistemas robóticos mediante llamadas a servicios web, facilitando su adopción sin necesidad de infraestructura local costosa \cite{citation:4}\cite{citation:8}.
+\item \textbf{Acceso mediante API:} OpenAI proporciona interfaces de programación que permiten integrar \textbf{ChatGPT} en sistemas robóticos mediante llamadas a servicios web, facilitando su adopción sin necesidad de infraestructura local costosa \cite{pollini2025reducinglatencyllmbasednatural}.
 
 \end{itemize}
 
@@ -505,7 +498,7 @@ ChatGPT, desarrollado por OpenAI, es un modelo de lenguaje grande basado en la a
 
 \item \textbf{Flexibilidad semántica:} Puede generar planes adaptativos para situaciones novedosas que no están explícitamente programadas en sistemas basados en reglas \cite{Shi2023}.
 
-\item \textbf{Reducción de latencia:} Investigaciones recientes muestran que la integración directa de ChatGPT con ROS 2 puede reducir la latencia de comunicación en un 7.01\% en promedio, facilitando operaciones robóticas en tiempo real \cite{citation:4}\cite{citation:8}.
+\item \textbf{Reducción de latencia:} Investigaciones recientes muestran que la integración directa de \textbf{ChatGPT} con \textbf{ROS 2} puede reducir la latencia de comunicación en un 7.01\% en promedio, facilitando operaciones robóticas en tiempo real \cite{pollini2025reducinglatencyllmbasednatural}.
 
 \end{itemize}
 
@@ -514,11 +507,11 @@ ChatGPT, desarrollado por OpenAI, es un modelo de lenguaje grande basado en la a
 
 \begin{itemize}
 
-\item \textbf{Dependencia de conectividad:} Requiere acceso a internet para consultar la API de OpenAI, lo que puede ser problemático en entornos con conectividad limitada o requisitos de seguridad que impidan la transmisión de datos a la nube \cite{citation:3}.
+\item \textbf{Dependencia de conectividad:} Requiere acceso a internet para consultar la API de \textbf{OpenAI}, lo que puede ser problemático en entornos con conectividad limitada o requisitos de seguridad que impidan la transmisión de datos a la nube \cite{citation:3}.
 
 \item \textbf{Costos operativos:} El uso de API propietarias implica costos por consulta que pueden ser prohibitivos en despliegues a gran escala o con alta frecuencia de interacción \cite{citation:7}.
 
-\item \textbf{Latencia variable:} Los tiempos de respuesta dependen de la calidad de la conexión y la carga de los servidores de OpenAI, lo que puede introducir variabilidad indeseable en sistemas de tiempo real \cite{citation:4}.
+\item \textbf{Latencia variable:} Los tiempos de respuesta dependen de la calidad de la conexión y la carga de los servidores de \textbf{OpenAI}, lo que puede introducir variabilidad indeseable en sistemas de tiempo real \cite{pollini2025reducinglatencyllmbasednatural}.
 
 \item \textbf{Privacidad de datos:} El envío de comandos de voz y datos contextuales a servidores externos puede plantear problemas de confidencialidad en aplicaciones sensibles \cite{citation:7}.
 
@@ -526,9 +519,9 @@ ChatGPT, desarrollado por OpenAI, es un modelo de lenguaje grande basado en la a
 
 \end{itemize}
 
-\subsection{Qwen2.5-0.5B: Modelo Open-Source para Cómputo en el Borde}
+\subsection{Qwen2.5-0.5B: Modelo Open-Source para Cómputo}
 
-Qwen (QwenLM) es una familia de modelos de lenguaje grande desarrollada por Alibaba, con versiones que abarcan desde modelos masivos hasta variantes extremadamente compactas diseñadas para despliegue en entornos con recursos limitados \cite{citation:3}. Qwen2.5-0.5B-Instruct, la versión con 0.5 mil millones de parámetros, representa un punto óptimo entre capacidad lingüística y eficiencia computacional, siendo particularmente relevante para robótica de servicio embarcada.
+\textbf{Qwen} \textit{(QwenLM)} es una familia de modelos de lenguaje grande desarrollada por \textbf{Alibaba}, con versiones que abarcan desde modelos masivos hasta variantes extremadamente compactas diseñadas para despliegue en entornos con recursos limitados \cite{citation:3}. \textbf{Qwen2.5-0.5B-Instruct}, la versión con 0.5 mil millones de parámetros, representa un punto óptimo entre capacidad lingüística y eficiencia computacional, siendo particularmente relevante para robótica de servicio.
 
 \begin{itemize}
 
@@ -537,8 +530,6 @@ Qwen (QwenLM) es una familia de modelos de lenguaje grande desarrollada por Alib
 % Tabla de características de Qwen2.5-0.5B
 \begin{table}[H]
 \centering
-\caption{Características principales de Qwen2.5-0.5B-Instruct}
-\label{tab:qwen}
 \begin{tabular}{|l|p{10cm}|}
 \hline
 \textbf{Característica} & \textbf{Descripción} \\
@@ -547,18 +538,18 @@ Parámetros & 0.5 mil millones (aproximadamente 1 GB en pesos del modelo) \cite{
 \hline
 Arquitectura & Transformer con decodificador causal, similar a GPT \cite{citation:3} \\
 \hline
-Soporte de inferencia & CPU nativo, memoria < 2 GB, sin necesidad de GPU \cite{citation:3}\cite{citation:7} \\
+Soporte de inferencia & CPU nativo, memoria $<$ 2 GB, sin necesidad de GPU \cite{citation:3}\cite{citation:7} \\
 \hline
 Idiomas & Optimizado para chino, con capacidades funcionales en inglés \cite{citation:3} \\
 \hline
-Ajuste & Instrucción fine-tuning (versión Instruct) para diálogo y seguimiento de comandos \cite{citation:7} \\
+Ajuste & Instrucción fine-tuning \textbf{(versión Instruct)} para diálogo y seguimiento de comandos \cite{citation:7} \\
 \hline
 Formato de despliegue & Disponible en GGUF (llama.cpp), ONNX, y formatos nativos de PyTorch \cite{citation:3} \\
 \hline
 \end{tabular}
 \end{table}
 
-\item \textbf{Ventajas para robótica embarcada:}
+\item \textbf{Ventajas para robótica:}
 
 \begin{itemize}
 
@@ -568,9 +559,9 @@ Formato de despliegue & Disponible en GGUF (llama.cpp), ONNX, y formatos nativos
 
 \item \textbf{Costo cero por consulta:} Al ser código abierto y ejecutarse localmente, no hay costos asociados al número de interacciones.
 
-\item \textbf{Personalización:} Posibilidad de fine-tuning con datos específicos del dominio (por ejemplo, vocabulario de un laboratorio o nombres de objetos domésticos) sin dependencia de proveedores externos \cite{citation:7}.
+\item \textbf{Personalización:} Posibilidad de fine-tuning con datos específicos del dominio \textit{(por ejemplo, vocabulario de un laboratorio o nombres de objetos domésticos)} sin dependencia de proveedores externos \cite{citation:7}.
 
-\item \textbf{Integración con ROS 2:} Experiencias documentadas muestran la viabilidad de integrar Qwen2.5-0.5B con ROS 2 para aplicaciones como guías inteligentes en entornos educativos, donde el modelo procesa consultas en lenguaje natural y genera respuestas que se traducen en comandos de navegación \cite{citation:7}.
+\item \textbf{Integración con ROS 2:} Experiencias documentadas muestran la viabilidad de integrar \textbf{Qwen2.5-0.5B} con \textbf{ROS 2} para aplicaciones como guías inteligentes en entornos educativos, donde el modelo procesa consultas en lenguaje natural y genera respuestas que se traducen en comandos de navegación \cite{citation:7}.
 
 \end{itemize}
 
@@ -590,10 +581,20 @@ Formato de despliegue & Disponible en GGUF (llama.cpp), ONNX, y formatos nativos
 
 \subsection{Comparativa y Selección para Robótica de Servicio}
 
-La Tabla 3.2 resume las principales diferencias entre ChatGPT (representante de modelos propietarios) y Qwen2.5-0.5B (representante de modelos open-source ligeros), proporcionando criterios para la selección según las necesidades de la aplicación robótica.
+La Tabla \ref{tab:comparativa} resume las principales diferencias entre \textbf{ChatGPT} \textit{(representante de modelos propietarios)} y \textbf{Qwen2.5-0.5B} \textit{(representante de modelos open-source ligeros)}, proporcionando criterios para la selección según las necesidades de la aplicación robótica.
+
+En el contexto de esta tesis, la selección entre ambos modelos responde a una estrategia complementaria \cite{Savage2024}:
+
+\begin{itemize}
+
+\item \textbf{Qwen2.5-0.5B} se emplea como módulo de traducción de lenguaje natural a hechos CLIPS directamente en el robot, aprovechando su capacidad para ejecutarse localmente con latencias predecibles y sin dependencia de conectividad. Esto es particularmente útil para tareas rutinarias donde el vocabulario está acotado al entorno doméstico.
+
+\item \textbf{ChatGPT} se utiliza en el módulo de planificación dual o hibrido, como interprete de lenguaje natural o generador de planes alternativos para situaciones complejas o novedosas, cuando el sistema basado en reglas no puede resolver la tarea. En estos casos, la latencia adicional se justifica por la necesidad de flexibilidad semántica.
+
+\end{itemize}
 
 % Tabla comparativa ChatGPT vs Qwen2.5-0.5B
-\begin{table}[h]
+\begin{table}[H]
 \centering
 \caption{Comparativa entre ChatGPT y Qwen2.5-0.5B para robótica de servicio}
 \label{tab:comparativa}
@@ -601,7 +602,7 @@ La Tabla 3.2 resume las principales diferencias entre ChatGPT (representante de 
 \hline
 \textbf{Aspecto} & \textbf{ChatGPT} & \textbf{Qwen2.5-0.5B} \\
 \hline
-Parámetros & >100B (estimado) & 0.5B \\
+Parámetros & $>$ 100B (estimado) & 0.5B \\
 \hline
 Ejecución & Nube (API) & Local (edge) \\
 \hline
@@ -624,22 +625,315 @@ Idoneidad & Tareas complejas, investigación, prototipado & Despliegue en produc
 \end{tabular}
 \end{table}
 
-En el contexto de esta tesis, la selección entre ambos modelos responde a una estrategia complementaria \cite{Savage2024}:
+Esta arquitectura híbrida capitaliza las ventajas de ambos paradigmas: la eficiencia y privacidad de la ejecución local con \textbf{Qwen} para tareas estándar, y la potencia lingüística de \textbf{ChatGPT} para casos excepcionales, manteniendo siempre la supervisión del sistema basado en reglas como garantía de seguridad \cite{Shi2023}.
+
+\section{Integración de Traductores de Lenguaje Natural con Sistemas Basados en Reglas}
+
+Este integración esta enfocada en la arquitectura que busca combinar la robustez y transparencia del razonamiento simbólico con la flexibilidad y accesibilidad de la interacción en lenguaje humano. En el contexto de la robótica de servicio resulta fundamental permitir que usuarios no expertos puedan comunicarse con el robot de manera intuitiva, utilizando el lenguaje natural, mientras que el sistema subyacente mantiene la predictibilidad y seguridad propias de los motores de reglas. Se aborda la utilidad de dicha integración, describiendo su funcionamiento técnico en el caso específico de CLIPS, y presenta una descripción comparativa de las tres tecnologías involucradas: \textbf{CLIPS}, 
+\textbf{ChatGPT} y \textbf{Qwen2.5-0.5B}.
+
+\subsection{Utilidad y Función de la Integración}
+
+La principal utilidad de integrar traductores de lenguaje natural con sistemas basados en reglas radica en la ampliación de la accesibilidad del sistema robótico. Tradicionalmente, la programación y operación de robots basados en reglas requiere que el usuario conozca la sintaxis formal de hechos y reglas, o que utilice interfaces gráficas predefinidas que limitan la expresividad de las instrucciones \cite{Giarratano2005}. Al incorporar un módulo de procesamiento de lenguaje natural, el robot puede interpretar comandos expresados en lenguaje cotidiano, tales como ''tráeme el vaso rojo que está en la mesa de la cocina'', y transformarlos en representaciones estructuradas que el motor de reglas puede procesar \cite{Zeng2020}.
+
+Esta integración cumple varias funciones esenciales:
+
+\begin{enumerate}
+
+\item \textbf{Interfaz intuitiva para usuarios no técnicos:} Elimina la necesidad de aprender lenguajes de programación o secuencias de comandos predefinidas, permitiendo que personas sin formación en robótica puedan interactuar con el robot de manera natural \cite{ScienceDirect_Production}.
+
+\item \textbf{Traducción de ambigüedad a precisión:} El lenguaje natural es inherentemente ambiguo; una misma frase puede tener múltiples interpretaciones. El módulo de traducción debe resolver estas ambigüedades mediante análisis semántico y contextual, generando hechos unívocos que el sistema basado en reglas pueda evaluar sin ambigüedad \cite{citation:2}. Técnicas como la desambiguación del sentido de las palabras \textit{(word sense disambiguation)} y el reconocimiento de entidades nombradas son fundamentales en este proceso \cite{citation:8}.
+
+\item \textbf{Enriquecimiento del conocimiento del dominio:} Los comandos en lenguaje natural pueden contener información implícita sobre el entorno, los objetos y las intenciones del usuario que no está disponible en la base de conocimiento inicial. El traductor puede extraer esta información y representarla como nuevos hechos, enriqueciendo dinámicamente la memoria de trabajo del sistema de reglas \cite{Donnell1994}.
+
+\item \textbf{Adaptación a contextos culturales y situacionales:} Diferentes usuarios pueden referirse al mismo objeto o acción con términos distintos. Un traductor basado en modelos de lenguaje grande puede capturar estas variaciones lingüísticas y mapearlas a los conceptos canónicos definidos en la base de reglas, mejorando la robustez del sistema en entornos multilingües o multiculturales \cite{citation:1}.
+
+\end{enumerate}
+
+En el ámbito de la robótica de servicio doméstico, esta integración resulta particularmente valiosa para aplicaciones de asistencia a personas mayores o con alguna discapacidad, donde la facilidad de uso y la naturalidad de la interacción son requisitos prioritarios.
+
+\subsection{Funcionamiento de la Integración CLIPS-Lenguaje Natural}
+
+La integración entre CLIPS y los modelos de lenguaje natural en el robot Justina sigue un flujo de procesamiento claramente definido, que transforma comandos verbales en hechos estructurados y, finalmente, en planes ejecutables. Este flujo se organiza en torno a servicios y tópicos de ROS 2 que garantizan la comunicación asíncrona y desacoplada entre los módulos \cite{Savage2024}.
+
+\subsubsection*{Flujo de Procesamiento}
+
+El proceso completo de integración comprende las siguientes etapas:
+
+\begin{enumerate}
+
+\item \textbf{Captura y reconocimiento de voz:} El robot Justina captura el audio del entorno mediante su micrófono y utiliza un motor de reconocimiento de voz, como Vosk, para transcribir el habla a texto \cite{citation:7}. Esta etapa convierte la señal acústica en una cadena de texto que representa el comando del usuario.
+
+\item \textbf{Análisis semántico mediante LLM:} El texto resultante se envía al módulo de lenguaje natural, que puede estar basado en ChatGPT (mediante API) o en Qwen2.5-0.5B (ejecución local). Este módulo realiza un análisis semántico profundo para identificar los componentes clave del comando \cite{citation:4}:
 
 \begin{itemize}
 
-\item \textbf{Qwen2.5-0.5B} se emplea como módulo de traducción de lenguaje natural a hechos CLIPS directamente en el robot, aprovechando su capacidad para ejecutarse localmente con latencias predecibles y sin dependencia de conectividad. Esto es particularmente útil para tareas rutinarias donde el vocabulario está acotado al entorno doméstico.
+\item \textbf{Acción principal:} "traer", "llevar", "buscar", "colocar".
 
-\item \textbf{ChatGPT} se utiliza en el módulo de planificación dual como generador de planes alternativos para situaciones complejas o novedosas, cuando el sistema basado en reglas no puede resolver la tarea. En estos casos, la latencia adicional se justifica por la necesidad de flexibilidad semántica.
+\item \textbf{Objeto meta:} "vaso", "libro", "medicina".
+
+\item \textbf{Atributos descriptivos:} "rojo", "pequeño", "de plástico".
+
+\item \textbf{Ubicaciones:} "en la mesa", "en la cocina", "sobre el estante".
 
 \end{itemize}
 
-Esta arquitectura híbrida capitaliza las ventajas de ambos paradigmas: la eficiencia y privacidad de la ejecución local con Qwen para tareas estándar, y la potencia lingüística de ChatGPT para casos excepcionales, manteniendo siempre la supervisión del sistema basado en reglas como garante de seguridad \cite{Shi2023}.
+\item \textbf{Generación de hechos CLIPS:} El resultado del análisis se transforma en hechos estructurados según la sintaxis de CLIPS. Un hecho típico generado tiene la forma:
 
-\section{Integración de Traductores de Lenguaje Natural con Sistemas Basados en Reglas}
-\subsection{Utilidad y Función de la Integración}
-\subsection{Funcionamiento de la Integración CLIPS-Lenguaje Natural}
+$$\text{(objetivo (accion traer) (objeto vaso) (atributo rojo) (ubicacion mesa-cocina))}$$
+
+Esta representación sigue las plantillas definidas en la base de conocimiento del sistema, asegurando que los hechos generados sean directamente procesables por el motor de reglas \cite{Giarratano2005}.
+
+\item \textbf{Inserción en la memoria de trabajo:} Los hechos generados se insertan en la memoria de trabajo de \textbf{CLIPS} mediante el servicio \textbf{ROS2} correspondiente. La inserción desencadena el ciclo de inferencia del motor de reglas, que evalúa las reglas aplicables y genera un plan de acciones \cite{Donnell1994}.
+
+\item \textbf{Ejecución del plan:} El plan resultante, consistente en una secuencia de acciones primitivas, se publica en un tópico \textbf{ROS2} para que los módulos de ejecución (navegación, manipulación, etc.) lo traduzcan en comandos concretos para los actuadores del robot \cite{Savage2024}.
+
+\end{enumerate}
+
+\subsubsection*{Servicios y Tópicos ROS2}
+
+La arquitectura de integración se implementa mediante los siguientes elementos de comunicación en ROS2 \cite{citation:1}:
+
+\begin{itemize}
+
+\item \textbf{Servicio} \textit{/natural\_to\_clips/interpret:}
+
+\begin{itemize}
+
+\item \textbf{Entrada:} Cadena de texto con el comando en lenguaje natural.
+
+\item \textbf{Procesamiento:} Invoca al modelo de lenguaje (\textbf{ChatGPT} o \textbf{Qwen}) con un prompt estructurado que incluye el contexto del entorno y ejemplos de traducción esperados.
+
+\item \textbf{Salida:} Lista de hechos CLIPS estructurados en formato JSON o similar.
+
+\item \textbf{Validación:} Se aplican técnicas de prompting few-shot y validación sintáctica para garantizar que los hechos generados sean correctos \cite{citation:4}.
+
+\end{itemize}
+
+\item \textbf{Servicio} \textit{/clips/assert\_fact:}
+
+\begin{itemize}
+
+\item \textbf{Entrada:} Hecho individual en formato CLIPS (ej., (objetivo (accion traer) (objeto vaso))).
+
+\item \textbf{Procesamiento:} Inserta el hecho en la memoria de trabajo de CLIPS y retorna una confirmación.
+
+\item \textbf{Manejo de errores:} Verifica que el hecho respete las plantillas definidas; en caso contrario, rechaza la inserción y notifica el error.
+
+\end{itemize}
+
+\item \textbf{Tópico} \textit{/clips/results:}
+
+\begin{itemize}
+
+\item \textbf{Publicación:} El motor CLIPS publica el plan completo generado tras el ciclo de inferencia.
+
+\item \textbf{Formato:} Secuencia ordenada de acciones primitivas, cada una con los parámetros necesarios para su ejecución (ej., (goto cocina), (find-object vaso), (grasp objeto)).
+
+\item \textbf{Consumidores:} Los módulos de navegación, manipulación y control de actuadores usan esta información para ejecutar las acciones.
+
+\end{itemize}
+
+\end{itemize}
+
+\subsubsection*{Técnicas de Prompting para la Generación de Hechos}
+
+La calidad de la traducción de lenguaje natural a hechos CLIPS depende críticamente del diseño de los prompts enviados al modelo de lenguaje, se emplean las siguientes técnicas:
+
+\begin{itemize}
+
+\item \textbf{Prompts con especificación de tarea:} Se proporciona al modelo una descripción clara de su función: ''Eres un asistente que traduce comandos en lenguaje natural a hechos estructurados para un robot doméstico. Los hechos deben seguir el formato (objetivo (accion <acción>) (objeto <objeto>) (atributo <atributo>) (ubicacion <ubicación>)).''
+
+\item \textbf{Contexto del entorno:} Se incluye información sobre el entorno doméstico (habitaciones disponibles, objetos conocidos, capacidades del robot) para guiar la generación de hechos realistas y ejecutables \cite{citation:4}.
+
+\item \textbf{Ejemplos few-shot:} Se proporcionan varios ejemplos de comandos y sus correspondientes hechos CLIPS, demostrando cómo manejar variaciones lingüísticas y casos ambiguos \cite{citation:4}.
+
+\item \textbf{Validación y retroalimentación:} Cuando el modelo genera hechos sintácticamente incorrectos o incompletos, se envía un mensaje de error detallado al modelo junto con la solicitud de corrección, en un ciclo similar al descrito en \cite{citation:4} para la generación de consultas NRQL.
+
+\end{itemize}
+
+
 \subsection{Descripción de Tecnologías: CLIPS, ChatGPT y Qwen2.5-0.5B}
+
+La arquitectura híbrida propuesta integra tres tecnologías fundamentales descritas anteriormente, a continuación se presentan sus características, ventajas y limitaciones específicas que determinan su papel en el sistema global.
+
+\subsubsection*{ CLIPS (C Language Integrated Production System)}
+
+CLIPS es un lenguaje de programación basado en reglas desarrollado por el NASA, descrito en el sección 2.2.
+
+\begin{itemize}
+
+\item \textbf{Características principales:}
+
+\begin{itemize}
+
+\item \textbf{Motor de inferencia con algoritmo RETE:} Implementa una versión optimizada del algoritmo RETE para emparejamiento eficiente de patrones, permitiendo el procesamiento en tiempo real de bases de conocimiento con miles de reglas y hechos.
+
+\item \textbf{Paradigma de programación múltiple:} Soporta programación basada en reglas, programación orientada a objetos y programación procedural.
+
+\item \textbf{Portabilidad:} Escrito en C, puede ejecutarse en una amplia variedad de plataformas, desde microcontroladores hasta sistemas de alto rendimiento.
+
+\item \textbf{Integración con C/C++:} Ofrece una API que permite embeber CLIPS en aplicaciones más grandes, facilitando su integración con frameworks robóticos como ROS 2.
+
+\end{itemize}
+
+\item \textbf{Ventajas en el contexto robótico:}
+
+\begin{itemize}
+
+\item \textbf{Explicabilidad:} Las decisiones pueden rastrearse mediante la inspección de las reglas activadas y los hechos utilizados.
+
+\item \textbf{Determinismo:} El comportamiento es predecible y verificable formalmente, crucial para aplicaciones críticas.
+
+\item \textbf{Bajo consumo de recursos:} Puede ejecutarse en hardware con recursos limitados, sin necesidad de GPUs.
+
+\end{itemize}
+
+\item \textbf{Limitaciones:}
+
+\begin{itemize}
+
+\item \textbf{Rigidez semántica:} Requiere entradas estructuradas; no puede interpretar directamente lenguaje natural.
+
+\item \textbf{Ausencia de aprendizaje:} No incorpora mecanismos para aprender de la experiencia o adaptarse a situaciones novedosas.
+
+\end{itemize}
+
+\end{itemize}
+
+
+\subsubsection*{ChatGPT (Modelo Propietario)}
+
+\textbf{ChatGPT}, desarrollado por \textbf{OpenAI}, es una familia de modelos de lenguaje grande basados en la arquitectura \textbf{GPT} \textit{(Generative Pre-trained Transformer)} visto en la sección 3.3.2.
+
+\begin{itemize}
+
+\item \textbf{Características principales:}
+
+\begin{itemize}
+
+\item \textbf{Arquitectura:} Transformador con decodificador causal, escalado a cientos de miles de millones de parámetros en sus versiones más avanzadas.
+
+\item \textbf{Acceso mediante API:} Proporciona interfaces de programación que permiten su integración en sistemas robóticos mediante llamadas a servicios web.
+
+\item \textbf{Capacidades conversacionales:} Optimizado para mantener diálogos coherentes, manejar ambigüedades y solicitar aclaraciones.
+
+\end{itemize}
+
+\item \textbf{Ventajas para robótica:}
+
+\begin{itemize}
+
+\item \textbf{Alta calidad de comprensión:} Interpreta comandos complejos y ambiguos con tasas de éxito elevadas.
+
+\item \textbf{Flexibilidad semántica:} Genera planes adaptativos para situaciones novedosas no programadas explícitamente.
+
+\item \textbf{Reducción de latencia:} Investigaciones recientes muestran que la integración directa con ROS 2 puede reducir la latencia de comunicación en un 7.01\% en promedio.
+
+\end{itemize}
+
+\item \textbf{Limitaciones:}
+
+\begin{itemize}
+
+\item \textbf{Dependencia de conectividad:} Requiere acceso a internet para consultar la API, problemático en entornos con conectividad limitada.
+
+\item \textbf{Costos operativos:} El uso de API propietarias implica costos por consulta.
+
+\item \textbf{Privacidad de datos:} El envío de comandos a servidores externos puede plantear problemas de confidencialidad.
+
+\end{itemize}
+
+\end{itemize}
+
+
+\subsubsection*{Qwen2.5-0.5B (Modelo Open-Source)}
+
+
+Qwen2.5 es la última serie de modelos de lenguaje grande desarrollada por Alibaba, con versiones que abarcan desde 0.5 hasta 72 mil millones de parámetros descrita en la sección 3.3.3.
+
+\begin{itemize}
+
+\item \textbf{Características principales:}
+
+\begin{itemize}
+
+\item \textbf{Parámetros:} 0.49 mil millones de parámetros totales (0.36B no-embedding).
+
+\item \textbf{Arquitectura:} Transformador con RoPE (Rotary Positional Embeddings), SwiGLU, RMSNorm y atención QKV con bias.
+
+\item \textbf{Capas:} 24 capas, 14 cabezas de atención para Q y 2 para KV (GQA).
+
+\item \textbf{Longitud de contexto:} Soporta hasta 32,768 tokens.
+
+\item \textbf{Entrenamiento:} Pre-entrenamiento con enfoque en multilingüismo, incluyendo español.
+
+\end{itemize}
+
+\item \textbf{Ventajas para robótica:}
+
+\begin{itemize}
+
+\item \textbf{Ejecución local:} Todo el procesamiento ocurre en el dispositivo, eliminando dependencias de red.
+
+\item \textbf{Bajos requisitos:} Puede ejecutarse en CPUs ARM (como Raspberry Pi) con consumo de memoria inferior a 2 GB tras cuantización.
+
+\item \textbf{Costo cero por consulta:} Al ser código abierto, no hay costos asociados al número de interacciones.
+
+\item \textbf{Personalización:} Posibilidad de fine-tuning con datos específicos del dominio sin dependencia de proveedores externos.
+
+\end{itemize}
+
+\item \textbf{Limitaciones:}
+
+\begin{itemize}
+
+\item \textbf{Capacidad lingüística reducida:} Con solo 0.5B parámetros, su comprensión y generación son inferiores a ChatGPT, especialmente para comandos muy complejos o ambiguos.
+
+\item \textbf{Requiere optimización:} Para alcanzar latencias aceptables en CPU, es necesario aplicar técnicas de cuantización y utilizar motores de inferencia eficientes.
+
+\end{itemize}
+
+\end{itemize}
+
+\subsubsection*{Comparativa y Roles en la Arquitectura Híbrida}
+
+La Tabla \ref{tab:comparativa_tecnologias} resume las principales diferencias entre las tres tecnologías y sus roles en el sistema propuesto.
+
+En la arquitectura del robot Justina, estas tres tecnologías se complementan:
+
+\begin{itemize}
+
+\item \textbf{CLIPS} actúa como núcleo de planificación segura, manejando tareas críticas y bien definidas donde la predictibilidad es esencial.
+
+\item \textbf{Qwen2.5-0.5B} opera como traductor local para comandos rutinarios, proporcionando respuestas rápidas y privadas sin dependencia de la nube.
+
+\item \textbf{ChatGPT} se reserva para situaciones complejas o novedosas donde la flexibilidad semántica de un modelo de gran escala es necesaria, aceptando la latencia adicional en aras de la adaptabilidad.
+
+\end{itemize}
+
+Esta integración sinérgica permite aprovechar las fortalezas de cada tecnología mientras se mitigan sus limitaciones individuales, constituyendo el núcleo de la propuesta híbrida de esta tesis.
+
+\begin{table}[H]
+\centering
+\caption{Comparativa y roles en la arquitectura híbrida}
+\label{tab:comparativa_tecnologias}
+\begin{tabular}{|p{3.2cm}|p{3cm}|p{3.5cm}|p{3.5cm}|}
+\hline
+\textbf{Aspecto} & \textbf{CLIPS} & \textbf{ChatGPT} & \textbf{Qwen2.5-0.5B} \\
+\hline
+Paradigma & Simbólico (reglas) & Subsimbólico (red neuronal) & Subsimbólico (red neuronal) \\
+Ejecución & Local (embebido) & Nube (API) & Local (edge) \\
+Requisitos & CPU, $<10$ MB RAM & GPU en servidor, internet & CPU, $<2$ GB RAM \\
+Determinismo & Completo & Probabilístico & Probabilístico \\
+Explicabilidad & Alta (reglas trazables) & Baja (“caja negra”) & Baja (“caja negra”) \\
+Flexibilidad & Baja (reglas fijas) & Alta (generalización) & Media (dominio restringido) \\
+Costo operativo & Cero & Por token (API) & Cero \\
+Rol en el sistema & Planificación segura, control crítico & Traducción de comandos complejos, planificación dual & Traducción local para tareas rutinarias \\
+\hline
+\end{tabular}
+\end{table}
+
 \section{ChatGPT como Agente de Planificación Autónomo}
 \subsection{Capacidades de Planificación de LLMs vs. Sistemas Basados en Reglas}
 
