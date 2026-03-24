@@ -935,10 +935,18 @@ Rol en el sistema & Planificación segura, control crítico & Traducción de com
 \end{table}
 
 \section{ChatGPT como Agente de Planificación Autónomo}
+
+La irrupción de los modelos de lenguaje grande (LLMs) ha transformado no solo la interacción humano-robot, sino también el propio proceso de planificación de acciones en robótica autónoma. Más allá de su función como traductores de lenguaje natural a representaciones simbólicas, modelos como ChatGPT han demostrado capacidades emergentes para actuar como agentes de planificación autónomos, generando secuencias completas de acciones a partir de objetivos de alto nivel expresados en lenguaje natural \cite{Shi2023}. Esta capacidad abre nuevas posibilidades arquitectónicas, donde los LLMs no solo complementan, sino que pueden competir con los sistemas basados en reglas en la generación de planes, ofreciendo una flexibilidad contextual sin precedentes. Esta sección analiza comparativamente las capacidades de planificación de LLMs y sistemas basados en reglas, describe una arquitectura de planificación dual que integra ambos enfoques, detalla los mecanismos de selección y validación de planes, y finalmente evalúa las ventajas y riesgos de la planificación con LLMs en robótica.
+
 \subsection{Capacidades de Planificación de LLMs vs. Sistemas Basados en Reglas}
 
-Análisis comparativo de los enfoques de planificación, destacando la rigidez predecible de CLIPS frente a la adaptabilidad contextual de los LLMs.
+Los sistemas basados en reglas (RBS) y los modelos de lenguaje grande (LLMs) representan paradigmas fundamentalmente distintos para la generación de planes en robótica. Mientras que los primeros operan mediante razonamiento simbólico explícito sobre una base de reglas predefinidas, los segundos generan planes mediante inferencia probabilística a partir de patrones aprendidos durante su entrenamiento \cite{Russell2020}.
 
 \subsection{Arquitectura de Planificación Dual: CLIPS y ChatGPT como Motores Complementarios}
 \subsection{Mecanismos de Selección y Validación de Planes}
+
+La planificación dual introduce un desafío crítico: cómo seleccionar el plan más adecuado cuando los dos motores generan propuestas potencialmente divergentes. Para abordar este desafío, la arquitectura implementa un módulo de selección y validación que evalúa los planes generados según múltiples criterios y aplica heurísticas de decisión.
+
 \subsection{Ventajas y Riesgos de la Planificación con LLMs en Robótica}
+
+La integración de LLMs como motores de planificación autónomos en sistemas robóticos ofrece ventajas significativas, pero también introduce riesgos que deben gestionarse cuidadosamente.
