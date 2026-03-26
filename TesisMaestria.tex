@@ -5,6 +5,14 @@
     right=3cm,
     top=3cm,
     bottom=3cm]{geometry}
+    
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[LE,RO]{\thepage}
+\fancyhead[RE]{\nouppercase{\leftmark}} % Capítulo sin mayúsculas
+\fancyhead[LO]{\thesection} % Solo número de sección
+\renewcommand{\headrulewidth}{0.4pt}
 
 \usepackage{setspace}
 \usepackage[spanish]{babel}
@@ -37,9 +45,10 @@
 \newcommand\ddfrac[2]{\frac{\displaystyle #1}{\displaystyle #2}}
 \DeclareMathOperator{\atantwo}{atan2}
 
+
 \begin{document}
 %\includepdf{PortadaTesis.pdf}
-\title{Planeación de acciones usando un sistema basado en reglas para robots de servicio doméstico  }
+\title{Planeación   }
 \author{Luis Sergio Cano Olguin}
 \date{Tutor: Dr. Jesús Savage Carmona}
 
