@@ -936,17 +936,268 @@ Rol en el sistema & Planificación segura, control crítico & Traducción de com
 
 \section{ChatGPT como Agente de Planificación Autónomo}
 
-La irrupción de los modelos de lenguaje grande (LLMs) ha transformado no solo la interacción humano-robot, sino también el propio proceso de planificación de acciones en robótica autónoma. Más allá de su función como traductores de lenguaje natural a representaciones simbólicas, modelos como ChatGPT han demostrado capacidades emergentes para actuar como agentes de planificación autónomos, generando secuencias completas de acciones a partir de objetivos de alto nivel expresados en lenguaje natural \cite{Shi2023}. Esta capacidad abre nuevas posibilidades arquitectónicas, donde los LLMs no solo complementan, sino que pueden competir con los sistemas basados en reglas en la generación de planes, ofreciendo una flexibilidad contextual sin precedentes. Esta sección analiza comparativamente las capacidades de planificación de LLMs y sistemas basados en reglas, describe una arquitectura de planificación dual que integra ambos enfoques, detalla los mecanismos de selección y validación de planes, y finalmente evalúa las ventajas y riesgos de la planificación con LLMs en robótica.
+La gran mejora de los modelos de lenguaje grande (LLMs) ha transformado no solo la interacción humano-robot, sino también el propio proceso de planificación de acciones en robótica autónoma. Más allá de su función como traductores de lenguaje natural a representaciones simbólicas, modelos como ChatGPT han demostrado capacidades emergentes para actuar como agentes de planificación autónomos, generando secuencias completas de acciones a partir de objetivos de alto nivel expresados en lenguaje natural \cite{Shi2023}. Esta capacidad abre nuevas posibilidades, donde los LLMs no solo complementan, sino que pueden competir con los sistemas basados en reglas en la generación de planes, ofreciendo una flexibilidad contextual sin precedentes.
 
 \subsection{Capacidades de Planificación de LLMs vs. Sistemas Basados en Reglas}
 
-Los sistemas basados en reglas (RBS) y los modelos de lenguaje grande (LLMs) representan paradigmas fundamentalmente distintos para la generación de planes en robótica. Mientras que los primeros operan mediante razonamiento simbólico explícito sobre una base de reglas predefinidas, los segundos generan planes mediante inferencia probabilística a partir de patrones aprendidos durante su entrenamiento \cite{Russell2020}.
+\begin{table}[H]
+\centering
+\caption{Comparativa entre planificación con sistemas basados en reglas y LLMs}
+\label{tab:comparativa_rbs_llm}
+\begin{tabular}{p{4cm} p{5cm} p{5cm}}
+\hline
+\textbf{Dimensión} & \textbf{Sistemas Basados en Reglas (CLIPS)} & \textbf{Modelos de Lenguaje Grande (ChatGPT)} \\
+\hline
+Fundamento & Razonamiento simbólico, lógica formal & Inferencia probabilística, patrones estadísticos \\
+Generación de planes & Descomposición recursiva basada en métodos y operadores & Generación autorregresiva basada en contexto \\
+Conocimiento & Explicitado en reglas (declarativo) & Implícito en los pesos de la red neuronal \\
+Adaptabilidad & Baja (requiere modificación manual de reglas) & Alta (generaliza a situaciones novedosas) \\
+Explicabilidad & Alta (trazabilidad de reglas activadas) & Baja (opacidad de la red neuronal) \\
+Seguridad & Verificable formalmente & No verificable formalmente \\
+Manejo de ambigüedad & Ninguno (la entrada debe ser estructurada) & Alta (interpretación contextual) \\
+Actualización del conocimiento & Manual (añadir/modificar reglas) & Fine-tuning o prompting contextual \\
+Consistencia & Determinista & Estocástica (puede variar entre ejecuciones) \\
+\hline
+\end{tabular}
+\end{table}
+
+Los sistemas basados en reglas (RBS) y los modelos de lenguaje grande (LLMs) representan paradigmas fundamentalmente distintos para la generación de planes en robótica. Mientras que los primeros operan mediante razonamiento simbólico explícito sobre una base de reglas predefinidas, los segundos generan planes mediante inferencia probabilística a partir de patrones aprendidos durante su entrenamiento \cite{Russell2020}. La Tabla \ref{tab:comparativa_rbs_llm} resume las principales diferencias entre ambos enfoques, que se analizan en detalle a continuación.
+
+\subsubsection*{Sistemas Basados en Reglas: Rigidez Predecible}
+
+Los sistemas basados en reglas, como CLIPS, generan planes mediante un proceso de razonamiento que opera sobre un conjunto de reglas y hechos explícitamente definidos \cite{Giarratano2005}. Este proceso se caracteriza por:
+
+\begin{itemize}
+
+\item \textbf{Determinismo:} Dadas las mismas condiciones iniciales, el sistema produce invariablemente el mismo plan, lo que facilita la validación y certificación del comportamiento \cite{Russell2020}.
+
+\item \textbf{Explicabilidad:} Cada decisión puede rastrearse hasta las reglas que la generaron, permitiendo auditoría y depuración sistemática \cite{Giarratano2005}.
+
+\item \textbf{Completitud del conocimiento:} Requiere que todo el conocimiento necesario para la planificación esté explícitamente codificado en la base de reglas, lo que implica un esfuerzo significativo de ingeniería del conocimiento \cite{Brooks1986}.
+
+\item \textbf{Falta de generalización:} Las reglas solo cubren las situaciones explícitamente contempladas; cualquier desviación puede llevar al fracaso del planificador \cite{Shi2023}.
+
+\end{itemize}
+
+Esta rigidez hace que los RBS sean ideales para dominios bien estructurados con comportamientos predecibles, como entornos industriales o tareas repetitivas, pero limita su aplicabilidad en entornos domésticos dinámicos donde la variabilidad es la norma.
+
+\subsubsection*{Modelos de Lenguaje Grande: Adaptabilidad Contextual}
+
+Los LLMs como ChatGPT generan planes mediante un proceso fundamentalmente diferente: dada una descripción del objetivo y el contexto, el modelo produce autorregresivamente una secuencia de acciones, token por token, basándose en patrones aprendidos durante su entrenamiento en corpus masivos de texto \cite{Vaswani2017}. Este enfoque ofrece características distintivas:
+
+\begin{itemize}
+
+\item \textbf{Generalización emergente:} Los LLMs pueden generar planes para situaciones no vistas durante el entrenamiento, aprovechando su capacidad para componer patrones aprendidos de manera novedosa \cite{Shi2023}.
+
+\item \textbf{Interpretación de lenguaje natural:} Pueden procesar directamente descripciones de tareas en lenguaje natural, sin necesidad de traducción previa a representaciones formales \cite{Zeng2020}.
+
+\item \textbf{Razonamiento contextual:} Incorporan información contextual implícita (como normas sociales, preferencias comunes, o propiedades de objetos) que no está explícitamente programada \cite{citation:1}.
+
+\item \textbf{Flexibilidad ante restricciones:} Pueden adaptar planes dinámicamente cuando se introducen nuevas restricciones o requisitos en el diálogo.
+
+\end{itemize}
+
+Sin embargo, esta flexibilidad conlleva riesgos significativos. La naturaleza probabilística de los LLMs implica que el mismo objetivo puede generar planes diferentes en distintas ejecuciones, y no existe garantía formal de que las acciones generadas sean seguras o factibles en el mundo físico \cite{Shi2023}. Además, la opacidad del razonamiento subyacente dificulta la auditoría y la certificación del comportamiento.
+
+\subsubsection*{Complementariedad Fundamental}
+
+Lejos de ser enfoques opuestos, los RBS y los LLMs presentan una complementariedad fundamental que motiva su integración en arquitecturas híbridas \cite{Savage2024}:
+
+\begin{itemize}
+
+\item Los \textbf{RBS} proporcionan seguridad garantizada, explicabilidad y comportamiento determinista para tareas críticas y bien definidas.
+
+\item Los \textbf{LLMs} aportan flexibilidad semántica, adaptabilidad a situaciones novedosas y capacidad de interacción natural para tareas complejas y mal definidas.
+
+\end{itemize}
+
+Esta complementariedad constituye la base de la arquitectura de planificación dual propuesta en esta tesis, donde ambos motores operan de manera concurrente y un módulo supervisor selecciona o combina sus salidas según el contexto.
 
 \subsection{Arquitectura de Planificación Dual: CLIPS y ChatGPT como Motores Complementarios}
+
+La arquitectura de planificación dual propuesta en esta investigación integra CLIPS y ChatGPT como motores complementarios que operan en paralelo, generando planes concurrentemente y permitiendo la selección dinámica de la mejor estrategia según el contexto \cite{Savage2024}. La Figura 3.1 ilustra la estructura general de esta arquitectura, cuyos componentes principales se describen a continuación.
+
+\subsubsection*{Principios de la Planificación Dual}
+
+La arquitectura de planificación dual se fundamenta en los siguientes principios \cite{Shi2023}:
+
+\begin{enumerate}
+
+\item \textbf{Procesamiento Concurrente:} Ambos motores operan en paralelo, generando planes simultáneamente a partir del mismo objetivo y contexto. Esto permite que la latencia de generación no sea aditiva, sino que el sistema pueda seleccionar el primer plan válido o esperar la finalización de ambos según la estrategia de selección.
+
+\item \textbf{Independencia de Representación:} CLIPS opera con representaciones simbólicas (hechos y reglas), mientras que ChatGPT procesa representaciones textuales. La arquitectura mantiene esta independencia mediante interfaces de traducción que convierten el contexto común al formato requerido por cada motor.
+
+\item \textbf{Estrategias de Selección Configurables:} El módulo de selección puede implementar diferentes estrategias según los requisitos de la aplicación, como priorizar el plan de CLIPS por defecto (seguridad primero), priorizar el plan de ChatGPT para tareas novedosas (flexibilidad primero), o combinar elementos de ambos planes.
+
+\end{enumerate}
+
+\subsubsection*{Generación de Planes con ChatGPT}
+
+Para que ChatGPT genere planes robóticos ejecutables, se requiere un diseño cuidadoso de los prompts que incluyan toda la información contextual necesaria \cite{Shi2023}. La estructura típica del prompt de planificación incluye:
+
+\begin{enumerate}
+
+\item \textbf{Especificación del rol:} Se establece explícitamente que el modelo actúa como planificador robótico:''Eres un planificador de acciones para un robot de servicio doméstico.''
+
+\item \textbf{Descripción del entorno:} Se proporciona información sobre las habitaciones, objetos disponibles, y relaciones espaciales, en formato de texto estructurado.
+
+\item \textbf{Capacidades del robot:} Se enumeran las acciones primitivas que el robot puede ejecutar (navegar, buscar, agarrar, soltar, etc.), junto con sus precondiciones.
+
+\item \textbf{Objetivo en lenguaje natural:} Se presenta la tarea que debe cumplirse, expresada en lenguaje natural.
+
+\item \textbf{Ejemplos few-shot:} Se incluyen ejemplos de objetivos similares y los planes generados, para guiar al modelo hacia el formato deseado \cite{citation:4}.
+
+\item \textbf{Restricciones de formato:} Se especifica que el plan debe producirse como una secuencia numerada de acciones, cada una con parámetros explícitos.
+
+\end{enumerate}
+
+Un ejemplo de prompt estructurado para planificación con ChatGPT es el siguiente:
+
+\begin{verbatim}
+Eres un planificador de acciones para un robot de servicio doméstico.
+
+Entorno:
+- Habitaciones: cocina, sala, comedor, habitacion_principal
+- Objetos: vaso_rojo (en cocina, mesa); libro (en sala, estante)
+- Ubicación actual del robot: entrada
+
+Capacidades del robot:
+- goto(habitacion)
+- find_object(objeto)
+- grasp(objeto)
+- release(objeto)
+- bring_object(objeto, destino)
+
+Objetivo: "Tráeme el vaso rojo que está en la cocina a la sala"
+
+Ejemplo de plan válido:
+1. goto(cocina)
+2. find_object(vaso_rojo)
+3. grasp(vaso_rojo)
+4. goto(sala)
+5. release(vaso_rojo)
+
+Genera un plan para el objetivo indicado. 
+Responde únicamente con la secuencia numerada de acciones.
+\end{verbatim}
+
+Este enfoque de prompting estructurado ha demostrado ser efectivo para generar planes coherentes y ejecutables en entornos robóticos \cite{Shi2023}.
+
 \subsection{Mecanismos de Selección y Validación de Planes}
 
 La planificación dual introduce un desafío crítico: cómo seleccionar el plan más adecuado cuando los dos motores generan propuestas potencialmente divergentes. Para abordar este desafío, la arquitectura implementa un módulo de selección y validación que evalúa los planes generados según múltiples criterios y aplica heurísticas de decisión.
 
+\subsubsection*{Criterios de Evaluación}
+
+Los planes generados por CLIPS y ChatGPT se evalúan según los siguientes criterios \cite{Shi2023, Russell2020}:
+
+\begin{table}[htbp]
+\centering
+\caption{Criterios de evaluación para selección de planes}
+\label{tab:criterios_planes}
+\begin{tabular}{p{3cm} p{7cm} p{4cm}}
+\hline
+\textbf{Criterio} & \textbf{Descripción} & \textbf{Métrica} \\
+\hline
+Seguridad & El plan no debe incluir acciones que puedan causar daño al robot, al entorno o a las personas. & Evaluación de reglas de seguridad (verificación de precondiciones críticas) \\
+Factibilidad & Todas las acciones deben ser ejecutables por el robot dadas sus capacidades físicas. & Verificación de acciones contra capacidades declaradas \\
+Consistencia & La secuencia de acciones debe respetar los efectos de acciones previas. & Verificación de encadenamiento de precondiciones \\
+Eficiencia & El plan debe minimizar el número de acciones o el tiempo estimado de ejecución. & Longitud del plan, estimación de tiempo por acción \\
+Adecuación contextual & El plan debe respetar normas sociales implícitas (ej., no interrumpir actividades humanas). & Evaluación mediante reglas sociales o LLM supervisor \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsubsection*{Estrategias de Selección}
+
+El módulo de selección puede implementar diversas estrategias según los requisitos de la aplicación:
+
+\begin{enumerate}
+
+\item \textbf{Selección por defecto priorizando CLIPS:} El plan de CLIPS se ejecuta por defecto. El plan de ChatGPT solo se utiliza cuando CLIPS no puede generar un plan (base de reglas incompleta) o cuando el plan de CLIPS viola criterios de eficiencia (longitud excesiva). Esta estrategia prioriza la seguridad y previsibilidad.
+
+\item \textbf{Selección por defecto priorizando ChatGPT:} El plan de ChatGPT se ejecuta por defecto para maximizar adaptabilidad. El plan de CLIPS se utiliza como respaldo cuando el plan de ChatGPT no supera la validación de seguridad. Esta estrategia es adecuada para entornos muy dinámicos donde la rigidez de CLIPS sería limitante.
+
+\item \textbf{Selección basada en voto ponderado:} Cada plan recibe una puntuación agregada según los criterios de evaluación. Se selecciona el plan con mayor puntuación. Los pesos de los criterios pueden configurarse según la aplicación.
+
+\item \textbf{Fusión de planes:} En lugar de seleccionar un plan completo, el módulo puede fusionar elementos de ambos planes, por ejemplo, utilizando la secuencia de navegación de CLIPS (más segura) y la estrategia de manipulación de ChatGPT (más adaptativa).
+
+\end{enumerate}
+
+\subsubsection*{Validación de Seguridad Pre-Ejecución}
+
+Independientemente de la estrategia de selección, todos los planes pasan por una fase de validación de seguridad pre-ejecución antes de ser enviados al módulo de ejecución \cite{citation:1}. Esta validación incluye:
+
+\begin{itemize}
+
+\item \textbf{Verificación de precondiciones:} Para cada acción en la secuencia, se verifica que sus precondiciones se cumplan en el estado esperado.
+
+\item \textbf{Detección de acciones inseguras:} Se aplican reglas de seguridad explícitas (ej., no acercarse a áreas restringidas, no manipular objetos frágiles sin verificación) que pueden rechazar acciones específicas.
+
+\item \textbf{Simulación de ejecución:} Se ejecuta una simulación rápida del plan en un modelo simplificado del entorno para detectar conflictos espaciales o temporales.
+
+\item \textbf{Validación de límites físicos:} Se verifican restricciones como alcance del brazo, capacidad de carga, o niveles de batería.
+
+\end{itemize}
+
+En caso de que un plan no supere la validación de seguridad, se recurre al plan alternativo (si está disponible) o se solicita una replanificación con restricciones adicionales.
+
 \subsection{Ventajas y Riesgos de la Planificación con LLMs en Robótica}
 
 La integración de LLMs como motores de planificación autónomos en sistemas robóticos ofrece ventajas significativas, pero también introduce riesgos que deben gestionarse cuidadosamente.
+
+\subsubsection*{Ventajas}
+
+\begin{enumerate}
+
+\item \textbf{Flexibilidad semántica sin precedentes:} Los LLMs pueden interpretar objetivos expresados en lenguaje natural con alta variabilidad léxica y sintáctica, adaptando sus respuestas al contexto \cite{Shi2023}. Un usuario puede decir ''trae lo que está en la mesa de la cocina'' y el modelo inferirá que se refiere al objeto que estaba allí previamente.
+
+\item \textbf{Razonamiento de sentido común:} Incorporan conocimiento del mundo que no está explícitamente programado, como saber que un vaso suele estar en la cocina o que los libros no deben dejarse en el suelo \cite{Zeng2020}.
+
+\item \textbf{Adaptación dinámica a restricciones:} Pueden replanificar en tiempo real cuando se introducen nuevas restricciones (ej.,''pero no pases por la sala porque hay personas comiendo'') sin necesidad de reprogramación \cite{citation:1}.
+
+\item \textbf{Reducción de la ingeniería del conocimiento:} Eliminan la necesidad de codificar explícitamente todas las posibles situaciones y respuestas, reduciendo el esfuerzo de desarrollo y mantenimiento.
+
+\item \textbf{Interacción explicativa:} Pueden generar explicaciones de sus decisiones en lenguaje natural, mejorando la transparencia para usuarios no técnicos \cite{Shi2023}.
+
+\end{enumerate}
+
+\subsubsection*{Riesgos y Desafíos}
+
+\begin{enumerate}
+
+\item \textbf{Falta de garantías de seguridad:} No existe un marco formal para verificar que los planes generados por LLMs sean seguros en todas las circunstancias. Un modelo puede generar acciones aparentemente razonables que, en el contexto físico, resulten peligrosas \cite{Shi2023}.
+
+\item \textbf{Comportamiento no determinista:} La misma entrada puede generar planes diferentes en distintas ejecuciones, dificultando la predicción del comportamiento y la certificación del sistema.
+
+\item \textbf{Alucinaciones (hallucinations):} Los LLMs pueden generar acciones o referencias a objetos inexistentes, con total confianza y plausibilidad superficial \cite{Shi2023}. Por ejemplo, un modelo podría sugerir buscar un objeto en una habitación que no existe en el entorno.
+
+\item \textbf{Dependencia de la calidad del prompt:} La calidad del plan generado es altamente sensible a la formulación del prompt. Pequeñas variaciones pueden llevar a planes radicalmente diferentes.
+
+\item \textbf{Latencia y recursos:} La inferencia con LLMs de gran escala requiere recursos computacionales significativos y puede introducir latencias inaceptables para aplicaciones de tiempo real.
+
+\item \textbf{Privacidad de datos:} El uso de APIs externas implica enviar información contextual potencialmente sensible a servidores de terceros.
+
+\item \textbf{Sesgos y equidad:} Los LLMs pueden heredar sesgos presentes en los datos de entrenamiento, que podrían manifestarse como comportamientos inapropiados en contextos sociales \cite{Shi2023}.
+
+\end{enumerate}
+
+\subsubsection*{Estrategias de Mitigación}
+
+Para gestionar estos riesgos, la arquitectura propuesta implementa múltiples capas de mitigación:
+
+\begin{itemize}
+
+\item \textbf{Validación por reglas de seguridad:} Todos los planes generados por ChatGPT son filtrados por un conjunto de reglas de seguridad en CLIPS que bloquean acciones peligrosas.
+
+\item \textbf{Ejecución supervisada:} Un módulo supervisor monitorea la ejecución y puede interrumpir acciones que se desvíen del comportamiento esperado.
+
+\item \textbf{Simulación previa:} Los planes se simulan en un entorno virtual antes de la ejecución física para detectar problemas potenciales.
+
+\item \textbf{Uso limitado a tareas no críticas:} En la implementación inicial, ChatGPT se utiliza principalmente para tareas donde el fallo no implica riesgos de seguridad significativos.
+
+\item \textbf{Fallback a CLIPS:} En caso de que ChatGPT no genere un plan válido o este no supere la validación, el sistema recurre automáticamente al plan generado por CLIPS.
+
+\end{itemize}
+
+Esta combinación de flexibilidad y control permite aprovechar las ventajas de los LLMs mientras se mantienen los estándares de seguridad requeridos en robótica de servicio.
