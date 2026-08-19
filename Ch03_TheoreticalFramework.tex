@@ -1,8 +1,10 @@
 \chapter{Marco Teórico y Conceptual}
 
-El fundamento teórico del sistema propuesto consiste en una arquitectura de planeación jerárquica. Se introduce el funcionamiento de los modelos de lenguaje grande y se detalla la integración de traductores de lenguaje natural con sistemas basados en reglas, estableciendo las bases tecnológicas para la implementación del sistema híbrido CLIPS-ChatGPT/Qwen y su uso en la arquitectura ViRoot \textit{(Virtual Real Robot)} descrita a continuación (ver Figura \ref{fig:viroot}).
+El fundamento teórico del sistema propuesto consiste en dos arquitectura de planeación. Se introduce el funcionamiento de los modelos de lenguaje grande y se detalla la integración de traductores de lenguaje natural con sistemas basados en reglas, estableciendo las bases tecnológicas para la implementación de los sistemas y su uso en la arquitectura ViRoot \textit{(Virtual Real Robot)} descrita a continuación (ver Figura \ref{fig:viroot}).
 
 \subsection*{Arquitectura del Sistema}
+
+La arquitectura ViRBot proporciona el contexto funcional en el que se integra este trabajo. Incluye módulos de percepción, navegación, manipulación, reconocimiento y síntesis de voz, supervisión y ejecución \ref{fig:viroot}). La tesis no modifica todos estos componentes; su alcance se concentra en la transformación de una orden textual GPSR en un plan aceptado por el ejecutor.
 
 La arquitectura VIRBOT de Justina se organiza en cuatro capas principales:
 
@@ -43,6 +45,8 @@ La arquitectura VIRBOT de Justina se organiza en cuatro capas principales:
 \subsection*{Arquitectura Funcional de ViRbot}
 
 Esta arquitectura organiza los módulos funcionales del robot de manera interconectada, lo que permiten integrar la percepción, comprensión del lenguaje, planeación simbólica y control físico del robot. La Figura \ref{fig:viroot2} muestra la interacción entre los distintos subsistemas del robot Justina.
+
+Debe distinguirse entre el estado interno utilizado durante la generación del plan y el estado confirmado durante la ejecución física. El planificador CLIPS mantiene un estado simbólico predictivo mínimo, por ejemplo la ubicación esperada del robot y el objeto que se espera que sostenga. Este estado se reinicia en cada ciclo de planeación y no constituye, por sí mismo, un modelo continuamente sincronizado con los sensores del robot.
 
 Dentro de la arquitectura se distinguen los cuatro grupos principales: percepción, comprensión e interacción, planificación y supervisión, y control de hardware.
 

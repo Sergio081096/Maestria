@@ -1,56 +1,60 @@
 \chapter{Introducción}
 
-Los robots de servicio doméstico representan un campo de proyección para la inteligencia artificial y la automatización, con aplicaciones que van desde la asistencia a personas mayores hasta la gestión autónoma de entornos residenciales \cite{Murphy2019}. En este contexto, la planificación de acciones, es decir, la capacidad de un robot para descomponer objetivos de alto nivel en secuencias ejecutables, es un desafío  en entornos dinámicos y no estructurados donde interactúan humanos, objetos móviles y tareas imprevistas \cite{Russell2020}.
+Los robots de servicio representan un campo de proyección para la inteligencia artificial y la automatización, con aplicaciones que van desde la asistencia a personas mayores hasta la gestión autónoma de entornos residenciales \cite{Murphy2019}, donde deben interpretar instrucciones expresadas por personas y convertirlas en acciones que puedan ejecutarse mediante módulos de navegación, percepción, manipulación e interacción.\cite{Russell2020}.
 
-Los sistemas basados en reglas, como los implementados en motores de inferencia del tipo CLIPS, han demostrado ser robustos y predecibles en escenarios estructurados, como líneas de producción o laboratorios controlados \cite{Giarratano2005}. Su fortaleza radica en la transparencia del razonamiento simbólico y la capacidad de priorizar acciones críticas, como la evasión de obstáculos o la gestión de emergencias. Sin embargo, su rigidez los hace poco adaptables ante variaciones no previstas en el entorno o ante comandos expresados en lenguaje natural con alto grado de ambigüedad o complejidad \cite{Brooks1986}.
+La transformación de una instrucción en lenguaje natural a un plan robótico presenta dos problemas relacionados. El primero es semántico: identificar correctamente los objetivos, entidades, destinos y relaciones expresados por el usuario. El segundo es simbólico: convertir dicha interpretación en una secuencia de acciones pertenecientes al repertorio real del robot y con parámetros compatibles con el ejecutor.
 
-Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT, han emergido como herramientas capaces de interpretar y generar lenguaje natural, e incluso de actuar como agentes de planificación autónomos \cite{Vaswani2017}. Su flexibilidad contextual permite traducir instrucciones verbales en secuencias de acciones, complementando así la solidez de los sistemas basados en reglas. No obstante, su naturaleza probabilística y la falta de garantías formales de seguridad limitan su uso directo en aplicaciones robóticas donde la integridad física y la predictibilidad son prioritarias \cite{Shi2023}.
+Los sistemas basados en reglas,han demostrado ser robustos y predecibles en escenarios estructurados, como líneas de producción o laboratorios controlados \cite{Giarratano2005}. En particular, CLIPS utiliza hechos y reglas de producción para determinar qué transformaciones deben aplicarse a partir de un estado simbólico. Sin embargo, su rigidez los hace poco adaptables ante variaciones no previstas en el entorno o ante comandos expresados en lenguaje natural con alto grado de ambigüedad o complejidad \cite{Brooks1986}.
 
-Esta tesis propone un \textbf{sistema híbrido de planificación de tareas} que integra un motor de reglas CLIPS con modelos de lenguaje natural del tipo ChatGPT, aprovechando las ventajas de ambos enfoques: la previsibilidad y seguridad de CLIPS, en conjunto con la adaptabilidad y capacidad de comprensión lingüística de los LLMs. El sistema se implemento y valido en el robot de servicio doméstico \textit{Justina}, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, utilizando ROS 2 como marco de integración.
+Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT, han emergido como herramientas capaces de interpretar y generar lenguaje natural, e incluso de actuar como agentes de planificación autónomos \cite{Vaswani2017}. Su flexibilidad contextual permite traducir instrucciones verbales en secuencias de acciones, complementando así la solidez de los sistemas basados en reglas. No obstante, su naturaleza probabilística puede producir formatos inválidos, entidades inexistentes o acciones que no pertenecen a las capacidades del robot. Por lo tanto la falta de garantías formales de seguridad limitan su uso directo en aplicaciones robóticas donde la integridad física y la predictibilidad son prioritarias \cite{Shi2023}.
 
+Esta tesis estudia dos aproximaciones para resolver el problema. La primera es una arquitectura neuro-simbólica en la que un modelo Qwen2.5-7B, ajustado mediante QLoRA, transforma una orden  en objetivos canónicos representados en JSON. Posteriormente, un módulo determinista normaliza y convierte esos objetivos en hechos, que son procesados por reglas de producción en CLIPS para generar el plan compatible con el ejecutor del robot. La segunda aproximación emplea un modelo GPT como planificador generativo directo. En este caso, el modelo recibe la orden, el contexto y el catálogo de acciones, produciendo una respuesta estructurada mediante JSON Schema que es revisada por un validador determinista antes de considerarse ejecutable.
+
+Las dos aproximaciones no se combinan mediante un selector de planes durante la ejecución. Se implementan como arquitecturas independientes y se comparan experimentalmente bajo el mismo conjunto de órdenes, contexto y criterios de evaluación. Esta comparación permite analizar el compromiso entre interpretación semántica, consistencia, trazabilidad, flexibilidad, latencia, recursos computacionales y coste de uso. 
 \section{Contexto y Motivación}
 
-El área de la rebotica orientada al servicio doméstico ha evolucionado significativamente en la última década, impulsada por avances en percepción, planificación y interacción humano-robot \cite{Murphy2019}. Estos sistemas se han diseñado para operar en entornos no estructurados como hogares, hospitales o centros de cuidado, donde deben realizar tareas que van desde la entrega de objetos hasta la asistencia en actividades de la vida diaria. En este contexto, la capacidad de planificar acciones de manera autónoma, segura y adaptativa se convierte en un requisito fundamental.
+El área de la robotica orientada al servicio doméstico ha evolucionado significativamente en la última década, impulsada por avances en percepción, planificación y interacción humano-robot \cite{Murphy2019}. 
 
-La planificación de acciones en robótica ha sido tradicionalmente abordada mediante sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, que ofrecen un marco predecible y verificable para la toma de decisiones \cite{Russell2020}. Sin embargo, la creciente complejidad de los entornos domésticos—caracterizados por la presencia de humanos, objetos dinámicos y situaciones imprevistas—ha expuesto las limitaciones de los enfoques puramente simbólicos. Paralelamente, el reciente surgimiento de modelos de lenguaje grande \textbf{(LLMs)} ha abierto nuevas posibilidades para la interpretación de comandos en lenguaje natural y la generación de planes flexibles, aunque a menudo carentes de garantías formales de seguridad \cite{Shi2023}.
+El robot de servicio Justina, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, integra módulos de percepción, navegación, manipulación e interacción mediante ROS 2. Para ejecutar una orden, el robot necesita una representación intermedia que conecte el lenguaje del usuario con las acciones ofrecidas por dichos módulos.
 
-Esta tesis se desarrolla en el marco del Laboratorio de Bio-Robótica de la UNAM, utilizando como plataforma el robot de servicio Justina, un sistema modular basado en ROS 2 con capacidades avanzadas de navegación, manipulación y percepción. La motivación central del trabajo radica en la necesidad de desarrollar arquitecturas de planificación que combinen lo mejor de ambos mundos: la robustez y transparencia de los sistemas basados en reglas, y la adaptabilidad y capacidad de diálogo de los modelos de lenguaje modernos.
+Estos sistemas se han diseñado para operar en entornos no estructurados como hogares, hospitales o centros de cuidado, donde deben realizar tareas que van desde la entrega de objetos hasta la asistencia en actividades de la vida diaria. En este contexto, la capacidad de planificar acciones de manera autónoma, segura y adaptativa se convierte en un requisito fundamental.
 
-\section{Problemática: Sistemas Basados en Reglas en Entornos Dinámicos}
 
-Los sistemas basados en reglas, implementados en motores de inferencia como CLIPS, se fundamentan en la lógica simbólica y el ciclo \textit{reconocer-actuar}  \cite{Giarratano2005}. Su principal ventaja es la previsibilidad: ante un conjunto de hechos y reglas bien definidos, la respuesta del sistema es determinista y explicable. Esto los hace idóneos para aplicaciones donde la seguridad y la certificación son críticas, como en entornos industriales o médicos.
+La planificación de acciones en robótica ha sido tradicionalmente abordada mediante sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, que ofrecen un marco predecible y verificable para la toma de decisiones \cite{Russell2020}. Sin embargo, una solución exclusivamente simbólica puede generar planes consistentes cuando recibe objetivos correctamente estructurados, pero no resuelve directamente la interpretación del lenguaje natural. En contraste, un modelo de lenguaje puede interpretar distintas formulaciones de una orden, aunque su salida no es necesariamente compatible con las restricciones del robot. La motivación de este trabajo es evaluar si la separación entre interpretación neuronal y expansión simbólica permite obtener planes ejecutables y trazables, y contrastar sus resultados con los de un planificador basado exclusivamente en un modelo GPT.
 
-No obstante, en contextos domésticos dinámicos, estos sistemas enfrentan desafíos significativos \cite{Brooks1986}:
+El interés de la comparación no consiste en demostrar que un paradigma es universalmente superior. Se busca identificar que arquitectura presenta ventajas dependiendo del comando, así como que errores introduce cada etapa y cuáles son los costes asociados con su despliegue local o mediante una API externa.
+
+\section{Planteamiento del problema}
+
+Una orden puede contener variaciones lingüísticas, referencias espaciales, objetos, personas, destinos y varias subtareas relacionadas. Para que el robot pueda ejecutarla, la orden debe convertirse en una secuencia válida de acciones primitivas, para esto el sistema basados en reglas CLIPS, fundamentado en la lógica simbólica y el ciclo \textit{reconocer-actuar}  \cite{Giarratano2005}, usa un conjunto de hechos y reglas bien definidos para producir una respuesta determinista y explicable, lo que lo hace idóneo para aplicaciones donde la seguridad es crítica, como entornos industriales o médicos.
+
+La conversión por parte de CLIPS enfrenta los siguientes problemas:
 
 \begin{enumerate}
-	\item \textbf{Rigidez interpretativa:} No pueden procesar comandos en lenguaje natural complejo o ambiguo, como "trae el libro rojo que está cerca de la ventana".
+	\item \textbf{Rigidez interpretativa} No se pueden procesar comandos en lenguaje natural complejo o ambiguo.
 	\item \textbf{Falta de adaptabilidad:} Las reglas deben ser definidas a priori; cualquier situación no prevista en la base de conocimiento puede llevar al fracaso o a un comportamiento no deseado.
 	\item \textbf{Dificultad para gestionar la incertidumbre:} No manejan bien la información incompleta o cambiante del entorno en tiempo real.
 	\item \textbf{Escalabilidad limitada:} Mantener y extender un conjunto grande de reglas para cubrir todos los escenarios posibles resulta complejo y laborioso.
 \end{enumerate}
 
-Por otro lado, los enfoques puramente basados en aprendizaje automático — especialmente los LLMs—ofrecen flexibilidad y capacidad de generalización, pero introducen riesgos como \cite{Shi2023}:
+Por otro lado, los resultados deben satisfacer al menos las siguientes condiciones \cite{Shi2023}:
 \begin{itemize}
-	\item Comportamientos impredecibles o no verificables.
-	\item Falta de garantías de seguridad en la ejecución física.
-	\item Dependencia de grandes volúmenes de datos y recursos computacionales.
+	\item Las entidades finales deben pertenecer al catálogo o ser tratadas explícitamente como desconocidas.
+	\item Los objetivos deben conservar el significado y el orden causal de la instrucción.
+	\item Las acciones generadas deben pertenecer al repertorio del ejecutor.
+	\item Cada acción debe contener los parámetros requeridos.
+	\item La secuencia debe respetar precondiciones simbólicas básicas, como la ubicación del robot o la posesión de un objeto.
 \end{itemize}
 
-La problemática central, por tanto, es cómo diseñar un sistema de planificación que mantenga la seguridad y explicabilidad de los RBS, pero que sea lo suficientemente flexible para operar en entornos domésticos dinámicos e interactuar de manera natural con humanos.
+Los modelos de lenguaje pueden ampliar la cobertura lingüística, aunque también pueden generar resultados inexistentes o inconsistentes. El problema de investigación se formula, por tanto, de la siguiente manera:
+
+\textbf{¿Qué diferencias de exactitud, consistencia, robustez y coste existen entre una arquitectura neuro-simbólica Qwen–CLIPS y un planificador generativo basado en GPT al convertir órdenes GPSR en planes para un robot de servicio?}
 
 \section{Hipótesis}
 
-La hipótesis central de esta investigación propone la integración sinérgica de un sistema basado en reglas (CLIPS) con un modelo de lenguaje grande (ChatGPT o Qwen) puede superar las limitaciones de cada enfoque por separado, resultando en un sistema híbrido de planificación que es a la vez seguro, explicable, adaptable y capaz de entender lenguaje natural.
+Para la interpretación y planeación de órdenes, una arquitectura neuro-simbólica compuesta por Qwen y CLIPS producirá una mayor proporción de planes estructuralmente válidos, trazables y consistentes que un planificador generativo basado directamente en GPT. Por otra parte, se espera que el planificador GPT directo presente mayor flexibilidad ante formulaciones lingüísticas novedosas, pero con mayor variabilidad, latencia y coste de inferencia mediante API.
 
-Esta complementariedad se articula en tres niveles:
-
-\begin{enumerate}
-	\item \textbf{Nivel de interpretación:} Los LLMs actúan como traductores de lenguaje natural a hechos estructurados, permitiendo que comandos complejos y ambiguos sean convertidos en representaciones simbólicas que CLIPS puede procesar.
-	\item \textbf{Nivel de planificación:} Se implementa una arquitectura de planificación dual, donde CLIPS genera planes predecibles y seguros para tareas conocidas, mientras que los LLMs proponen soluciones flexibles para situaciones novedosas o complejas.
-	\item \textbf{Nivel de validación y selección:} Un mecanismo de supervisión evalúa los planes generados por ambos motores con base en criterios de seguridad, eficiencia y contexto, seleccionando la mejor opción o combinándolas de manera segura.
-\end{enumerate}
-
-Se espera que este sistema híbrido:
+Se espera que los sistemas:
 
 \begin{itemize}
 	\item Mejore la tasa de éxito en la ejecución de tareas en entornos domésticos.
@@ -62,42 +66,32 @@ Se espera que este sistema híbrido:
 	\item Permita una interacción más natural e intuitiva con usuarios no expertos.
 \end{itemize}
 
-La validación de esta hipótesis se realizará mediante experimentos en simulación y con el robot físico Justina, comparando el desempeño del sistema híbrido frente a enfoques puramente basados en reglas o puramente basados en LLMs.
+La hipótesis se evaluará de forma separada para la interpretación de objetivos y para la generación del plan completo. De esta manera será posible determinar si un error proviene del modelo de lenguaje, de la conversión simbólica o de la cobertura de las reglas CLIPS.
 
 \section{Objetivos}
 
+Diseñar, implementar y evaluar una arquitectura neuro-simbólica Qwen–CLIPS para interpretar órdenes y generar planes compatibles con un robot de servicio, comparándola con un planificador generativo basado en GPT con salida estructurada.
+
 \begin{itemize}
-    \item \textbf{Diseño del Sistema Híbrido:}
+    \item \textbf{Objetivos específicos}
     \begin{itemize}
-        \item Definir un conjunto jerárquico de reglas en CLIPS para priorizar acciones críticas.
-        \item Especificar la arquitectura de integración entre CLIPS y modelos de lenguaje natural.
-        \item Diseñar un marco de planificación dual que permita tanto a CLIPS como a ChatGPT generar y ejecutar planes.
-        \item Establecer protocolos de comunicación y validación entre los módulos.
+        \item Definir una representación canónica de objetivos y su correspondencia con las acciones disponibles en el ejecutor.
+        \item Ajustar Qwen2.5-7B mediante QLoRA para convertir órdenes en objetivos canónicos representados en JSON.
+        \item Implementar la normalización, validación y conversión de los objetivos generados por Qwen en hechos.
+        \item Implementar reglas de producción en CLIPS que expandan objetivos de alto nivel en secuencias de acciones compatibles con el ejecutor.
+        \item Diseñar un planificador GPT directo mediante un prompt, un JSON Schema y un validador determinista.
+        \item Construir un conjunto experimental que incluya órdenes conocidas, paráfrasis, composiciones de objetivos, entradas ambiguas y casos fuera del dominio.
+        \item Comparar las arquitecturas en términos de exactitud semántica, validez estructural, robustez, latencia, consumo de recursos, variabilidad y coste.
+        \item Validar en simulación, robot físico y durante la RoboCup 2026 el resultado los planes generados.
     \end{itemize}
-    \item \textbf{Implementación Técnica:}
+    \item \textbf{Contribuciones esperadas}
     \begin{itemize}
-        \item Integrar el motor de reglas CLIPS con ROS (Robot Operating System).
-        \item Desarrollar el módulo de interfaz con APIs de ChatGPT o implementación local de Qwen2.5-0.5B.
-        \item Implementar capacidades de planificación autónoma en ChatGPT mediante prompting estructurado.
-        \item Desarrollar un mecanismo de selección y validación entre planes generados por diferentes motores.
-    \end{itemize}
-    \item \textbf{Capacidades de Interacción Natural:}
-    \begin{itemize}
-        \item Implementar traducción de comandos en lenguaje natural a hechos estructurados de CLIPS.
-        \item Desarrollar mecanismos de diálogo para resolución de ambigüedades.
-        \item Crear protocolos de retroalimentación para aprendizaje incremental.
-    \end{itemize}
-    \item \textbf{Validación Experimental:}
-    \begin{itemize}
-        \item Validar el sistema en escenarios realistas con el robot físico y simulaciones.
-        \item Evaluar el rendimiento mediante métricas comparativas:
-        \begin{itemize}
-            \item Tiempo de ejecución de tareas y tasa de éxito.
-            \item Precisión en interpretación de comandos complejos.
-            \item Robustez ante instrucciones ambiguas o novedosas.
-        \end{itemize}
-        \item Comparar el sistema híbrido vs. abordajes puramente basados en reglas.
-        \item Evaluar la calidad de planes generados por CLIPS vs. ChatGPT en diferentes escenarios.
+        \item Una representación intermedia de objetivos que conecta la interpretación lingüística con la planeación simbólica.
+        \item Un modelo Qwen2.5-7B ajustado mediante QLoRA para traducir órdenes a objetivos canónicos.
+        \item Una integración ROS 2–CLIPS que convierte dichos objetivos en planes compatibles con el ejecutor.
+        \item Un planificador GPT directo restringido mediante prompt, JSON Schema y validación determinista.
+        \item Un protocolo experimental reproducible para comparar planeación neuro-simbólica y planeación generativa.
+        \item Un análisis de errores por etapa que diferencia fallos semánticos, estructurales, simbólicos y de ejecución.
     \end{itemize}
 \end{itemize}
 

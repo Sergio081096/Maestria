@@ -1,8 +1,8 @@
 \chapter{Antecedentes y Estado del Arte}
 
-Se realiza una revisión comprensiva de la evolución histórica de los sistemas basados en reglas en el área de la robótica, analizando aplicaciones tradicionales y limitaciones actuales. También se examinan las características técnicas de CLIPS y se contrastan con enfoques modernos de aprendizaje automático, culminando con el estudio de sistemas híbridos que combinan la predictibilidad de las reglas con la flexibilidad del \textit{(Machine Learning, ML)} para entornos dinámicos.
+Este capítulo presenta los trabajos y tecnologías relacionados con la transformación de instrucciones de lenguaje natural a planes para robots de servicio. La revisión se concentra en cuatro componentes relevantes para la tesis: sistemas de producción, CLIPS, modelos de lenguaje para interpretación y planeación, y arquitecturas neuro-simbólicas. Los métodos de percepción, navegación o control se mencionan únicamente cuando contribuyen directamente a la interfaz entre la orden GPSR y el plan de tareas.
 
-\section{Sistemas Basados en Reglas: Historia y Aplicaciones}
+\section{Sistemas Basados en Reglas}
 
 Los sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, constituyen uno de los paradigmas más antiguos y consolidados en inteligencia artificial \cite{Giarratano2005}. Su origen se remonta a los sistemas expertos de la década de 1970, donde se utilizaban para representar el conocimiento de especialistas humanos en dominios bien delimitados, como el diagnóstico médico o la configuración de sistemas complejos \cite{Russell2020}. En robótica, la adopción de estos sistemas se popularizó en los años 80 y 90, particularmente en entornos industriales estructurados, donde la previsibilidad y seguridad eran prioritarias.
 
@@ -17,11 +17,10 @@ En cuanto a aplicaciones, los sistemas basados en reglas han demostrado su utili
 	En tareas simples como la entrega de objetos, navegación en interiores y asistencia a personas con movilidad reducida. 
 	\item \textbf{Robótica espacial y de exploración:}
 	Sistemas como Remote Agent de la NASA emplearon arquitecturas basadas en reglas para la planificación y ejecución autónoma de experimentos en misiones no tripuladas \cite{Pell1997}.
-	\item \textbf{Sistemas híbridos contemporáneos: }
-	Recientemente, los RBS se han integrado con técnicas de aprendizaje automático para compensar sus limitaciones en entornos dinámicos. Por ejemplo, en \textit{Robotic Pick-and-Place with Natural Language Commands} \cite{Zeng2020} se combina un RBS con un modelo de lenguaje natural para interpretar comandos verbales en tareas de manipulación.
+	
 \end{enumerate}
 
-A pesar de la relevancia de enfoques basados en aprendizaje profundo, los sistemas basados en reglas mantienen su relevancia en aplicaciones donde la explicabilidad, verificabilidad y seguridad son críticas \cite{Shi2023}. Su capacidad para representar conocimiento simbólico de forma transparente los hace ideales para entornos regulados o donde se requiere auditoría de las decisiones del robot.
+Su principal ventaja para esta tesis es que permiten establecer una correspondencia explícita entre un objetivo simbólico y las acciones emitidas para el ejecutor. Sin embargo, la cobertura del sistema está limitada por las reglas y los tipos de hechos definidos previamente.
 
 \section{El Lenguaje CLIPS: Características, Ventajas y Limitaciones}
 
@@ -29,53 +28,28 @@ CLIPS es un lenguaje de programación basado en reglas, diseñado específicamen
 
 \subsection{Características Fundamentales de CLIPS}
 
-CLIPS se fundamenta en el paradigma de los sistemas de producción, operando mediante su ciclo de inferencia que permite razonar sobre una base de hechos utilizando reglas del tipo if-then \cite{Giarratano2005}. Entre sus características más distintivas se encuentran:
+CLIPS es un entorno para el desarrollo de sistemas basados en conocimiento que ofrece hechos, plantillas, reglas de producción, funciones y un motor de inferencia que permite razonar sobre una base de hechos utilizando reglas del tipo if-then \cite{Giarratano2005}. 
+
+En el contexto de esta tesis, las propiedades relevantes de CLIPS son:
+
 \begin{enumerate}
 \item \textbf{Encadenamiento hacia adelante \textit{(forward chaining)}:} CLIPS utiliza predominantemente encadenamiento hacia adelante, lo que significa que, partiendo de un conjunto de hechos iniciales, el motor de inferencia aplica reglas para derivar nuevos hechos de manera iterativa \cite{NASA_CLIPS}. Este enfoque es especialmente adecuado para aplicaciones en tiempo real donde los cambios en el entorno deben reflejarse inmediatamente en la base de conocimiento \cite{Murphy2019}.
 
-\item \textbf{Algoritmo RETE para emparejamiento de patrones:} CLIPS implementa una versión optimizada del algoritmo RETE, que permite un emparejamiento eficiente de patrones entre reglas y hechos, incluso cuando la base de conocimiento contiene miles de elementos \cite{Giarratano2005}. Esta característica es crítica en robótica, donde la velocidad de respuesta es determinante \cite{Brooks1986}.
-
 \item \textbf{Representación del conocimiento multifacética:} Además de reglas, CLIPS permite representar conocimiento mediante hechos ordenados y plantillas \textit{(deftemplate)}, así como mediante funciones definidas por el usuario en C \cite{NASA_CLIPS}. Esto facilita la integración con sistemas de percepción y control de bajo nivel \cite{Savage2024}.
 
-\item \textbf{Portabilidad y código abierto:} Escrito en C, CLIPS puede ejecutarse en prácticamente cualquier plataforma, desde microcontroladores hasta sistemas de alto rendimiento \cite{Giarratano2005}. Su naturaleza open source ha permitido su adaptación en múltiples contextos robóticos, como el control de robots de exploración y sistemas de inspección \cite{NASA_CLIPS}.
+\item \textbf{Trazabilidad de las reglas activadas:} El comportamiento es reproducible cuando se mantienen constantes los hechos, las reglas y la estrategia de resolución de conflictos.
+
+\item \textbf{Portabilidad y código abierto:} Escrito en C, CLIPS puede ejecutarse en prácticamente cualquier plataforma debido a su bajo costo, desde microcontroladores hasta sistemas de alto rendimiento \cite{Giarratano2005}. Su naturaleza open source ha permitido su adaptación en múltiples contextos robóticos, como el control de robots de exploración y sistemas de inspección \cite{NASA_CLIPS}.
 
 \item \textbf{Integración con otros lenguajes:} CLIPS ofrece una API en C y una librería en python, lo que le permite ser empleado en aplicaciones más grandes, posibilitado su integración con frameworks robóticos como ROS y entornos de simulación \cite{Murphy2019}.
 \end{enumerate}
 
+Estas propiedades no implican por sí mismas seguridad garantizada ni verificación formal. Una base CLIPS puede contener reglas incompletas o contradictorias, y su comportamiento depende de la cobertura del conocimiento y de la resolución de conflictos. En consecuencia, esta tesis utiliza CLIPS como mecanismo explícito y trazable de expansión de objetivos, no como prueba formal de seguridad.
 
-\subsection{Ventajas de CLIPS en Robótica}
-
-La adopción de CLIPS en robótica de servicio y sistemas autónomos se justifica por varias ventajas clave:
-\begin{itemize}
-\item \textbf{Explicabilidad y transparencia:} Las decisiones tomadas por un sistema CLIPS pueden ser rastreadas y explicadas mediante la inspección de las reglas activadas y los hechos utilizados \cite{Giarratano2005}. Esto es fundamental en aplicaciones donde la seguridad y la auditoría son prioritarias, como en robótica médica o espacial \cite{Shi2023}.
-
-\item \textbf{Previsibilidad del comportamiento:} Dado que el conjunto de reglas es definido explícitamente, el comportamiento del sistema es determinista y verificable formalmente \cite{Russell2020}. Esta característica contrasta con los enfoques de deep learning, donde las decisiones pueden ser opacas y difíciles de validar \cite{Shi2023}.
-
-\item \textbf{Bajo consumo de recursos computacionales:} CLIPS puede ejecutarse en hardware con capacidades limitadas, como robots móviles embarcados, sin necesidad de GPUs o grandes cantidades de memoria \cite{Murphy2019}. Esto lo hace adecuado para plataformas robóticas con restricciones energéticas \cite{Savage2024}.
-
-\item \textbf{Facilidad de mantenimiento y actualización:} La base de conocimiento puede ser modificada o extendida sin necesidad de recompilar el sistema completo, lo que facilita la adaptación a nuevos entornos o requisitos \cite{Giarratano2005}.
-\end{itemize}
+CLIPS tampoco interpreta directamente lenguaje natural ni aprende reglas a partir de los ejemplos empleados en esta investigación. Para recibir una orden requiere una etapa externa que produzca objetivos estructurados. Además, la integración con ROS 2 no es una capacidad intrínseca de CLIPS, sino una interfaz implementada específicamente para comunicar el motor de reglas con los nodos del robot.
 
 
-\subsection{Limitaciones de CLIPS en Entornos Dinámicos}
-
-A pesar de sus fortalezas, CLIPS presenta limitaciones significativas cuando se aplica en entornos domésticos dinámicos y no estructurados:
-\begin{enumerate}
-\item \textbf{Rigidez semántica:} CLIPS no puede interpretar directamente comandos en lenguaje natural complejo o ambiguo; requiere que la entrada sea previamente estructurada en hechos formales \cite{Zeng2020}. Esto limita su capacidad para interactuar con usuarios no expertos de manera intuitiva \cite{Shi2023}.
-
-\item \textbf{Falta de aprendizaje automático:} CLIPS es un sistema simbólico puro; no posee mecanismos intrínsecos para aprender de la experiencia o adaptar sus reglas automáticamente ante situaciones novedosas \cite{Russell2020}. Cualquier modificación debe ser realizada manualmente por un programador.
-
-\item \textbf{Escalabilidad del conocimiento:} Mantener una base de reglas que cubra todas las posibles situaciones en un hogar resulta complejo y propenso a inconsistencias \cite{Brooks1986}. A medida que crece el número de reglas, la gestión y depuración se vuelven más difíciles \cite{Giarratano2005}.
-
-\item \textbf{Manejo limitado de la incertidumbre:} CLIPS no incorpora mecanismos nativos para representar información incierta o probabilística, lo que dificulta su uso en tareas de percepción donde los sensores proporcionan datos ruidosos \cite{Murphy2019}.
-
-\item \textbf{Integración compleja con subsistemas modernos:} Aunque existen iniciativas como el \textit{*ROS 2 CLIPS-Executive*} \cite{Savage2024}, la integración de CLIPS con pipelines de percepción basados en aprendizaje profundo requiere desarrollos ad hoc que no siempre son triviales \cite{Zeng2020}.
-
-Estas limitaciones han motivado la exploración de arquitecturas híbridas que combinen la robustez y transparencia de CLIPS con la flexibilidad y capacidad de adaptación de los modelos de lenguaje grande, como se discutirá en secciones posteriores de esta tesis \cite{Shi2023}.
-\end{enumerate}
-
-
-\section{Enfoques Modernos: Aprendizaje Automático (ML) y Redes Neuronales en Robótica}
+\section{Modelos de lenguaje para interpretación de instrucciones robóticas}
 
 El desarrollo del aprendizaje automático, y en particular del aprendizaje profundo, ha transformado radicalmente la robótica contemporánea, habilitando capacidades que eran difíciles de lograr con enfoques puramente simbólicos o geométricos \cite{Cheng2025}. A diferencia de los sistemas basados en reglas, que requieren la especificación explícita de todo el conocimiento del dominio, los enfoques de ML permiten a los robots aprender directamente de los datos, extrayendo patrones complejos y adaptándose a entornos variables sin necesidad de programación explícita  \cite{Russell2020}.
 
@@ -89,115 +63,97 @@ El desarrollo del aprendizaje automático, y en particular del aprendizaje profu
 
 \textbf{Modelos de Lenguaje Grande (LLMs) en Robótica:} La irrupción de modelos transformadores, como los descritos por  \cite{Vaswani2017}, han dado lugar a los Large Language Models (LLMs), capaces de procesar y generar lenguaje natural con una fluidez sin precedentes. En robótica, estos modelos se utilizan para interpretar comandos complejos, traducir lenguaje natural a representaciones simbólicas, e incluso generar planes completos a partir de descripciones de alto nivel \cite{Shi2023}. Su capacidad para captar matices semánticos y contextuales los hace especialmente valiosos para la interacción humano-robot en entornos domésticos.
 
-\subsection{Aplicaciones Específicas en Robótica de Servicio}
+\subsection{Familia de modelos Qwen}
 
-\begin{itemize}
-\item \textbf{Percepción y Reconocimiento:}  La integración de CNNs en pipelines de percepción permite a los robots identificar objetos, personas y gestos con alta precisión. Sistemas como YOLO y FastSAM (Segment Anything Model) se utilizan para segmentación en tiempo real y localización de objetos de interés \cite{Raj2025}.
+Qwen es una familia de modelos de lenguaje desarrollada por el equipo Qwen de Alibaba Cloud. La familia incluye modelos de distintos tamaños y variantes destinadas a tareas generales o al seguimiento de instrucciones \cite{alibabacloudqwen}. Estos modelos están basados en Transformers y pueden utilizarse para tareas como generación de texto, respuesta a preguntas, extracción de información y producción de contenido estructurado.
 
-\item \textbf{Navegación Autónoma:} Los enfoques basados en aprendizaje profundo han demostrado superioridad frente a métodos geométricos tradicionales en entornos desconocidos, utilizando entradas como mapas locales de obstáculos (LOM) para generar comandos de velocidad directamente \cite{Sadek2024}. La combinación de SLAM visual con redes neuronales permite una localización robusta incluso en escenarios dinámicos \cite{Cheng2025}.
+Qwen2.5 es una generación de esta familia que incluye modelos con diferentes números de parámetros. Para esta investigación se seleccionó `Qwen/Qwen2.5-7B`, un modelo de aproximadamente siete mil millones de parámetros. 
 
-\item \textbf{Manipulación y Control:} En robótica de manipulación, las redes neuronales se emplean para estimar propiedades físicas de objetos (rigidez, forma) a partir de señales propioceptivas, permitiendo agarres adaptativos y seguros \cite{Bernabei2025}. 
+En la arquitectura propuesta, Qwen2.5-7B funciona como intérprete semántico y no como generador del plan final. El modelo recibe una orden y produce una secuencia de objetivos canónicos representada en JSON. Esta secuencia identifica tipos de objetivo, entidades, ubicaciones y relaciones expresadas en la instrucción. Posteriormente, un módulo determinista normaliza y valida la respuesta antes de convertirla en hechos para CLIPS.
 
-\item \textbf{Planificación y Toma de Decisiones:} Los algoritmos de planificación de rutas y decisiones en vehículos autónomos combinan enfoques basados en conocimiento (reglas, teoría de juegos) con métodos basados en datos (imitación, RL) para lograr sistemas robustos y adaptativos \cite{HybridPlanning2024}.
+La selección de un modelo de siete mil millones de parámetros busca un compromiso entre capacidad lingüística y recursos computacionales. Además, su disponibilidad para ejecución en infraestructura controlada permite estudiar una alternativa local frente al consumo de un servicio externo. Estas ventajas no eliminan la necesidad de medir memoria, latencia y consumo computacional. Los detalles del despliegue, el conjunto de entrenamiento y los resultados pertenecen a los capítulos de implementación y evaluación.
 
-\end{itemize}
+\subsection{Modelos GPT}
 
-\subsection{Limitaciones de los Enfoques Puramente Basados en ML}
+Los modelos GPT constituyen otra familia de modelos generativos basados en Transformers. En esta tesis se accede al modelo seleccionado mediante la API de OpenAI, en lugar de desplegar sus parámetros en la infraestructura local. La API recibe las instrucciones y el contexto de la tarea y devuelve la respuesta generada por el modelo. El capítulo de implementación la versión utilizada, porque la denominación general “ChatGPT” no identifica de manera reproducible un modelo de API \cite{openaidocs2026}.
 
-A pesar de sus ventajas, los enfoques puramente basados en ML presentan limitaciones significativas:
+En la arquitectura experimental GPT directo, el modelo recibe la orden, el catálogo de entidades, el repertorio de acciones, las restricciones del dominio y ejemplos de respuesta. A diferencia de Qwen en la arquitectura neuro-simbólica, este modelo genera tanto la representación de los objetivos como la secuencia propuesta de acciones. Por ello, constituye un planificador generativo independiente y no un módulo interno de la cadena Qwen–CLIPS.
+
+La respuesta se solicita mediante una salida estructurada definida con JSON Schema. La documentación de la API denomina *Structured Outputs* al mecanismo mediante el cual el modelo debe ajustar su respuesta al esquema proporcionado \cite{openaidocs2026}. Esta restricción permite comprobar la estructura de la respuesta, pero no demuestra que las entidades existan, que los parámetros sean apropiados ni que el plan sea físicamente seguro. Estas propiedades se comprueban mediante un validador determinista separado.
+
+El uso de una API externa introduce variables que deben incluirse en la evaluación, como latencia de comunicación, disponibilidad del servicio, tokens de entrada y salida, coste monetario y posibles cambios entre versiones del modelo. En consecuencia, las pruebas deben fijar y documentar el modelo, los parámetros de generación y el prompt.
+
+\subsection{Interpretación semántica y generación de planes robóticos}
+
+Para esta tesis conviene distinguir dos funciones:
+
+\textbf{Interpretación semántica:} Transformación de una orden en una representación intermedia de objetivos, entidades y relaciones.
+
+\textbf{Planeación generativa:} Producción directa de una secuencia de acciones a partir de la orden, el contexto y las capacidades declaradas del robot.
+
+La primera función se asigna a Qwen en la arquitectura neuro-simbólica. La segunda se estudia mediante un modelo GPT como condición experimental independiente. Esta distinción permite comparar el efecto de conservar una etapa simbólica explícita frente a delegar al modelo tanto la interpretación como la composición del plan.
+
+La interpretación semántica puede evaluarse comparando la secuencia de objetivos producida por el modelo con una anotación de referencia. La planeación requiere criterios adicionales: pertenencia de las acciones al repertorio del robot, validez de parámetros, conservación de dependencias, cumplimiento de precondiciones y compatibilidad con el ejecutor. Evaluar ambas etapas de forma separada permite localizar el origen de los errores.
+
+\subsection{Limitaciones de los modelos de lenguaje en robótica}
+
+
+El uso de un modelo de lenguaje introduce riesgos específicos: generación de entidades o acciones inexistentes, incumplimiento del formato, variabilidad entre ejecuciones, sensibilidad al *prompt* y costes de inferencia. Asimismo, una instrucción ambigua puede dar lugar a una interpretación plausible pero diferente de la intención del usuario.
+
+Estas limitaciones son especialmente relevantes cuando la salida se utiliza para controlar un sistema físico. Por ello, una respuesta lingüísticamente coherente no debe considerarse automáticamente un plan ejecutable. En esta investigación se separan la generación, la validación estructural y la validación semántica; los módulos de ejecución del robot conservan la responsabilidad sobre restricciones físicas y condiciones observadas durante la tarea.
+
+
+\subsection{Adaptación eficiente de modelos: LoRA y QLoRA}
+
+El ajuste completo de un modelo de lenguaje requiere actualizar todos sus parámetros y mantener estados adicionales durante el entrenamiento. Los métodos de adaptación eficiente en parámetros permiten reducir este coste al entrenar únicamente un subconjunto reducido de parámetros, manteniendo congelada gran parte del modelo preentrenado \cite{houlsby2019parameter,hu2022lora}. LoRA (\textit{Low-Rank Adaptation}) introduce matrices entrenables de bajo rango en determinadas capas del modelo, manteniendo congelados los pesos originales \cite{hu2022lora}, mientras que QLoRA combina estos adaptadores con la cuantización del modelo base para reducir significativamente el uso de memoria durante el ajuste fino \cite{dettmers2023qlora}.
+
+
+En esta investigación se utiliza QLoRA para especializar Qwen2.5-7B en la conversión de órdenes a objetivos canónicos. Los detalles del conjunto de datos, cuantización, hiperparámetros y plataforma pertenecen al capítulo de implementación; esta sección debe limitarse a explicar el fundamento y justificar la elección del método.
+
+\subsection*{Salidas estructuradas y validación}
+
+Una estrategia para integrar modelos de lenguaje con software convencional consiste en restringir la salida a una estructura legible por máquina. JSON permite representar objetivos, parámetros y acciones, mientras que JSON Schema permite comprobar tipos, campos obligatorios, enumeraciones y restricciones estructurales.
+
+No obstante, una respuesta conforme al esquema puede seguir siendo semánticamente incorrecta. Por ejemplo, puede incluir una ubicación que no pertenece al mapa o aplicar una acción válida al tipo de entidad equivocado. En consecuencia, la validación debe separar al menos tres niveles:
+
 
 \begin{enumerate}
-
-\item \textbf{Falta de garantías de seguridad:} Las redes neuronales pueden producir comportamientos impredecibles ante entradas fuera de la distribución de entrenamiento, lo que es crítico en aplicaciones donde la seguridad física es prioritaria \cite{Shi2023}.
-
-\item \textbf{Opacidad y falta de explicabilidad:} La naturaleza de \textit{"caja negra"} de las redes profundas dificulta la interpretación de sus decisiones, limitando su adopción en entornos regulados donde se requiere auditoría \cite{Russell2020}.
-
-\item \textbf{Dependencia de datos:} Los modelos de ML requieren grandes volúmenes de datos etiquetados o experiencias de interacción, cuyo costo de adquisición en robótica suele ser complejo \cite{Cheng2025}.
-
-\item \textbf{Dificultad para incorporar conocimiento previo:} A diferencia de los sistemas basados en reglas, las redes neuronales no pueden aprovechar fácilmente el conocimiento simbólico existente sobre el dominio \cite{Brooks1986}.
-
+\item Sintaxis JSON.
+\item Conformidad con el esquema.
+\item Validez semántica respecto a catálogos, acciones y precondiciones.
 \end{enumerate}
 
-Estas limitaciones han motivado el desarrollo de arquitecturas híbridas que combinan lo mejor de ambos paradigmas.
+Esta separación es aplicable tanto a los objetivos producidos por Qwen como al plan generado directamente por GPT.
 
-\section{Sistemas Híbridos: Combinando la Predictibilidad de las Reglas con la Flexibilidad del ML}
+```latex
+\subsection{Arquitecturas neuro-simbólicas}
 
-Los sistemas híbridos en robótica representan una tercera vía que busca integrar sinérgicamente enfoques simbólicos (basados en reglas) y subsimbólicos (basados en aprendizaje), aprovechando las fortalezas de cada paradigma mientras se compensan sus debilidades respectivas \cite{Cheng2025}.
+Las arquitecturas neuro-simbólicas buscan combinar las capacidades de aprendizaje y generalización de los modelos neuronales con mecanismos explícitos de representación de conocimiento y razonamiento simbólico. Mientras que los modelos neuronales son especialmente adecuados para procesar información no estructurada y aprender representaciones a partir de datos, los sistemas simbólicos permiten expresar conocimiento mediante estructuras discretas, reglas y relaciones que pueden ser utilizadas durante un proceso de inferencia \cite{garcez2015neural,besold2017neural}. El objetivo de este enfoque es aprovechar las fortalezas de ambos paradigmas en lugar de utilizar cada uno de manera aislada.
 
-\subsection{Definición y Fundamentos de los Sistemas Híbridos}
+La integración entre ambos componentes puede realizarse de diferentes maneras. Un modelo neuronal puede, por ejemplo, transformar una entrada no estructurada en una representación simbólica que posteriormente es procesada por un sistema de razonamiento. En la dirección opuesta, el conocimiento simbólico puede utilizarse para imponer restricciones, validar resultados o proporcionar información adicional durante el aprendizaje o la inferencia del modelo neuronal \cite{besold2017neural}. Por tanto, una arquitectura neuro-simbólica no implica necesariamente que el aprendizaje neuronal y el razonamiento simbólico se realicen dentro de un único modelo; también pueden implementarse como componentes especializados conectados mediante representaciones intermedias.
 
-Un sistema híbrido de planificación y control esta definido como aquella arquitectura que integra explícitamente componentes basados en reglas (deterministas, explicables, verificables) con componentes basados en aprendizaje (adaptativos, flexibles, basados en datos) \cite{Sadek2024}. El objetivo no es sustituir un enfoque por otro, sino establecer mecanismos de coordinación que permitan a cada módulo operar en el ámbito donde es más competente.
+Esta separación resulta particularmente útil cuando la entrada del sistema se encuentra expresada en lenguaje natural, pero la ejecución posterior requiere representaciones estructuradas y operaciones sujetas a reglas explícitas. En este tipo de arquitecturas, el modelo neuronal puede encargarse de interpretar la variabilidad lingüística y transformarla en una representación formal o canónica, mientras que un componente simbólico utiliza dicha representación para realizar razonamiento o planificación. Un esquema similar puede observarse en LLM+P, donde un modelo de lenguaje convierte la descripción de un problema de planificación expresado en lenguaje natural a PDDL y posteriormente delega la generación del plan a un planificador clásico \cite{liu2023llmp}.
 
-La motivación fundamental de los sistemas híbridos radica en la complementariedad de ambos paradigmas \cite{HybridPlanning2024}:
+La arquitectura principal propuesta en esta tesis sigue una estrategia de acoplamiento secuencial entre ambos paradigmas. En la primera etapa, un modelo de la familia Qwen2.5 \cite{yang2024qwen25}, adaptado al dominio de tareas de servicio del robot, recibe una instrucción expresada en lenguaje natural y la transforma en una representación canónica de los objetivos solicitados. Esta etapa permite abstraer variaciones lingüísticas como diferentes estructuras gramaticales, sinónimos o formas alternativas de expresar una misma intención, produciendo una representación estructurada que puede ser consumida por el sistema de planificación.
 
-\begin{itemize}
-\item Los sistemas basados en reglas aportan predictibilidad, seguridad, explicabilidad y la capacidad de incorporar conocimiento experto explícito.
+En la segunda etapa, los objetivos obtenidos son enviados a CLIPS. A diferencia del modelo neuronal, CLIPS no interpreta directamente la instrucción original en lenguaje natural. Su función consiste en trabajar sobre los símbolos previamente obtenidos, incorporar los objetivos al estado de conocimiento y aplicar las reglas definidas para descomponerlos y expandirlos en las acciones necesarias para su ejecución. De esta manera, la interpretación lingüística y la expansión simbólica del plan permanecen como responsabilidades diferenciadas dentro de la arquitectura.
 
-\item Los enfoques basados en ML aportan adaptabilidad, capacidad de generalización a situaciones novedosas, y la habilidad de procesar entradas complejas y ruidosas (como imágenes o lenguaje natural).
-\end{itemize}
+Esta división permite que el modelo neuronal se concentre en el problema de correspondencia entre lenguaje natural y representaciones canónicas, mientras que el conocimiento sobre la estructura de las tareas, sus relaciones y su descomposición se mantiene explícitamente en la base de reglas de CLIPS. En consecuencia, una modificación en las reglas de planificación no requiere necesariamente modificar el modelo de lenguaje y, de forma análoga, las mejoras realizadas sobre el componente de interpretación pueden introducirse sin sustituir el mecanismo simbólico de planificación.
 
-\subsection{Tipologías de Integración Híbrida}
-
-En la literatura se identifican varios patrones arquitectónicos para la integración híbrida \cite{HybridPlanning2024}:
-\begin{enumerate}
-
-\item \textbf{Arquitecturas de Dominio de Reglas con Complemento ML (Rule First + ML):} En este enfoque, el sistema basado en reglas constituye el núcleo principal de toma de decisiones, y los componentes de ML se utilizan para extender sus capacidades en áreas específicas. Por ejemplo, un sistema CLIPS puede manejar la lógica de alto nivel de una tarea, mientras que una CNN se encarga de la detección de objetos necesaria para instanciar los hechos.
-
-\item \textbf{Arquitecturas de Dominio ML con Restricciones de Reglas (Model First + Rules):} Aquí, un modelo de ML (como una política de RL o un LLM) genera las acciones principales, pero sus salidas son validadas y, si es necesario, corregidas por un conjunto de reglas de seguridad que actúan como \textit{"caja de seguridad"} \cite{Shi2023}. Esto es común en navegación autónoma, donde el planificador basado en aprendizaje puede sugerir trayectorias, pero un módulo de reglas garantiza que se eviten obstáculos y se respeten límites de velocidad.
-
-\item \textbf{Arquitecturas de Fusión o Scheduling Paralelo:} En este esquema, tanto el sistema basado en reglas como el modelo de ML generan acciones concurrentemente, y un módulo supervisor (scheduler) decide qué acción ejecutar basándose en el contexto, la confianza de cada módulo o criterios predefinidos \cite{Sadek2024}. Este enfoque permite aprovechar la redundancia y seleccionar la mejor estrategia para cada situación.
-
-\item \textbf{Arquitecturas de Aprendizaje para Adaptación de Reglas:} En sistemas más avanzados, los componentes de ML se utilizan para adaptar o ajustar dinámicamente los parámetros del sistema basado en reglas. Por ejemplo, un meta-aprendizaje basado en Soft Actor-Critic (SAC) puede ajustar en línea los factores de escala de un controlador PID difuso, mejorando el rendimiento sin perder la estabilidad del lazo determinista de alto frecuencia \cite{Zhang2025}.
-
-\end{enumerate}
-
-\subsection{Ejemplos de Sistemas Híbridos en Robótica}
-
-\begin{itemize}
-
-\item \textbf{Navegación Híbrida:} La tesis de \cite{Sadek2024}  propone agentes autónomos que combinan técnicas geométricas tradicionales (modelado explícito del entorno) con políticas aprendidas mediante redes neuronales, demostrando que los enfoques híbridos pueden operar robustamente tanto en simulación como en entornos físicos reales.
-
-\item \textbf{Análisis Semántico para Interacción Humano-Robot:} Se han desarrollado enfoques híbridos de análisis semántico que combinan técnicas basadas en reglas con aprendizaje automático para interpretar comandos de lenguaje natural en asistentes robóticos, logrando una comprensión más robusta y contextual \cite{HRI2024}.
-
-\item \textbf{Control de Robots Industriales:} La combinación de controladores PID difusos (basados en 49 reglas) con meta-optimización mediante aprendizaje por refuerzo (SAC) ha demostrado reducciones significativas en error de seguimiento $(46-52\%)$ y consumo energético $(28-30\%)$ en manipuladores industriales, manteniendo la estabilidad y predictibilidad del lazo de control de alta frecuencia \cite{Zhang2025}.
-
-\item \textbf{Planificación Híbrida (Hybrid Planning):} El paradigma de Hybrid Planning integra explícitamente sistemas de reglas (árboles de tareas, máquinas de estado finito) con módulos de predicción basados en modelos (MPC, LLMs) para lograr comportamientos robustos en entornos complejos cite{HybridPlanning2024}. Este enfoque se aplica en robótica de almacenes, interacción humano-robot y vehículos autónomos.
-
-\item \textbf{Modelado Físico con Aprendizaje:} En robótica de robots blandos y paralelos, se están explorando enfoques que combinan modelos físicos con aprendizaje automático (hybrid learning physics modeling) para mejorar la precisión del modelado cinemático y dinámico, aprovechando el conocimiento previo de la estructura del sistema mientras se aprenden compensaciones de datos \cite{Bernabei2025}.
-
-\end{itemize}
-
-\subsection{Ventajas y Desafíos de los Sistemas Híbridos}
-
-\subsubsection{Ventajas:} 
-\cite{Sadek2024, Shi2023}
-\begin{itemize}
-
-\item \textbf{Robustez mejorada:} Al combinar múltiples fuentes de conocimiento, el sistema puede fallar de manera controlada y recurrir a estrategias alternativas.
-
-\item \textbf{Seguridad preservada:} Las reglas pueden actuar como cortafuegos que previenen comportamientos inseguros generados por modelos de ML.
-
-\item \textbf{Explicabilidad selectiva:} Las decisiones críticas pueden ser explicadas mediante las reglas que las generaron, mientras que las decisiones rutinarias pueden delegarse a modelos opacos.
-
-\item \textbf{Adaptabilidad sin sacrificar estabilidad:} Los componentes de ML permiten adaptación a contextos cambiantes, mientras que las reglas mantienen un comportamiento base estable y verificado.
-
-\end{itemize}
+En esta tesis, por tanto, la integración neuro-simbólica se describe como una composición secuencial: Qwen transforma el lenguaje natural en objetivos canónicos y CLIPS expande dichos objetivos mediante reglas de producción. Los componentes no actúan como dos planificadores concurrentes ni se realiza una fusión automática de planes generados independientemente. El denominado planificador GPT directo se implementa como una arquitectura alternativa con fines de comparación experimental y no como un componente adicional de la cadena neuro-simbólica Qwen--CLIPS.
+```
 
 
-\subsubsection*{Desafíos:}
-\cite{Cheng2025}
-\begin{itemize}
-
-\item \textbf{Complejidad de integración:} La coordinación entre módulos heterogéneos requiere diseños arquitectónicos cuidadosos y protocolos de comunicación eficientes.
-
-\item \textbf{Resolución de conflictos:} Es necesario definir mecanismos claros para cuando las recomendaciones de reglas y modelos entren en conflicto.
-
-\item \textbf{Validación y verificación:} Los sistemas híbridos heredan la dificultad de verificar componentes de ML, aunque la presencia de reglas puede facilitar la validación del comportamiento global.
-
-\item \textbf{Sobrecarga computacional:} Ejecutar múltiples motores de razonamiento concurrentemente puede aumentar los requisitos de cómputo a bordo.
-
-\end{itemize}
 
 \subsection{Conexión con la Propuesta de Tesis}
 
-La arquitectura híbrida CLIPS-ChatGPT propuesta en esta tesis se enmarca precisamente en esta categoría de sistemas, siguiendo un patrón de dominio de reglas con complemento ML para la traducción de lenguaje natural \cite{Savage2024},, y extendiéndose hacia una arquitectura de planificación dual que permite tanto a CLIPS como a los LLMs generar planes concurrentemente \cite{Shi2023}. Esta aproximación busca capitalizar la predictibilidad y seguridad de CLIPS para tareas críticas y bien definidas, mientras que aprovecha la flexibilidad semántica y capacidad de generación contextual de ChatGPT para interpretar comandos complejos y adaptarse a situaciones novedosas. La validación experimental de esta hipótesis de complementariedad constituye el núcleo de la contribución de esta investigación.
+Los antecedentes muestran que los sistemas simbólicos ofrecen una representación explícita del dominio, mientras que los modelos de lenguaje permiten procesar una mayor variedad de expresiones. Sin embargo, sigue siendo necesario medir de forma separada la calidad de la interpretación semántica y la ejecutabilidad del plan resultante bajo un mismo dominio, catálogo de entidades y repertorio de acciones.
+
+Esta tesis aborda dicho problema mediante una comparación controlada entre una arquitectura secuencial Qwen–CLIPS y un planificador GPT directo. Adicionalmente, la condición de objetivos de referencia procesados por CLIPS permite estimar el rendimiento máximo de la etapa simbólica y distinguir los errores introducidos por la interpretación lingüística de aquellos causados por la cobertura de reglas.
+
+
+La propuesta principal específicamente corresponde a una arquitectura neuro-simbólica de composición secuencial. Un modelo Qwen2.5-7B ajustado mediante QLoRA recibe una instrucción y produce una secuencia de objetivos canónicos representada en JSON. Un módulo determinista valida y normaliza la respuesta, la convierte en hechos y la envía al motor CLIPS. Finalmente, las reglas de producción expanden cada objetivo en acciones compatibles con el ejecutor del robot.
+
+Como punto de comparación anteriormente mencionado se implementa un planificador basado en GPT que genera directamente una representación estructurada de los objetivos y el plan. Su salida se restringe mediante JSON Schema y se somete a validación determinista. Ambas arquitecturas se evalúan de forma independiente; por tanto, el trabajo no propone selección concurrente ni fusión automática de planes.
+
+La contribución experimental consiste en comparar ambos enfoques bajo el mismo conjunto de órdenes, catálogos y acciones, separando los errores de interpretación de los errores de planeación y cuantificando exactitud, ejecutabilidad, robustez, latencia, recursos y coste.
