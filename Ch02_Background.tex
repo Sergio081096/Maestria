@@ -1,12 +1,12 @@
 \chapter{Antecedentes y Estado del Arte}
 
-Este capítulo presenta los trabajos y tecnologías relacionados con la transformación de instrucciones de lenguaje natural a planes para robots de servicio. La revisión se concentra en cuatro componentes relevantes para la tesis: sistemas de producción, CLIPS, modelos de lenguaje para interpretación y planeación, y arquitecturas neuro-simbólicas. Los métodos de percepción, navegación o control se mencionan únicamente cuando contribuyen directamente a la interfaz entre la orden GPSR y el plan de tareas.
+Este capítulo presenta los trabajos y tecnologías relacionados con la transformación de instrucciones de lenguaje natural a planes para robots de servicio. La revisión se concentra en cuatro componentes relevantes para la tesis: sistemas de producción, CLIPS, modelos de lenguaje para interpretación y planeación, y arquitecturas neuro-simbólicas. Los métodos de percepción, navegación o control se mencionan únicamente cuando contribuyen directamente a la interfaz entre la orden y el plan de tareas.
 
 \section{Sistemas Basados en Reglas}
 
 Los sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, constituyen uno de los paradigmas más antiguos y consolidados en inteligencia artificial \cite{Giarratano2005}. Su origen se remonta a los sistemas expertos de la década de 1970, donde se utilizaban para representar el conocimiento de especialistas humanos en dominios bien delimitados, como el diagnóstico médico o la configuración de sistemas complejos \cite{Russell2020}. En robótica, la adopción de estos sistemas se popularizó en los años 80 y 90, particularmente en entornos industriales estructurados, donde la previsibilidad y seguridad eran prioritarias.
 
-Históricamente, los RBS han sido fundamentales en arquitecturas de control robótico jerárquico, como la propuesta por Brooks \cite{Brooks1986}, donde capas de comportamientos reactivos podían ser coordinadas mediante reglas de supresión. Más adelante, motores de inferencia como CLIPS \textit{(C Language Integrated Production System)}, desarrollado por la NASA en 1985, se convirtieron en herramientas estándar para la implementación de sistemas de planificación y toma de decisiones en robots autónomos \cite{NASA_CLIPS}. CLIPS permitió la representación simbólica del conocimiento a través de hechos, reglas, en conjunto con un ciclo de inferencia \textit{reconocer-actuar} que ofreció un marco eficiente para el razonamiento en tiempo real.
+Históricamente, los RBS han sido fundamentales en arquitecturas de control robótico jerárquico, como la propuesta por Brooks \cite{Brooks1986}, donde capas de comportamientos reactivos podían ser coordinadas mediante reglas de supresión. Más adelante, motores de inferencia como CLIPS \textit{(C Language Integrated Production System)}, desarrollado por la NASA en 1985, se convirtieron en herramientas estándar para la implementación de sistemas de planificación y toma de decisiones en robots autónomos \cite{NASA_CLIPS}. CLIPS permitió la representación simbólica del conocimiento a través de hechos, reglas, en conjunto con un ciclo de inferencia (\textit{reconocer-actuar}), que ofreció un marco eficiente para el razonamiento en tiempo real.
 
 En cuanto a aplicaciones, los sistemas basados en reglas han demostrado su utilidad en diversos dominios robóticos:
 
@@ -28,7 +28,7 @@ CLIPS es un lenguaje de programación basado en reglas, diseñado específicamen
 
 \subsection{Características Fundamentales de CLIPS}
 
-CLIPS es un entorno para el desarrollo de sistemas basados en conocimiento que ofrece hechos, plantillas, reglas de producción, funciones y un motor de inferencia que permite razonar sobre una base de hechos utilizando reglas del tipo if-then \cite{Giarratano2005}. 
+CLIPS es un entorno para el desarrollo de sistemas basados en conocimiento que ofrece hechos, plantillas, reglas de producción, funciones y un motor de inferencia que permite razonar sobre una base de eventos utilizando reglas del tipo if-then \cite{Giarratano2005}. 
 
 En el contexto de esta tesis, las propiedades relevantes de CLIPS son:
 
@@ -141,8 +141,6 @@ En la segunda etapa, los objetivos obtenidos son enviados a CLIPS. A diferencia 
 Esta división permite que el modelo neuronal se concentre en el problema de correspondencia entre lenguaje natural y representaciones canónicas, mientras que el conocimiento sobre la estructura de las tareas, sus relaciones y su descomposición se mantiene explícitamente en la base de reglas de CLIPS. En consecuencia, una modificación en las reglas de planificación no requiere necesariamente modificar el modelo de lenguaje y, de forma análoga, las mejoras realizadas sobre el componente de interpretación pueden introducirse sin sustituir el mecanismo simbólico de planificación.
 
 En esta tesis, por tanto, la integración neuro-simbólica se describe como una composición secuencial: Qwen transforma el lenguaje natural en objetivos canónicos y CLIPS expande dichos objetivos mediante reglas de producción. Los componentes no actúan como dos planificadores concurrentes ni se realiza una fusión automática de planes generados independientemente. El denominado planificador GPT directo se implementa como una arquitectura alternativa con fines de comparación experimental y no como un componente adicional de la cadena neuro-simbólica Qwen--CLIPS.
-```
-
 
 
 \subsection{Conexión con la Propuesta de Tesis}
