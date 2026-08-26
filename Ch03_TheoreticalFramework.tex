@@ -1,1073 +1,910 @@
-\chapter{Marco Teórico y Conceptual}
+\chapter{Formalización del problema y arquitectura conceptual}
+\label{ch:formalizacion}
 
-El fundamento teórico del sistema propuesto consiste en dos arquitectura de planeación. Se introduce el funcionamiento de los modelos de lenguaje grande y se detalla la integración de traductores de lenguaje natural con sistemas basados en reglas, estableciendo las bases tecnológicas para la implementación de los sistemas y su uso en la arquitectura ViRoot \textit{(Virtual Real Robot)} descrita a continuación (ver Figura \ref{fig:viroot}).
+El problema abordado en esta tesis consiste en transformar una instrucción
+expresada en lenguaje natural en una secuencia de acciones que pueda ser
+procesada por el sistema de ejecución de un robot de servicio. Esta
+transformación requiere relacionar dos niveles de representación diferentes:
+por una parte, la intención expresada por el usuario y, por otra, las acciones
+concretas disponibles en el robot.
 
-\subsection*{Arquitectura del Sistema}
+Como se revisó en el capítulo anterior, los modelos de lenguaje proporcionan
+mecanismos para procesar la variabilidad presente en las instrucciones
+lingüísticas, mientras que los sistemas simbólicos permiten representar
+conocimiento y relaciones mediante estructuras explícitas. A partir de estos
+antecedentes, en este capítulo se formaliza el problema particular considerado
+en la investigación y se establecen las representaciones utilizadas para
+describir órdenes, objetivos y planes.
 
-La arquitectura ViRBot proporciona el contexto funcional en el que se integra este trabajo. Incluye módulos de percepción, navegación, manipulación, reconocimiento y síntesis de voz, supervisión y ejecución \ref{fig:viroot}). La tesis no modifica todos estos componentes; su alcance se concentra en la transformación de una orden textual GPSR en un plan aceptado por el ejecutor.
+El dominio experimental toma como referencia las tareas de General Purpose
+Service Robot (GPSR) de RoboCup@Home. Sin embargo, GPSR se utiliza como una
+fuente controlada de tareas, entidades y escenarios, y no como una restricción
+que obligue al usuario a reproducir literalmente las formulaciones
+lingüísticas utilizadas en la competencia.
 
-La arquitectura VIRBOT de Justina se organiza en cuatro capas principales:
+Finalmente, se presentan las dos arquitecturas que serán evaluadas. La primera
+utiliza Qwen2.5-7B como intérprete semántico y CLIPS como componente encargado
+de expandir los objetivos obtenidos en acciones ejecutables. La segunda delega
+tanto la interpretación como la generación del plan a un modelo GPT. Ambas
+arquitecturas utilizan el mismo dominio conceptual, pero distribuyen de manera
+diferente la responsabilidad de transformar una orden en un plan.
 
-\begin{itemize}
-    \item \textbf{Capa de Entradas}
-    \begin{itemize}
-        \item Procesamiento de datos de sensores internos y externos.
-        \item Aplicación de técnicas de reconocimiento de patrones.
-        \item Generación del estado del entorno.
-    \end{itemize}
-    \item \textbf{Capa de Planificación}
-    \begin{itemize}
-        \item Validación mediante gestión del conocimiento.
-        \item Reconocimiento de situaciones y activación de objetivos.
-        \item Planificación de secuencias de operaciones físicas.
-    \end{itemize}
-    \item \textbf{Capa de Gestión del Conocimiento}
-    \begin{itemize}
-        \item Mapas del entorno creados con técnicas SLAM.
-        \item Sistema de localización basado en filtro de Kalman.
-        \item Sistema basado en reglas CLIPS para representación del conocimiento.
-    \end{itemize}
-    \item \textbf{Capa de Ejecución}
-    \begin{itemize}
-        \item Ejecución y verificación de planes de movimiento.
-        \item Procedimientos predefinidos representados como máquinas de estado.
-        \item Integración de procedimientos para generar planes complejos.
-    \end{itemize}
-\end{itemize}
 
-\begin{figure}[h]
+% ============================================================
+\section{Contexto arquitectónico y alcance del sistema}
+\label{sec:contexto_arquitectonico}
+
+\subsection{Integración dentro de la arquitectura ViRBot}
+\label{subsec:integracion_virbot}
+
+La investigación se desarrolla sobre el robot de servicio Justina y su
+arquitectura de software ViRBot. Esta arquitectura integra diferentes
+capacidades necesarias para la operación del robot, entre ellas percepción,
+interacción humano--robot, navegación, manipulación, representación de
+conocimiento, planificación y ejecución.
+
+% TODO: revisar referencia correspondiente a ViRBot y procedencia de la figura.
+
+\begin{figure}[ht]
     \centering
     \includegraphics[width=0.8\textwidth]{Figures/virbot.png}
-    \caption{Arquitectura ViRoot.}
-    \label{fig:viroot}
+    \caption{Arquitectura general ViRBot del robot Justina.}
+    \label{fig:virbot}
 \end{figure}
 
-\subsection*{Arquitectura Funcional de ViRbot}
-
-Esta arquitectura organiza los módulos funcionales del robot de manera interconectada, lo que permiten integrar la percepción, comprensión del lenguaje, planeación simbólica y control físico del robot. La Figura \ref{fig:viroot2} muestra la interacción entre los distintos subsistemas del robot Justina.
-
-Debe distinguirse entre el estado interno utilizado durante la generación del plan y el estado confirmado durante la ejecución física. El planificador CLIPS mantiene un estado simbólico predictivo mínimo, por ejemplo la ubicación esperada del robot y el objeto que se espera que sostenga. Este estado se reinicia en cada ciclo de planeación y no constituye, por sí mismo, un modelo continuamente sincronizado con los sensores del robot.
-
-Dentro de la arquitectura se distinguen los cuatro grupos principales: percepción, comprensión e interacción, planificación y supervisión, y control de hardware.
-
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=0.8\textwidth]{Figures/virbot.jpg}
-    \caption{Arquitectura Funcional ViRoot.}
-    \label{fig:viroot2}
-\end{figure}
-
-\subsubsection*{Módulos de Percepción}
-
-Los módulos de percepción permiten al robot obtener información del entorno físico mediante sensores y algoritmos de interpretación.
-
-\begin{itemize}
-
-\item \textbf{Vision:} Este módulo procesa información proveniente de cámaras y sensores visuales \textit{(nubes de puntos)}. Permite la detección y reconocimiento de objetos, personas y características del entorno. La información visual es utilizada principalmente por el sistema de navegación y por el planificador de tareas para tomar decisiones sobre la interacción con el entorno.
-
-\item \textbf{Cartographer:} El módulo Cartographer implementa algoritmos de \textbf{SLAM} \textit{(Simultaneous Localization and Mapping)} para construir mapas del entorno y estimar la posición del robot dentro de ellos. Este módulo proporciona información fundamental para la navegación autónoma.
-
-\item \textbf{Speech Recognition:} Este módulo procesa las señales de audio capturadas por los micrófonos del robot y las convierte en texto. El resultado es utilizado por el sistema de \textit{Natural Language Understanding} para interpretar instrucciones del usuario.
-
-\end{itemize}
-
-\subsubsection*{Módulos de Comprensión e Interacción}
-
-Estos módulos permiten que el robot interactúe con los humanos mediante lenguaje natural.
-
-\begin{itemize}
-
-\item \textbf{Natural Language Understanding (NLU):} Este componente interpreta las instrucciones del usuario en lenguaje natural. Utiliza modelos lingüísticos y reglas semánticas para transformar frases en representaciones estructuradas que puedan ser utilizadas por el sistema de planificación.
-
-\item \textbf{LLMs:} Los Large Language Models (LLMs) se emplean como complemento para mejorar la interpretación semántica de las instrucciones. Estos modelos permiten generar representaciones simbólicas o estructuras intermedias que posteriormente son procesadas por el sistema de planificación basado en reglas.
-
-\item \textbf{Speech Generation:} Este módulo permite al robot generar respuestas habladas. Convierte texto generado por el sistema en señales de voz, facilitando la interacción natural con los usuarios.
-
-\end{itemize}
-
-\subsubsection*{Módulos de Planificación y Gestión del Conocimiento}
-
-Estos módulos constituyen el núcleo de la toma de decisiones del sistema.
-
-\begin{itemize}
-
-\item \textbf{CLIPS Knowledge Base:} La base de conocimiento implementada en CLIPS almacena hechos y reglas que representan el conocimiento del entorno, los objetos, las tareas y las capacidades del robot. Esta base de conocimiento se actualiza continuamente conforme el robot percibe el entorno.
-
-\item \textbf{CLIPS Planner:} Este módulo utiliza reglas de producción para generar planes de acción a partir de objetivos definidos. El planificador determina qué acciones deben ejecutarse y en qué orden para alcanzar una meta específica.
-
-\item \textbf{Simple Task Planner State Machine:} Este componente implementa una máquina de estados que coordina la ejecución de tareas simples. Funciona como un nivel intermedio entre la planificación simbólica y la ejecución de acciones físicas.
-
-\item \textbf{Supervisor:} El supervisor monitorea la ejecución de los planes y gestiona errores o situaciones inesperadas. También se encarga de coordinar la interacción entre los distintos módulos del sistema.
-
-\item \textbf{Executor:} El ejecutor recibe los planes generados por el planificador y los convierte en comandos concretos para los diferentes actuadores del robot.
-
-\end{itemize}
-
-\subsubsection*{Módulos de Control del Robot}
-
-Estos módulos controlan directamente los sistemas físicos del robot.
-
-\begin{itemize}
-
-\item \textbf{Navigation:} El sistema de navegación calcula trayectorias y controla el desplazamiento del robot utilizando información del mapa y de los sensores.
-
-\item \textbf{Mobile Base:} Este módulo controla la base móvil del robot, permitiendo su desplazamiento en el entorno.
-
-\item \textbf{Manipulator:} Controla el brazo robótico utilizado para manipular objetos en el entorno.
-
-\item \textbf{Torso:} Permite el movimiento vertical del cuerpo del robot para alcanzar objetos a diferentes alturas.
-
-\item \textbf{Mechatronic Head:} Controla los movimientos de la cabeza del robot, permitiendo orientar sensores como cámaras y micrófonos hacia puntos de interés.
-
-\end{itemize}
-
-
-\section{Arquitectura de un Sistema de Planeación de Acciones Jerárquico}
-
-La planificación de acciones aborda el problema de generar secuencias de pasos u operaciones que permitan a un robot alcanzar objetivos de alto nivel en entornos parcialmente observables y dinámicos \cite{Russell2020}. Entre los paradigmas más consolidados para abordar este desafío se encuentra la planificación jerárquica, que descompone tareas complejas en subtareas más simples \cite{Nau2004}, Por ejemplo ("servir la cena") se descomponen en tareas intermedias ("ir a la cocina", "tomar platos", "colocar en mesa") y finalmente en acciones primitivas ejecutables por el robot. Este enfoque reduce significativamente la complejidad computacional del problema de planificación al explotar el conocimiento experto sobre cómo descomponer tareas, en contraste con los planificadores clásicos de primer principio que exploran espacios de estados sin guía estructural \cite{Erol1994}.
-
-\subsection{Fundamentos de la Planificación Jerárquica: HTN}
-El método más influyente de planificación jerárquica es el paradigma de \textbf{Redes de Tareas Jerárquicas} \textit{(Hierarchical Task Networks, HTN)} \cite{Georgievski2016}. En HTN, el problema de planificación no se define mediante un estado objetivo, sino mediante una tarea inicial (task network) que representa el objetivo de alto nivel a alcanzar \cite{Nau2004}. El conocimiento del dominio se codifica mediante dos elementos fundamentales:
-
-\begin{itemize}
-
-\item \textbf{Operadores:} Describen acciones primitivas ejecutables directamente por el robot, especificando sus precondiciones y efectos sobre el estado del mundo \cite{Fikes1971}. Son análogos a las acciones en \textbf{STRIPS} \textit{(Stanford Research Institute Problem Solver)}, el primer planificador clásico ampliamente adoptado \cite{Geffner2020}.
-
-\item \textbf{Métodos :} Constituyen el núcleo de la jerarquía. Cada método especifica cómo descomponer una tarea compuesta (abstracta) en una red de subtareas, que pueden ser a su vez compuestas o primitivas \cite{Lallement2014}. Los métodos incluyen precondiciones que determinan cuándo es aplicable una determinada descomposición, permitiendo que el planificador elija entre múltiples formas de realizar una misma tarea según el contexto \cite{deSilva2016}.
-
-\end{itemize}
-
-
-El proceso de planificación HTN funciona mediante la descomposición recursiva: partiendo de la tarea inicial, el planificador selecciona métodos aplicables cuyas precondiciones se satisfacen en el estado actual, y reemplaza las tareas compuestas por sus subtareas, generando progresivamente una red completamente expandida en acciones primitivas \cite{Nau2003}. Cuando se alcanza una secuencia de acciones primitivas cuyas precondiciones pueden encadenarse consistentemente desde el estado inicial, se ha encontrado un plan solución.
-
-Una ventaja distintiva de HTN es su capacidad para generar planes explicables y alineados con el conocimiento experto, ya que la jerarquía de métodos refleja cómo un diseñador humano concebiría la realización de tareas complejas \cite{Lallement2014}. 
-
-\subsection{El Planificador HATP (Hierarchical Agent-Based Task Planner)}
-
-Dentro de la familia de planificadores HTN orientados a robótica, destaca HATP (Hierarchical Agent-based Task Planner) , desarrollado en LAAS-CNRS para entornos de interacción humano-robot \cite{Lallement2014, deSilva2017}. HATP extiende el paradigma HTN tradicional con características específicamente diseñadas para robótica de servicio:
-
-\begin{itemize}
-
-\item \textbf{Tratamiento de agentes como entidades de primera clase:} HATP distingue explícitamente entre diferentes agentes (robots, humanos) en la representación del dominio, permitiendo asignar tareas a distintos ejecutores y generar planes multi-agente sincronizados \cite{Alami2013}.
-
-\item \textbf{Reglas sociales (social rules):} Incorpora mecanismos para especificar restricciones sobre comportamientos aceptables en contextos de interacción humano-robot, como límites de tiempo de espera o secuencias de acciones que deben evitarse por razones de comodidad o seguridad \cite{Lallement2014}.
-
-\item \textbf{Integración con razonamiento geométrico:} HATP puede intercalar planificación simbólica con validación geométrica mediante planificadores de movimiento (ej. Move3D), verificando en tiempo de planificación si las acciones consideradas son factibles en el mundo físico modelado con detalle 3D \cite{deSilva2017}. 
-\end{itemize}
-
-\subsection{Taxonomía de Arquitecturas Jerárquicas en Robótica}
-
-Más allá de HTN, la literatura identifica diversas aproximaciones a la planificación jerárquica en robótica:
-
-\begin{itemize}
-
-\item \textbf{Planificación Jerárquica con Lógica Temporal (HTL):} Una línea reciente de investigación extiende la planificación jerárquica al dominio de especificaciones de lógica temporal proponiendo un framework de descomposición jerárquica basado en \textbf{LTL} \textit{(Linear Temporal Logic)} jerárquico \cite{Luo2024}, donde cada especificación de alto nivel se descompone en subtareas atómicas, infiriendo relaciones temporales entre ellas para construir una red de tareas. Este enfoque, validado experimentalmente en dominios de navegación y manipulación, permite manejar especificaciones complejas que resultarían inmanejables con una única fórmula LTL monolítica.
-
-\item \textbf{Arquitecturas de Tres Capas (Three-Layer Architectures):} Un patrón arquitectónico ampliamente adoptado en robótica autónoma es la separación en capas deliberativa, de ejecución y reactiva \cite{Gat1998}. En el contexto de rehabilitación robótica, esta estructura se manifiesta como:
-
-\begin{itemize}
-
-\item \textbf{Capa física:} Maneja la interacción directa con el entorno mediante sensores y actuadores.
-
-\item \textbf{Capa reactiva:} Ajusta en tiempo real parámetros de control (ej. asistencia, dificultad) basándose en retroalimentación sensorial.
-
-\item \textbf{Capa deliberativa:} Utiliza planificadores como HTN o planificación basada en línea temporal para generar estrategias de intervención personalizadas a largo plazo \cite{Morales2025}.
-
-\end{itemize}
-
-\item \textbf{Planificación Jerárquica con Representaciones Ontológicas:} Investigaciones recientes exploran la integración de ontologías para enriquecer la representación del conocimiento en planificadores jerárquicos \cite{Pang2022}. Las ontologías permiten modelar relaciones semánticas entre objetos, agentes y tareas, facilitando el razonamiento sobre contextos no explícitamente programados y mejorando la adaptabilidad del planificador a situaciones novedosas.
-
-\end{itemize}
-
-\subsection{Relevancia para el Sistema Propuesto}
-
-La arquitectura de planificación jerárquica presentada constituye el fundamento teórico sobre el cual se construye el sistema híbrido CLIPS-ChatGPT/Qwen propuesto en esta tesis. Específicamente:
-
-\begin{itemize}
-
-\item El motor CLIPS implementa un sistema de producción que, aunque no sigue estrictamente el formalismo HTN, puede organizarse jerárquicamente mediante reglas de prioridad y descomposición secuencial, como se detalla en la sección 4.1.1 \cite{Savage2024}.
-
-\item La integración con ChatGPT/Qwen para planificación dual (sección 4.3) puede entenderse como una extensión de las arquitecturas híbridas que combinan planificadores simbólicos (como HATP) con módulos de razonamiento geométrico o semántico, pero sustituyendo estos últimos por modelos de lenguaje de gran escala con capacidad de generar planes contextualmente adaptativos \cite{Shi2023}.
-
-\item La arquitectura ViRoot del robot Justina (Figura \ref{fig:viroot}) sigue explícitamente una organización jerárquica en capas de entradas, planificación, gestión de conocimiento y ejecución, alineándose con los principios de las arquitecturas de tres capas discutidas \cite{Savage2024}.
-
-\end{itemize}
-
-
-Esta base teórica proporciona el marco necesario para comprender cómo la combinación de razonamiento simbólico jerárquico y procesamiento flexible de lenguaje natural puede superar las limitaciones de ambos paradigmas por separado, constituyendo la hipótesis central de esta investigación.
-
-\section{Fundamentos de los Sistemas de Producción (Rule-Based Systems)}
-
-Los sistemas de producción, también conocidos como sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, constituyen uno de los paradigmas más implementados en inteligencia artificial para la representación del conocimiento y el razonamiento automatizado \cite{MDX_Rete}. Su fundamento teórico reside en la representación del conocimiento mediante reglas del tipo if-then \textit{(condición-acción)}, que operan sobre una base de hechos que describe el estado actual del mundo \cite{Donnell1994}. En robótica, estos sistemas han demostrado particular utilidad para la planificación de acciones en entornos estructurados, donde la previsibilidad y la capacidad de explicación son requisitos fundamentales \cite{MDX_Rete}.
-
-\subsection{Estructura y Componentes de un Sistema de Producción}
-
-El sistema se compone de tres elementos fundamentales que interactúan de manera cíclica \cite{MDX_Rete}:
-
-\begin{enumerate}
-
-\item \textbf{Base de Hechos:}  Almacena la información relevante sobre el estado actual del entorno y del propio robot. Estos hechos representan afirmaciones sobre el mundo, como la ubicación de objetos, el estado de los actuadores o las percepciones sensoriales. En el contexto del robot Justina, la memoria de trabajo contendría hechos como \textit{(ubicacion robot cocina)} o \textit{(objeto vaso mesa)}.
-
-\item \textbf{Base de Reglas:} Contiene el conjunto de reglas de producción que codifican el conocimiento del dominio. Cada regla presenta la forma general \cite{Donnell1994}:
-
-$$
-(condition 1) (condition 2) ... (condition m)
-\Rightarrow (action 1) (action 2) ... (action n)
-$$
-
-La parte izquierda especifica las condiciones que deben satisfacerse para que la regla sea aplicable, mientras que la parte derecha define las acciones a ejecutar, que típicamente modifican la memoria de trabajo o producen efectos externos \cite{MDX_Rete}.
-
-\item \textbf{Motor de Inferencia:} Constituye el mecanismo de control que gobierna la aplicación de las reglas. Es responsable de determinar qué reglas son aplicables en cada momento, seleccionando una entre las posibles, y ejecutando sus acciones \cite{MDX_Rete}. El motor de inferencia implementa el ciclo fundamental de operación, es decir, el ciclo reconocer-actuar \textit{(recognize-act cycle)} \cite{Russell2020}.
-
-\end{enumerate}
-
-\subsection{El Ciclo Reconocer-Actuar}
-
-Este ciclo constituye el corazón operativo de todo sistema basado en reglas. El proceso iterativo se desarrolla en las siguientes fases \cite{Russell2020} \cite{MDX_Rete}:
-
-\begin{enumerate}
-
-\item \textbf{Reconocimiento:} El motor de inferencia compara el contenido actual de la memoria de trabajo con las condiciones de todas las reglas en la base de conocimiento. Aquellas reglas cuyas condiciones se satisfacen completamente con los hechos existentes se consideran $"activadas"$ y pasan a formar parte del conjunto de conflictos \cite{Russell2020}.
-
-\item \textbf{Resolución de Conflictos:} Cuando múltiples reglas resultan aplicables simultáneamente, el motor debe seleccionar una para su ejecución. Esta decisión se realiza mediante estrategias de resolución de conflictos, que pueden basarse en prioridades explícitas de las reglas, especificidad de las condiciones, orden de activación, o políticas específicas del dominio \cite{MDX_Rete}.
-
-\item \textbf{Actuación:} La regla seleccionada se ejecuta, realizando las acciones especificadas en su parte derecha. Estas acciones típicamente modifican la memoria de trabajo (añadiendo, eliminando o actualizando hechos) y pueden tener efectos secundarios sobre el entorno, y el robot \cite{Russell2020} \cite{MDX_Rete}.
-
-\item \textbf{Terminación:} El ciclo se repite hasta que se cumple un criterio de terminación, que puede ser la ausencia de reglas aplicables, la consecución del objetivo deseado, o una condición explícita de parada \cite{MDX_Rete}.
-
-
-\end{enumerate}
-
-\subsection{El Algoritmo RETE}
-
-Una implementación ingenua del ciclo \textit{reconocer-actuar} comprobaría cada regla contra todos los hechos en cada ciclo, resultando en una complejidad computacional prohibitiva incluso para sistemas de tamaño moderado \cite{Fanning1990}. Para abordar esta limitación, Charles Forgy desarrolló el \textbf{algoritmo RETE} durante su doctorado en \textit{Carnegie Mellon University (1979)}, cuya publicación apareció en Artificial Intelligence en 1982. El nombre $"RETE"$ proviene del latín y significa $"red"$, reflejando la estructura de red que constituye su esencia \cite{Fanning1990}.
-
-\subsubsection*{Principios Fundamentales del Algoritmo RETE}
-
-El algoritmo RETE optimiza el proceso de emparejamiento \textit{patrón-objeto} mediante dos estrategias clave \cite{Fanning1990}:
-
-\begin{enumerate}
-
-\item \textbf{Almacenamiento de Estado:} \textbf{RETE} mantiene en memoria los resultados de emparejamientos previos, de modo que solo es necesario procesar los cambios incrementales en la memoria de trabajo, en lugar de reevaluar todas las reglas desde cero en cada ciclo.
-
-\item \textbf{Compartición de subcálculos:} Cuando múltiples reglas comparten condiciones comunes, \textbf{RETE} evalúa dichas condiciones una sola vez y reutiliza los resultados para todas las reglas que las contienen.
-
-\end{enumerate}
-
-Estos principios se implementan mediante la construcción de una red de nodos \textit{(RETE network)} que representa las condiciones de todas las reglas del sistema \cite{Fanning1990} \cite{Giarratano2005}.
-
-\subsubsection*{Estructura de la Red RETE}
-
-La red RETE se organiza jerárquicamente desde el nodo raíz hasta las hojas que representan reglas completas \cite{Fanning1990}:
-
-\begin{itemize}
-
-\item \textbf{Nodo Raíz:} Punto de entrada por el que fluyen todos los hechos introducidos en el sistema 	\cite{Giarratano2005}.
-
-\item \textbf{Nodos Alfa:} Realizan pruebas simples sobre hechos individuales, como comprobaciones de tipo o igualdad de atributos. Cada nodo alfa corresponde a un patrón atómico dentro de las condiciones de las reglas \cite{UNIZA_RBS}. Estos nodos operan de manera independiente y almacenan en su memoria los hechos que satisfacen su prueba \cite{Fanning1990}.
-
-\item \textbf{Nodos Beta:} Implementan operaciones de unión entre conjuntos de hechos procedentes de diferentes caminos en la red. Cada nodo beta combina los resultados de dos nodos anteriores (típicamente uno alfa y otro beta) verificando que las variables compartidas tengan vinculaciones consistentes \cite{ScienceDirect_Production} \cite{UNIZA_RBS}. La memoria de los nodos beta almacena los pares o tuplas que han superado la condición de unión \cite{Fanning1990}.
-
-\item \textbf{Nodos Terminales:} Representan reglas completas. Cuando un token alcanza un nodo terminal, significa que se ha encontrado una combinación de hechos que satisface todas las condiciones de la regla correspondiente, quedando esta activada para su ejecución \cite{Fanning1990} \cite{Giarratano2005}.
-
-\end{itemize}
-
-\subsubsection*{Funcionamiento Incremental}
-
-El proceso de evaluación en \textbf{RETE} es incremental \cite{ScienceDirect_Production}. Cuando se añade, modifica o elimina un hecho en la memoria de trabajo:
-
-\begin{enumerate}
-
-\item El hecho ingresa por el nodo raíz y se propaga hacia abajo a través de los nodos alfa cuyas pruebas supera \cite{Fanning1990}.
-
-\item Los nodos alfa actualizan sus memorias y propagan los cambios a los nodos beta conectados.
-
-\item Los nodos beta evalúan las nuevas combinaciones posibles con los tokens almacenados en sus memorias izquierda y derecha, actualizando sus propias memorias y propagando los resultados \cite{ScienceDirect_Production} \cite{Giarratano2005}.
-
-\item Finalmente, los cambios alcanzan los nodos terminales, actualizando dinámicamente el conjunto de reglas activadas \cite{Fanning1990}.
-
-\end{enumerate}
-
-Este enfoque incremental reduce drásticamente el trabajo computacional, ya que solo se procesan los cambios efectivos en lugar de reevaluar todo el sistema en cada ciclo. La complejidad temporal del algoritmo \textbf{RETE} es, en promedio, independiente del número total de reglas en el sistema, dependiendo principalmente del número de hechos y de la estructura de las condiciones \cite{Forgy1982}.
-
-\subsection{Implementación de RETE en CLIPS}
-
-CLIPS implementa una versión optimizada del algoritmo RETE adaptada a sus necesidades específicas como sistema de producción de propósito general .
-
-\subsubsection*{Estructura de Memoria en CLIPS}
-CLIPS mantiene dos tipos principales de memoria \cite{Forgy1979}:
-
-\begin{itemize}
-
-\item \textbf{Memoria de Trabajo:} Almacena los hechos que representan el estado actual del sistema. Cada hecho puede ser simple (ordenado) o estructurado mediante plantillas (deftemplate).
-
-\item \textbf{Memoria de Hechos:} Una estructura interna que permite el acceso eficiente a los hechos durante el proceso de emparejamiento.
-
-\end{itemize}
-
-
-\subsubsection*{El Motor de Inferencia de CLIPS}
-
-Se implementa el ciclo \textit{reconocer-actuar} completo, utilizando la red \textbf{RETE} para la fase de reconocimiento \cite{Forgy1979}:
-
-\begin{enumerate}
-
-\item \textbf{Fase de Reconocimiento:} Los cambios en la memoria de trabajo se propagan a través de la red \textbf{RETE} precompilada a partir de las reglas del sistema. La red mantiene información sobre qué condiciones se satisfacen parcial o completamente.
-
-\item \textbf{Fase de Resolución de Conflictos:} CLIPS ofrece múltiples estrategias de resolución de conflictos, incluyendo prioridad (salience), profundidad (depth-first), amplitud (breadth-first), y estrategias basadas en la especificidad de las reglas 	\cite{Forgy1979}.
-
-\item \textbf{Fase de Actuación:} La regla seleccionada ejecuta sus acciones, que pueden incluir la modificación de la memoria de trabajo, la ejecución de funciones externas.
-
-\end{enumerate}
-
-\subsubsection*{Consideraciones de Rendimiento}
-
-Estudios sobre implementaciones de CLIPS en entornos empotrados han identificado cinco parámetros clave que afectan el rendimiento del motor de inferencia \cite{Murphy2019}:
-
-\begin{enumerate}
-
-\item El número de objetos en la memoria de trabajo.
-
-\item La complejidad estructural de los objetos y las reglas.
-
-\item El número de reglas que comparten patrones de emparejamiento comunes.
-
-\item El número de patrones por regla.
-
-\item El número de objetos vinculados a cada patrón.
-
-\end{enumerate}
-
-En aplicaciones de tiempo real el tiempo de respuesta del motor de inferencia suele ser adecuado, aunque los requisitos de memoria pueden ser significativos dependiendo de la complejidad de la red \textbf{RETE} \cite{Murphy2019}. Esta característica hace que CLIPS sea particularmente eficiente para plataformas robóticas con restricciones computacionales.
-
-
-\subsection{Ventajas y Limitaciones de los Sistemas de Producción}
-
-Los sistemas basados en reglas presentan ventajas significativas que los hacen útiles en robótica 	\cite{MDX_Rete}:
-
-\begin{itemize}
-
-\item \textbf{Ventajas:}
-	
-\begin{itemize}
-	
-	\item \textbf{Modularidad:} Las reglas pueden añadirse, modificarse o eliminarse independientemente, facilitando el mantenimiento y la 	evolución del sistema.
-
-	\item \textbf{Explicabilidad:} El razonamiento puede rastrearse y explicarse mediante la inspección de las reglas activadas, lo que es crucial para la auditoría y la confianza en sistemas críticos.
-
-	\item \textbf{Naturalidad:} Las reglas expresadas en formato \textit{if-then} se aproximan a la forma en que los humanos describen procedimientos y conocimientos.
-
-	\item \textbf{Separación conocimiento-control:} El conocimiento del dominio \textit{(reglas)} está claramente separado del mecanismo de control \textit{(motor de inferencia)}, permitiendo modificaciones sin afectar la arquitectura subyacente.
-	
-\end{itemize}
-	
-\item \textbf{Limitaciones:}
-
-\begin{itemize}
-
-\item \textbf{Dificultad de análisis:} El flujo de control puede ser difícil de predecir cuando múltiples reglas interactúan de maneras complejas.
-
-\item \textbf{Ausencia de aprendizaje:} Los sistemas clásicos de producción no incorporan capacidades de aprendizaje automático, requiriendo que todo el conocimiento sea explícitamente programado.
-
-\item \textbf{Ineficiencia potencial:} Aunque \textbf{RETE} optimiza el emparejamiento, sistemas con miles de reglas pueden presentar problemas de rendimiento.
-
-\item \textbf{Gestión de conflictos:} La resolución de conflictos requiere diseños cuidadosos para evitar comportamientos indeseados.
-
-\end{itemize}
-
-\end{itemize}
-
-Estas limitaciones, particularmente la rigidez semántica y la ausencia de aprendizaje, motivan la integración con modelos de lenguaje grande propuesta en esta tesis, buscando combinar la robustez y transparencia de los sistemas basados en reglas con la flexibilidad y capacidad adaptativa de los enfoques subsimbólicos modernos.
-
-\section{Introducción a los Modelos de Lenguaje Grande (LLMs) y ChatGPT/Qwen}
-
-Los Modelos de Lenguaje Grande \textit{(Large Language Models, \textbf{LLMs})} han emergido como una de las tecnologías más transformadoras en el campo de la inteligencia artificial, revolucionando la manera en que las máquinas procesan y generan lenguaje natural \cite{Shi2023}. Su aplicación en robótica de servicio abre nuevas posibilidades para la interacción humano-robot, permitiendo que usuarios no expertos comuniquen sus intenciones mediante comandos verbales complejos sin necesidad de conocer lenguajes de programación estructurados \cite{Zeng2020}. Se exploran los fundamentos de la arquitectura de los LLMs, centrándose en el mecanismo de atención y la arquitectura Transformer, para posteriormente contrastar dos modelos representativos: ChatGPT (modelo propietario) y Qwen2.5-0.5B (modelo de código abierto), evaluando su idoneidad para entornos robóticos con recursos computacionales limitados.
-
-\subsection{Transformers y Mecanismo de Atención}
-
-\subsubsection*{Limitaciones de los Modelos Secuenciales Previos}
-
-Antes de la introducción de la arquitectura Transformer en 2017, el procesamiento de lenguaje natural estaba dominado por redes neuronales recurrentes \textit{(RNN)} y sus variantes, como \textbf{LSTM} \textit{(Long Short-Term Memory)} y \textbf{GRU} \textit{(Gated Recurrent Units)} \cite{Russell2020}. Estos modelos procesan el texto de manera secuencial, token por token, lo que presenta dos limitaciones fundamentales \cite{Vaswani2017}:
-
-\begin{enumerate}
-
-\item \textbf{Dificultad para el paralelismo:} La naturaleza secuencial de las \textbf{RNN} impide el aprovechamiento eficiente de hardware paralelo como GPUs, resultando en tiempos de entrenamiento prolongados \cite{UNIZA_RBS}.
-
-\item \textbf{Problema de dependencias de largo alcance:} Aunque \textbf{LSTM} y \textbf{GRU} mitigan parcialmente el problema del gradiente descendente, la información sobre palabras distantes tiende a diluirse a medida que la secuencia se alarga, dificultando el modelado de relaciones semánticas entre elementos lejanos \cite{Albert1989}.
-
-\end{enumerate}
-
-\subsubsection*{La Arquitectura Transformer}
-
-El artículo \guillemotleft Attention Is All You Need\guillemotright, publicado por investigadores de Google en 2017, introdujo la arquitectura Transformer, que prescinde por completo de recurrencia y convoluciones, basándose únicamente en mecanismos de atención \cite{Vaswani2017}. Esta arquitectura se ha convertido en el fundamento de todos los \textbf{LLMs} modernos, incluyendo \textbf{GPT}, \textbf{BERT}, y sus derivados \cite{Shi2023}.
-
-La arquitectura Transformer sigue una estructura \textbf{codificador-decodificador} \textit{(encoder-decoder)} con las siguientes características principales \cite{Vaswani2017}:
-
-\begin{itemize}
-
-\item \textbf{Codificador (Encoder):} Compuesto por una pila de $N=6$ capas idénticas. Cada capa contiene dos subcapas: un mecanismo de autoatención multi-cabeza y una red feed-forward posicional totalmente conectada. Alrededor de cada subcapa se emplean conexiones residuales seguidas de normalización por capas.
-
-\item \textbf{Decodificador (Decoder):} Similar al codificador, pero con una tercera subcapa que realiza atención cruzada sobre la salida del codificador. Además, incorpora un enmascaramiento para evitar que las posiciones futuras influyan en la predicción actual, preservando la propiedad autorregresiva del modelo.
-
-\end{itemize}
-
-\subsubsection*{El Mecanismo de Atención}
-
-El núcleo de la arquitectura Transformer es el mecanismo de atención, que permite al modelo ponderar dinámicamente la importancia de diferentes elementos de la secuencia de entrada al generar cada representación de salida \cite{Vaswani2017}. Formalmente, la atención puede describirse como una función que mapea una consulta y un conjunto de pares clave-valor hacia una salida \cite{citation:2}.
-
-\textbf{Atención Escalada por Producto Punto:} La forma de atención utilizada en Transformer se define mediante la siguiente ecuación \cite{Vaswani2017}:
+El sistema desarrollado en esta tesis se ubica entre la recepción de una
+instrucción expresada en lenguaje natural y los componentes encargados de
+ejecutar las acciones correspondientes. Por tanto, no pretende sustituir los
+módulos de navegación, percepción o manipulación del robot, sino proporcionar
+una representación ordenada de las acciones que dichos módulos deben realizar.
+
+De manera simplificada, el flujo general puede expresarse como:
 
 \begin{equation}
-\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^\top}{\sqrt{d_k}}\right) V
+\boxed{
+\text{orden en lenguaje natural}
+\rightarrow
+\text{interpretación y planificación}
+\rightarrow
+\text{plan}
+\rightarrow
+\text{ejecución}
+}
 \end{equation}
 
-
-Donde:
-
-\begin{itemize}
-
-\item $Q$ (Query) es la representación del token actual que ''pregunta'' por información relevante.
-
-\item $K$ (Key) representa las ''etiquetas'' de todos los tokens que pueden responder a la consulta.
-
-\item $V$ (Value) contiene la información real de cada token que será agregada.
-
-\item $d_{k}$ es la dimensión de las claves, y la división por $\sqrt{d_{k}}$ actúa como factor de escalamiento para evitar que los productos punto crezcan excesivamente, lo que llevaría a gradientes extremadamente pequeños en la función softmax \cite{Vaswani2017}.
-
-\end{itemize}
-$ $
+La contribución estudiada se concentra principalmente en las transformaciones
+anteriores a la ejecución física. Los módulos existentes de Justina son los
+responsables de intentar realizar las acciones especificadas en el plan.
 
 
-\textbf{Interpretación intuitiva del mecanismo de atención:} Una analogía útil para comprender este mecanismo es la de una biblioteca \cite{citation:1}. La biblioteca \textit{(Source)} contiene muchos libros \textit{(Value)}, cada uno con un código de clasificación \textit{(Key)}. Cuando un usuario desea información sobre un tema específico \textit{(Query)}, el sistema busca los códigos más relevantes y recupera los libros correspondientes, prestando más atención \textit{(pesos mayores)} a aquellos que mejor coinciden con la consulta.
+\subsection{Alcance del problema abordado}
+\label{subsec:alcance_problema}
 
-\textbf{Autoatención:} Cuando $Q, K$ y $V$ se generan a partir de la misma secuencia de entrada, el mecanismo se denomina autoatención. Esto permite que cada token de la secuencia ''atienda'' a todos los demás tokens, capturando relaciones contextuales globales independientemente de la distancia entre ellos \cite{Vaswani2017}.
+Una instrucción proporcionada por una persona puede contener diferentes
+subtareas relacionadas entre sí. Por ejemplo:
 
-\textbf{Atención Multi-Cabeza:} En lugar de realizar una única función de atención, Transformer proyecta $Q, K$ y $V h$ veces con proyecciones lineales aprendidas diferentes, permitiendo al modelo atender conjuntamente a información procedente de distintos subespacios representacionales \cite{Vaswani2017}:
+\begin{quote}
+\textit{``Go to the kitchen, find an apple and bring it to me.''}
+\end{quote}
 
-% Atención multi-cabeza
+Esta instrucción contiene información relacionada con navegación, búsqueda,
+manipulación y entrega. Para que pueda ser procesada por el robot es necesario
+identificar dichas intenciones y convertirlas posteriormente en operaciones
+compatibles con sus capacidades.
+
+El problema estudiado puede expresarse inicialmente mediante la transformación:
+
 \begin{equation}
-\text{MultiHead}(Q, K, V) = \text{Concat}(\text{head}_1, \ldots, \text{head}_h) W^O
+x \rightarrow P,
 \end{equation}
-$$ \text{donde head}_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V) $$
 
-\textbf{Codificación Posicional (Positional Encoding):} Dado que la autoatención es inherentemente invariante al orden de los tokens \textit{(permutar la secuencia produce el mismo conjunto de atenciones)}, es necesario inyectar información sobre la posición relativa o absoluta de los tokens. Transformer utiliza codificaciones posicionales sinusoidales \cite{Vaswani2017}:
+donde $x$ representa una orden expresada en lenguaje natural y $P$ el plan
+generado para atenderla.
 
-% Codificación posicional sinusoidal
+Sin embargo, esta representación oculta la diferencia entre comprender la
+orden y determinar las acciones necesarias para realizarla. Para analizar estas
+dos funciones por separado, en esta tesis se introduce una representación
+semántica intermedia $G$:
+
 \begin{equation}
-PE_{(pos, 2i)} = \sin\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
+\boxed{
+x \rightarrow G \rightarrow P
+}
+\label{eq:problema_general}
 \end{equation}
-\begin{equation}
-PE_{(pos, 2i+1)} = \cos\left(\frac{pos}{10000^{2i/d_{\text{model}}}}\right)
-\end{equation}
 
-
-Modelos más recientes han adoptado variantes como \textbf{RoPE} \textit{(Rotary Positional Embeddings)}, que codifica posiciones relativas mediante rotaciones de los vectores 
-$Q y K$, mejorando la extrapolación a longitudes de secuencia superiores a las vistas durante el entrenamiento \cite{citation:5}\cite{citation:9}.
-
-\subsubsection*{Evolución hacia Modelos de Lenguaje Grande}
-
-A partir de la arquitectura Transformer, la investigación en \textbf{NLP} se bifurcó en dos direcciones principales \cite{citation:5}:
-
-\begin{enumerate}
-
-\item \textbf{Modelos tipo codificador (Encoder-only):} Como \textbf{BERT} \textit{(Bidirectional Encoder Representations from Transformers)}, que aprovecha la bidireccionalidad del codificador para tareas de comprensión del lenguaje, como clasificación o reconocimiento de entidades \cite{citation:1}. Estos modelos se pre-entrenan con objetivos como el modelado de lenguaje enmascarado \textit{(Masked Language Modeling, \textbf{MLM})}.
-
-\item \textbf{Modelos tipo decodificador (Decoder-only):} Como la serie \textbf{GPT} \textit{(Generative Pre-trained Transformer)}, que utilizan únicamente la parte decodificadora con enmascaramiento causal, optimizados para generación de texto autorregresiva \cite{citation:5}. Estos modelos se pre-entrenan con el objetivo de predecir el siguiente token t\textbf{(Causal Language Modeling, \textbf{CLM})}. Los \textbf{LLMs} actuales, incluyendo \textbf{ChatGPT} y \textbf{Qwen}, pertenecen predominantemente a esta categoría.
-
-\end{enumerate}
-
-\subsection{ChatGPT: Modelo Propietario para Interacción Conversacional}
-
-\textbf{ChatGPT}, desarrollado por \textbf{OpenAI}, es un modelo de lenguaje grande basado en la arquitectura \textbf{GPT} descrita anteriormente, específicamente optimizado para tareas de diálogo mediante técnicas de ajuste fino con aprendizaje por refuerzo a partir de retroalimentación humana \textbf{(RLHF)} \cite{Shi2023}. Su integración en robótica ha demostrado ser prometedora para interpretar comandos complejos en lenguaje natural y generar planes de acción contextualmente apropiados.
+donde:
 
 \begin{itemize}
-
-\item \textbf{Características principales de ChatGPT:}
-
-\begin{itemize}
-
-\item \textbf{Arquitectura:} Basada en Transformer con decodificador causales, escala a cientos de miles de millones de parámetros en sus versiones más avanzadas \cite{Shi2023}. Aunque los detalles arquitectónicos precisos no son públicos, sigue los principios fundamentales establecidos.
-
-\item \textbf{Capacidades conversacionales:} Esta optimizado para mantener diálogos coherentes y contextualmente relevantes, manejar ambigüedades y solicitar aclaraciones cuando es necesario \cite{Zeng2020}.
-
-\item \textbf{Acceso mediante API:} OpenAI proporciona interfaces de programación que permiten integrar \textbf{ChatGPT} en sistemas robóticos mediante llamadas a servicios web, facilitando su adopción sin necesidad de infraestructura local costosa \cite{pollini2025reducinglatencyllmbasednatural}.
-
+    \item $x$ es la orden original;
+    \item $G$ es una secuencia estructurada de objetivos semánticos;
+    \item $P$ es una secuencia de acciones compatibles con el robot.
 \end{itemize}
 
-\item \textbf{Ventajas para robótica:}
+Esta separación constituye la base conceptual utilizada posteriormente para
+comparar las arquitecturas Qwen--CLIPS y GPT directo.
 
-\begin{itemize}
 
-\item \textbf{Alta calidad de comprensión:} Demuestra una capacidad superior para interpretar comandos complejos y ambiguos, con tasas de éxito del 100% en estudios recientes de navegación robótica \cite{citation:8}.
+% ============================================================
+\section{GPSR como dominio de referencia}
+\label{sec:gpsr_referencia}
 
-\item \textbf{Flexibilidad semántica:} Puede generar planes adaptativos para situaciones novedosas que no están explícitamente programadas en sistemas basados en reglas \cite{Shi2023}.
+\subsection{La prueba General Purpose Service Robot}
+\label{subsec:gpsr}
 
-\item \textbf{Reducción de latencia:} Investigaciones recientes muestran que la integración directa de \textbf{ChatGPT} con \textbf{ROS 2} puede reducir la latencia de comunicación en un 7.01\% en promedio, facilitando operaciones robóticas en tiempo real \cite{pollini2025reducinglatencyllmbasednatural}.
+General Purpose Service Robot (GPSR) es una prueba de RoboCup@Home orientada a
+evaluar la capacidad de un robot de servicio para recibir instrucciones y
+resolver tareas que pueden involucrar diferentes capacidades del sistema.
 
-\end{itemize}
+% TODO: agregar referencia oficial correspondiente al reglamento RoboCup@Home.
 
+Las instrucciones utilizadas en este tipo de escenario pueden combinar
+operaciones relacionadas con navegación, búsqueda de personas u objetos,
+manipulación, entrega, seguimiento, guiado e interacción verbal. Como
+consecuencia, una sola orden puede requerir que el robot identifique varias
+subtareas y conserve relaciones entre ellas.
 
-\item \textbf{Limitaciones en entornos robóticos:}
+Por ejemplo, una orden puede requerir que el robot se desplace a una
+habitación, localice un objeto, lo tome y posteriormente lo entregue a una
+persona. De esta forma, GPSR proporciona un escenario adecuado para estudiar
+el problema de transformar instrucciones de alto nivel en secuencias de
+acciones robóticas.
 
-\begin{itemize}
 
-\item \textbf{Dependencia de conectividad:} Requiere acceso a internet para consultar la API de \textbf{OpenAI}, lo que puede ser problemático en entornos con conectividad limitada o requisitos de seguridad que impidan la transmisión de datos a la nube \cite{citation:3}.
+\subsection{Dominio de referencia y alcance lingüístico}
+\label{subsec:dominio_referencia}
 
-\item \textbf{Costos operativos:} El uso de API propietarias implica costos por consulta que pueden ser prohibitivos en despliegues a gran escala o con alta frecuencia de interacción \cite{citation:7}.
+En esta investigación, GPSR se utiliza principalmente como dominio de
+referencia para definir las familias de tareas y las entidades utilizadas en
+la generación y evaluación de las instrucciones. A partir de este dominio se
+establecen catálogos de personas, objetos, categorías, habitaciones y
+ubicaciones que permiten delimitar el conocimiento utilizado por los sistemas
+evaluados.
 
-\item \textbf{Latencia variable:} Los tiempos de respuesta dependen de la calidad de la conexión y la carga de los servidores de \textbf{OpenAI}, lo que puede introducir variabilidad indeseable en sistemas de tiempo real \cite{pollini2025reducinglatencyllmbasednatural}.
+Sin embargo, debe distinguirse entre el dominio de una tarea y la forma
+lingüística mediante la cual se expresa.
 
-\item \textbf{Privacidad de datos:} El envío de comandos de voz y datos contextuales a servidores externos puede plantear problemas de confidencialidad en aplicaciones sensibles \cite{citation:7}.
+Considérense las siguientes instrucciones:
 
-\end{itemize}
+\begin{quote}
+\textit{``Go to the kitchen and find Robin.''}
+\end{quote}
 
-\end{itemize}
+\begin{quote}
+\textit{``Could you look for Robin in the kitchen?''}
+\end{quote}
 
-\subsection{Qwen2.5-0.5B: Modelo Open-Source para Cómputo}
-
-\textbf{Qwen} \textit{(QwenLM)} es una familia de modelos de lenguaje grande desarrollada por \textbf{Alibaba}, con versiones que abarcan desde modelos masivos hasta variantes extremadamente compactas diseñadas para despliegue en entornos con recursos limitados \cite{citation:3}. \textbf{Qwen2.5-0.5B-Instruct}, la versión con 0.5 mil millones de parámetros, representa un punto óptimo entre capacidad lingüística y eficiencia computacional, siendo particularmente relevante para robótica de servicio.
-
-\begin{itemize}
-
-\item \textbf{Características principales de Qwen2.5-0.5B:}
-
-% Tabla de características de Qwen2.5-0.5B
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|p{10cm}|}
-\hline
-\textbf{Característica} & \textbf{Descripción} \\
-\hline
-Parámetros & 0.5 mil millones (aproximadamente 1 GB en pesos del modelo) \cite{citation:3} \\
-\hline
-Arquitectura & Transformer con decodificador causal, similar a GPT \cite{citation:3} \\
-\hline
-Soporte de inferencia & CPU nativo, memoria $<$ 2 GB, sin necesidad de GPU \cite{citation:3}\cite{citation:7} \\
-\hline
-Idiomas & Optimizado para chino, con capacidades funcionales en inglés \cite{citation:3} \\
-\hline
-Ajuste & Instrucción fine-tuning \textbf{(versión Instruct)} para diálogo y seguimiento de comandos \cite{citation:7} \\
-\hline
-Formato de despliegue & Disponible en GGUF (llama.cpp), ONNX, y formatos nativos de PyTorch \cite{citation:3} \\
-\hline
-\end{tabular}
-\end{table}
-
-\item \textbf{Ventajas para robótica:}
-
-\begin{itemize}
-
-\item \textbf{Ejecución local y privada:} Todo el procesamiento ocurre en el dispositivo, eliminando dependencias de red y garantizando la privacidad de los datos \cite{citation:7}.
-
-\item \textbf{Bajos requisitos computacionales:} Puede ejecutarse en procesadores ARM (como Raspberry Pi 4/5) y x86 de gama baja, con consumo de memoria inferior a 2 GB tras cuantización INT8 \cite{citation:3}. Tiempos de inferencia típicos: 300-800 ms para primer token en CPU de 4 núcleos \cite{citation:3}.
-
-\item \textbf{Costo cero por consulta:} Al ser código abierto y ejecutarse localmente, no hay costos asociados al número de interacciones.
-
-\item \textbf{Personalización:} Posibilidad de fine-tuning con datos específicos del dominio \textit{(por ejemplo, vocabulario de un laboratorio o nombres de objetos domésticos)} sin dependencia de proveedores externos \cite{citation:7}.
-
-\item \textbf{Integración con ROS 2:} Experiencias documentadas muestran la viabilidad de integrar \textbf{Qwen2.5-0.5B} con \textbf{ROS 2} para aplicaciones como guías inteligentes en entornos educativos, donde el modelo procesa consultas en lenguaje natural y genera respuestas que se traducen en comandos de navegación \cite{citation:7}.
-
-\end{itemize}
-
-\item \textbf{Limitaciones:}
-
-\begin{itemize}
-
-\item \textbf{Capacidad lingüística reducida:} Con solo 0.5B parámetros, su comprensión y generación son inferiores a modelos como ChatGPT, especialmente para comandos muy complejos o ambiguos \cite{citation:7}. Sin embargo, para dominios restringidos (vocabulario de un hogar o laboratorio), el rendimiento puede ser suficiente tras personalización.
-
-\item \textbf{Requiere optimización:} Para alcanzar latencias aceptables en CPU, es necesario aplicar técnicas de cuantización (INT8, INT4) y utilizar motores de inferencia eficientes como llama.cpp u ONNX Runtime \cite{citation:3}.
-
-\item \textbf{Menor capacidad de diálogo:} La gestión de contextos largos y la coherencia en diálogos extendidos son inferiores a las de modelos con más parámetros \cite{citation:9}.
-
-\end{itemize}
-
-\end{itemize}
-
-\subsection{Comparativa y Selección para Robótica de Servicio}
-
-La Tabla \ref{tab:comparativa} resume las principales diferencias entre \textbf{ChatGPT} \textit{(representante de modelos propietarios)} y \textbf{Qwen2.5-0.5B} \textit{(representante de modelos open-source ligeros)}, proporcionando criterios para la selección según las necesidades de la aplicación robótica.
-
-En el contexto de esta tesis, la selección entre ambos modelos responde a una estrategia complementaria \cite{Savage2024}:
-
-\begin{itemize}
-
-\item \textbf{Qwen2.5-0.5B} se emplea como módulo de traducción de lenguaje natural a hechos CLIPS directamente en el robot, aprovechando su capacidad para ejecutarse localmente con latencias predecibles y sin dependencia de conectividad. Esto es particularmente útil para tareas rutinarias donde el vocabulario está acotado al entorno doméstico.
-
-\item \textbf{ChatGPT} se utiliza en el módulo de planificación dual o hibrido, como interprete de lenguaje natural o generador de planes alternativos para situaciones complejas o novedosas, cuando el sistema basado en reglas no puede resolver la tarea. En estos casos, la latencia adicional se justifica por la necesidad de flexibilidad semántica.
-
-\end{itemize}
-
-% Tabla comparativa ChatGPT vs Qwen2.5-0.5B
-\begin{table}[H]
-\centering
-\caption{Comparativa entre ChatGPT y Qwen2.5-0.5B para robótica de servicio}
-\label{tab:comparativa}
-\begin{tabular}{|l|p{5.5cm}|p{5.5cm}|}
-\hline
-\textbf{Aspecto} & \textbf{ChatGPT} & \textbf{Qwen2.5-0.5B} \\
-\hline
-Parámetros & $>$ 100B (estimado) & 0.5B \\
-\hline
-Ejecución & Nube (API) & Local (edge) \\
-\hline
-Latencia típica & 500-2000 ms (variable) & 300-800 ms (consistente) \cite{citation:3} \\
-\hline
-Dependencia de red & Obligatoria & Ninguna \\
-\hline
-Privacidad & Datos enviados a terceros & Datos locales \\
-\hline
-Costo por consulta & Sí (por token) & No \\
-\hline
-Personalización & Limitada (fine-tuning no disponible) & Completa (fine-tuning local) \\
-\hline
-Calidad lingüística & Muy alta & Moderada (suficiente para dominios restringidos) \cite{citation:7} \\
-\hline
-Consumo energético & Alto (servidores) & Bajo (CPU) \\
-\hline
-Idoneidad & Tareas complejas, investigación, prototipado & Despliegue en producción, dispositivos con recursos limitados, privacidad crítica \\
-\hline
-\end{tabular}
-\end{table}
-
-Esta arquitectura híbrida capitaliza las ventajas de ambos paradigmas: la eficiencia y privacidad de la ejecución local con \textbf{Qwen} para tareas estándar, y la potencia lingüística de \textbf{ChatGPT} para casos excepcionales, manteniendo siempre la supervisión del sistema basado en reglas como garantía de seguridad \cite{Shi2023}.
-
-\section{Integración de Traductores de Lenguaje Natural con Sistemas Basados en Reglas}
-
-Este integración esta enfocada en la arquitectura que busca combinar la robustez y transparencia del razonamiento simbólico con la flexibilidad y accesibilidad de la interacción en lenguaje humano. En el contexto de la robótica de servicio resulta fundamental permitir que usuarios no expertos puedan comunicarse con el robot de manera intuitiva, utilizando el lenguaje natural, mientras que el sistema subyacente mantiene la predictibilidad y seguridad propias de los motores de reglas. Se aborda la utilidad de dicha integración, describiendo su funcionamiento técnico en el caso específico de CLIPS, y presenta una descripción comparativa de las tres tecnologías involucradas: \textbf{CLIPS}, 
-\textbf{ChatGPT} y \textbf{Qwen2.5-0.5B}.
-
-\subsection{Utilidad y Función de la Integración}
-
-La principal utilidad de integrar traductores de lenguaje natural con sistemas basados en reglas radica en la ampliación de la accesibilidad del sistema robótico. Tradicionalmente, la programación y operación de robots basados en reglas requiere que el usuario conozca la sintaxis formal de hechos y reglas, o que utilice interfaces gráficas predefinidas que limitan la expresividad de las instrucciones \cite{Giarratano2005}. Al incorporar un módulo de procesamiento de lenguaje natural, el robot puede interpretar comandos expresados en lenguaje cotidiano, tales como ''tráeme el vaso rojo que está en la mesa de la cocina'', y transformarlos en representaciones estructuradas que el motor de reglas puede procesar \cite{Zeng2020}.
-
-Esta integración cumple varias funciones esenciales:
-
-\begin{enumerate}
-
-\item \textbf{Interfaz intuitiva para usuarios no técnicos:} Elimina la necesidad de aprender lenguajes de programación o secuencias de comandos predefinidas, permitiendo que personas sin formación en robótica puedan interactuar con el robot de manera natural \cite{ScienceDirect_Production}.
-
-\item \textbf{Traducción de ambigüedad a precisión:} El lenguaje natural es inherentemente ambiguo; una misma frase puede tener múltiples interpretaciones. El módulo de traducción debe resolver estas ambigüedades mediante análisis semántico y contextual, generando hechos unívocos que el sistema basado en reglas pueda evaluar sin ambigüedad \cite{citation:2}. Técnicas como la desambiguación del sentido de las palabras \textit{(word sense disambiguation)} y el reconocimiento de entidades nombradas son fundamentales en este proceso \cite{citation:8}.
-
-\item \textbf{Enriquecimiento del conocimiento del dominio:} Los comandos en lenguaje natural pueden contener información implícita sobre el entorno, los objetos y las intenciones del usuario que no está disponible en la base de conocimiento inicial. El traductor puede extraer esta información y representarla como nuevos hechos, enriqueciendo dinámicamente la memoria de trabajo del sistema de reglas \cite{Donnell1994}.
-
-\item \textbf{Adaptación a contextos culturales y situacionales:} Diferentes usuarios pueden referirse al mismo objeto o acción con términos distintos. Un traductor basado en modelos de lenguaje grande puede capturar estas variaciones lingüísticas y mapearlas a los conceptos canónicos definidos en la base de reglas, mejorando la robustez del sistema en entornos multilingües o multiculturales \cite{citation:1}.
-
-\end{enumerate}
-
-En el ámbito de la robótica de servicio doméstico, esta integración resulta particularmente valiosa para aplicaciones de asistencia a personas mayores o con alguna discapacidad, donde la facilidad de uso y la naturalidad de la interacción son requisitos prioritarios.
-
-\subsection{Funcionamiento de la Integración CLIPS-Lenguaje Natural}
-
-La integración entre CLIPS y los modelos de lenguaje natural en el robot Justina sigue un flujo de procesamiento claramente definido, que transforma comandos verbales en hechos estructurados y, finalmente, en planes ejecutables. Este flujo se organiza en torno a servicios y tópicos de ROS 2 que garantizan la comunicación asíncrona y desacoplada entre los módulos \cite{Savage2024}.
-
-\subsubsection*{Flujo de Procesamiento}
-
-El proceso completo de integración comprende las siguientes etapas:
-
-\begin{enumerate}
-
-\item \textbf{Captura y reconocimiento de voz:} El robot Justina captura el audio del entorno mediante su micrófono y utiliza un motor de reconocimiento de voz, como Vosk, para transcribir el habla a texto \cite{citation:7}. Esta etapa convierte la señal acústica en una cadena de texto que representa el comando del usuario.
-
-\item \textbf{Análisis semántico mediante LLM:} El texto resultante se envía al módulo de lenguaje natural, que puede estar basado en ChatGPT (mediante API) o en Qwen2.5-0.5B (ejecución local). Este módulo realiza un análisis semántico profundo para identificar los componentes clave del comando \cite{citation:4}:
-
-\begin{itemize}
-
-\item \textbf{Acción principal:} "traer", "llevar", "buscar", "colocar".
-
-\item \textbf{Objeto meta:} "vaso", "libro", "medicina".
-
-\item \textbf{Atributos descriptivos:} "rojo", "pequeño", "de plástico".
-
-\item \textbf{Ubicaciones:} "en la mesa", "en la cocina", "sobre el estante".
-
-\end{itemize}
-
-\item \textbf{Generación de hechos CLIPS:} El resultado del análisis se transforma en hechos estructurados según la sintaxis de CLIPS. Un hecho típico generado tiene la forma:
-
-$$\text{(objetivo (accion traer) (objeto vaso) (atributo rojo) (ubicacion mesa-cocina))}$$
-
-Esta representación sigue las plantillas definidas en la base de conocimiento del sistema, asegurando que los hechos generados sean directamente procesables por el motor de reglas \cite{Giarratano2005}.
-
-\item \textbf{Inserción en la memoria de trabajo:} Los hechos generados se insertan en la memoria de trabajo de \textbf{CLIPS} mediante el servicio \textbf{ROS2} correspondiente. La inserción desencadena el ciclo de inferencia del motor de reglas, que evalúa las reglas aplicables y genera un plan de acciones \cite{Donnell1994}.
-
-\item \textbf{Ejecución del plan:} El plan resultante, consistente en una secuencia de acciones primitivas, se publica en un tópico \textbf{ROS2} para que los módulos de ejecución (navegación, manipulación, etc.) lo traduzcan en comandos concretos para los actuadores del robot \cite{Savage2024}.
-
-\end{enumerate}
-
-\subsubsection*{Servicios y Tópicos ROS2}
-
-La arquitectura de integración se implementa mediante los siguientes elementos de comunicación en ROS2 \cite{citation:1}:
-
-\begin{itemize}
-
-\item \textbf{Servicio} \textit{/natural\_to\_clips/interpret:}
-
-\begin{itemize}
-
-\item \textbf{Entrada:} Cadena de texto con el comando en lenguaje natural.
-
-\item \textbf{Procesamiento:} Invoca al modelo de lenguaje (\textbf{ChatGPT} o \textbf{Qwen}) con un prompt estructurado que incluye el contexto del entorno y ejemplos de traducción esperados.
-
-\item \textbf{Salida:} Lista de hechos CLIPS estructurados en formato JSON o similar.
-
-\item \textbf{Validación:} Se aplican técnicas de prompting few-shot y validación sintáctica para garantizar que los hechos generados sean correctos \cite{citation:4}.
-
-\end{itemize}
-
-\item \textbf{Servicio} \textit{/clips/assert\_fact:}
-
-\begin{itemize}
-
-\item \textbf{Entrada:} Hecho individual en formato CLIPS (ej., (objetivo (accion traer) (objeto vaso))).
-
-\item \textbf{Procesamiento:} Inserta el hecho en la memoria de trabajo de CLIPS y retorna una confirmación.
-
-\item \textbf{Manejo de errores:} Verifica que el hecho respete las plantillas definidas; en caso contrario, rechaza la inserción y notifica el error.
-
-\end{itemize}
-
-\item \textbf{Tópico} \textit{/clips/results:}
-
-\begin{itemize}
-
-\item \textbf{Publicación:} El motor CLIPS publica el plan completo generado tras el ciclo de inferencia.
-
-\item \textbf{Formato:} Secuencia ordenada de acciones primitivas, cada una con los parámetros necesarios para su ejecución (ej., (goto cocina), (find-object vaso), (grasp objeto)).
-
-\item \textbf{Consumidores:} Los módulos de navegación, manipulación y control de actuadores usan esta información para ejecutar las acciones.
-
-\end{itemize}
-
-\end{itemize}
-
-\subsubsection*{Técnicas de Prompting para la Generación de Hechos}
-
-La calidad de la traducción de lenguaje natural a hechos CLIPS depende críticamente del diseño de los prompts enviados al modelo de lenguaje, se emplean las siguientes técnicas:
-
-\begin{itemize}
-
-\item \textbf{Prompts con especificación de tarea:} Se proporciona al modelo una descripción clara de su función: ''Eres un asistente que traduce comandos en lenguaje natural a hechos estructurados para un robot doméstico. Los hechos deben seguir el formato (objetivo (accion <acción>) (objeto <objeto>) (atributo <atributo>) (ubicacion <ubicación>)).''
-
-\item \textbf{Contexto del entorno:} Se incluye información sobre el entorno doméstico (habitaciones disponibles, objetos conocidos, capacidades del robot) para guiar la generación de hechos realistas y ejecutables \cite{citation:4}.
-
-\item \textbf{Ejemplos few-shot:} Se proporcionan varios ejemplos de comandos y sus correspondientes hechos CLIPS, demostrando cómo manejar variaciones lingüísticas y casos ambiguos \cite{citation:4}.
-
-\item \textbf{Validación y retroalimentación:} Cuando el modelo genera hechos sintácticamente incorrectos o incompletos, se envía un mensaje de error detallado al modelo junto con la solicitud de corrección, en un ciclo similar al descrito en \cite{citation:4} para la generación de consultas NRQL.
-
-\end{itemize}
-
-
-\subsection{Comparativa y Roles en la Arquitectura Híbrida}
-
-La arquitectura híbrida propuesta integra tres tecnologías fundamentales descritas anteriormente.
-
-La Tabla \ref{tab:comparativa_tecnologias} resume las principales diferencias entre las tres tecnologías y sus roles en el sistema propuesto.
-
-En la arquitectura del robot Justina, estas tres tecnologías se complementan:
-
-\begin{itemize}
-
-\item \textbf{CLIPS} actúa como núcleo de planificación segura, manejando tareas críticas y bien definidas donde la predictibilidad es esencial.
-
-\item \textbf{Qwen2.5-0.5B} opera como traductor local para comandos rutinarios, proporcionando respuestas rápidas y privadas sin dependencia de la nube.
-
-\item \textbf{ChatGPT} se reserva para situaciones complejas o novedosas donde la flexibilidad semántica de un modelo de gran escala es necesaria, aceptando la latencia adicional en aras de la adaptabilidad.
-
-\end{itemize}
-
-Esta integración sinérgica permite aprovechar las fortalezas de cada tecnología mientras se mitigan sus limitaciones individuales, constituyendo el núcleo de la propuesta híbrida de esta tesis.
-
-\begin{table}[H]
-\centering
-\caption{Comparativa y roles en la arquitectura híbrida}
-\label{tab:comparativa_tecnologias}
-\begin{tabular}{|p{3.2cm}|p{3cm}|p{3.5cm}|p{3.5cm}|}
-\hline
-\textbf{Aspecto} & \textbf{CLIPS} & \textbf{ChatGPT} & \textbf{Qwen2.5-0.5B} \\
-\hline
-Paradigma & Simbólico (reglas) & Subsimbólico (red neuronal) & Subsimbólico (red neuronal) \\
-Ejecución & Local (embebido) & Nube (API) & Local (edge) \\
-Requisitos & CPU, $<10$ MB RAM & GPU en servidor, internet & CPU, $<2$ GB RAM \\
-Determinismo & Completo & Probabilístico & Probabilístico \\
-Explicabilidad & Alta (reglas trazables) & Baja (“caja negra”) & Baja (“caja negra”) \\
-Flexibilidad & Baja (reglas fijas) & Alta (generalización) & Media (dominio restringido) \\
-Costo operativo & Cero & Por token (API) & Cero \\
-Rol en el sistema & Planificación segura, control crítico & Traducción de comandos complejos, planificación dual & Traducción local para tareas rutinarias \\
-\hline
-\end{tabular}
-\end{table}
-
-\section{ChatGPT como Agente de Planificación Autónomo}
-
-La gran mejora de los modelos de lenguaje grande (LLMs) ha transformado no solo la interacción humano-robot, sino también el propio proceso de planificación de acciones en robótica autónoma. Más allá de su función como traductores de lenguaje natural a representaciones simbólicas, modelos como ChatGPT han demostrado capacidades emergentes para actuar como agentes de planificación autónomos, generando secuencias completas de acciones a partir de objetivos de alto nivel expresados en lenguaje natural \cite{Shi2023}. Esta capacidad abre nuevas posibilidades, donde los LLMs no solo complementan, sino que pueden competir con los sistemas basados en reglas en la generación de planes, ofreciendo una flexibilidad contextual sin precedentes.
-
-\subsection{Capacidades de Planificación de LLMs vs. Sistemas Basados en Reglas}
-
-\begin{table}[H]
-\centering
-\caption{Comparativa entre planificación con sistemas basados en reglas y LLMs}
-\label{tab:comparativa_rbs_llm}
-\begin{tabular}{p{4cm} p{5cm} p{5cm}}
-\hline
-\textbf{Dimensión} & \textbf{Sistemas Basados en Reglas (CLIPS)} & \textbf{Modelos de Lenguaje Grande (ChatGPT)} \\
-\hline
-Fundamento & Razonamiento simbólico, lógica formal & Inferencia probabilística, patrones estadísticos \\
-Generación de planes & Descomposición recursiva basada en métodos y operadores & Generación autorregresiva basada en contexto \\
-Conocimiento & Explicitado en reglas (declarativo) & Implícito en los pesos de la red neuronal \\
-Adaptabilidad & Baja (requiere modificación manual de reglas) & Alta (generaliza a situaciones novedosas) \\
-Explicabilidad & Alta (trazabilidad de reglas activadas) & Baja (opacidad de la red neuronal) \\
-Seguridad & Verificable formalmente & No verificable formalmente \\
-Manejo de ambigüedad & Ninguno (la entrada debe ser estructurada) & Alta (interpretación contextual) \\
-Actualización del conocimiento & Manual (añadir/modificar reglas) & Fine-tuning o prompting contextual \\
-Consistencia & Determinista & Estocástica (puede variar entre ejecuciones) \\
-\hline
-\end{tabular}
-\end{table}
-
-Los sistemas basados en reglas (RBS) y los modelos de lenguaje grande (LLMs) representan paradigmas fundamentalmente distintos para la generación de planes en robótica. Mientras que los primeros operan mediante razonamiento simbólico explícito sobre una base de reglas predefinidas, los segundos generan planes mediante inferencia probabilística a partir de patrones aprendidos durante su entrenamiento \cite{Russell2020}. La Tabla \ref{tab:comparativa_rbs_llm} resume las principales diferencias entre ambos enfoques, que se analizan en detalle a continuación.
-
-\subsubsection*{Sistemas Basados en Reglas: Rigidez Predecible}
-
-Los sistemas basados en reglas, como CLIPS, generan planes mediante un proceso de razonamiento que opera sobre un conjunto de reglas y hechos explícitamente definidos \cite{Giarratano2005}. Este proceso se caracteriza por:
-
-\begin{itemize}
-
-\item \textbf{Determinismo:} Dadas las mismas condiciones iniciales, el sistema produce invariablemente el mismo plan, lo que facilita la validación y certificación del comportamiento \cite{Russell2020}.
-
-\item \textbf{Explicabilidad:} Cada decisión puede rastrearse hasta las reglas que la generaron, permitiendo auditoría y depuración sistemática \cite{Giarratano2005}.
-
-\item \textbf{Completitud del conocimiento:} Requiere que todo el conocimiento necesario para la planificación esté explícitamente codificado en la base de reglas, lo que implica un esfuerzo significativo de ingeniería del conocimiento \cite{Brooks1986}.
-
-\item \textbf{Falta de generalización:} Las reglas solo cubren las situaciones explícitamente contempladas; cualquier desviación puede llevar al fracaso del planificador \cite{Shi2023}.
-
-\end{itemize}
-
-Esta rigidez hace que los RBS sean ideales para dominios bien estructurados con comportamientos predecibles, como entornos industriales o tareas repetitivas, pero limita su aplicabilidad en entornos domésticos dinámicos donde la variabilidad es la norma.
-
-\subsubsection*{Modelos de Lenguaje Grande: Adaptabilidad Contextual}
-
-Los LLMs como ChatGPT generan planes mediante un proceso fundamentalmente diferente: dada una descripción del objetivo y el contexto, el modelo produce autorregresivamente una secuencia de acciones, token por token, basándose en patrones aprendidos durante su entrenamiento en corpus masivos de texto \cite{Vaswani2017}. Este enfoque ofrece características distintivas:
-
-\begin{itemize}
-
-\item \textbf{Generalización emergente:} Los LLMs pueden generar planes para situaciones no vistas durante el entrenamiento, aprovechando su capacidad para componer patrones aprendidos de manera novedosa \cite{Shi2023}.
-
-\item \textbf{Interpretación de lenguaje natural:} Pueden procesar directamente descripciones de tareas en lenguaje natural, sin necesidad de traducción previa a representaciones formales \cite{Zeng2020}.
-
-\item \textbf{Razonamiento contextual:} Incorporan información contextual implícita (como normas sociales, preferencias comunes, o propiedades de objetos) que no está explícitamente programada \cite{citation:1}.
-
-\item \textbf{Flexibilidad ante restricciones:} Pueden adaptar planes dinámicamente cuando se introducen nuevas restricciones o requisitos en el diálogo.
-
-\end{itemize}
-
-Sin embargo, esta flexibilidad conlleva riesgos significativos. La naturaleza probabilística de los LLMs implica que el mismo objetivo puede generar planes diferentes en distintas ejecuciones, y no existe garantía formal de que las acciones generadas sean seguras o factibles en el mundo físico \cite{Shi2023}. Además, la opacidad del razonamiento subyacente dificulta la auditoría y la certificación del comportamiento.
-
-\subsubsection*{Complementariedad Fundamental}
-
-Lejos de ser enfoques opuestos, los RBS y los LLMs presentan una complementariedad fundamental que motiva su integración en arquitecturas híbridas \cite{Savage2024}:
-
-\begin{itemize}
-
-\item Los \textbf{RBS} proporcionan seguridad garantizada, explicabilidad y comportamiento determinista para tareas críticas y bien definidas.
-
-\item Los \textbf{LLMs} aportan flexibilidad semántica, adaptabilidad a situaciones novedosas y capacidad de interacción natural para tareas complejas y mal definidas.
-
-\end{itemize}
-
-Esta complementariedad constituye la base de la arquitectura de planificación dual propuesta en esta tesis, donde ambos motores operan de manera concurrente y un módulo supervisor selecciona o combina sus salidas según el contexto.
-
-\subsection{Arquitectura de Planificación Dual: CLIPS y ChatGPT como Motores Complementarios}
-
-La arquitectura de planificación dual propuesta en esta investigación integra CLIPS y ChatGPT como motores complementarios que operan en paralelo, generando planes concurrentemente y permitiendo la selección dinámica de la mejor estrategia según el contexto \cite{Savage2024}. La Figura \ref{fig:plan} ilustra la estructura general de esta arquitectura, cuyos componentes principales se describen a continuación.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.8\textwidth]{Figures/Plandual.png}
-    \caption{Arquitectura de planificación dual CLIPS-ChatGPT.}
-    \label{fig:plan}
-\end{figure}
-
-\subsubsection*{Principios de la Planificación Dual}
-
-La arquitectura de planificación dual se fundamenta en los siguientes principios \cite{Shi2023}:
-
-\begin{enumerate}
-
-\item \textbf{Procesamiento Concurrente:} Ambos motores operan en paralelo, generando planes simultáneamente a partir del mismo objetivo y contexto. Esto permite que la latencia de generación no sea aditiva, sino que el sistema pueda seleccionar el primer plan válido o esperar la finalización de ambos según la estrategia de selección.
-
-\item \textbf{Independencia de Representación:} CLIPS opera con representaciones simbólicas (hechos y reglas), mientras que ChatGPT procesa representaciones textuales. La arquitectura mantiene esta independencia mediante interfaces de traducción que convierten el contexto común al formato requerido por cada motor.
-
-\item \textbf{Estrategias de Selección Configurables:} El módulo de selección puede implementar diferentes estrategias según los requisitos de la aplicación, como priorizar el plan de CLIPS por defecto (seguridad primero), priorizar el plan de ChatGPT para tareas novedosas (flexibilidad primero), o combinar elementos de ambos planes.
-
-\end{enumerate}
-
-\subsubsection*{Generación de Planes con ChatGPT}
-
-Para que ChatGPT genere planes robóticos ejecutables, se requiere un diseño cuidadoso de los prompts que incluyan toda la información contextual necesaria \cite{Shi2023}. La estructura típica del prompt de planificación incluye:
-
-\begin{enumerate}
-
-\item \textbf{Especificación del rol:} Se establece explícitamente que el modelo actúa como planificador robótico:''Eres un planificador de acciones para un robot de servicio doméstico.''
-
-\item \textbf{Descripción del entorno:} Se proporciona información sobre las habitaciones, objetos disponibles, y relaciones espaciales, en formato de texto estructurado.
-
-\item \textbf{Capacidades del robot:} Se enumeran las acciones primitivas que el robot puede ejecutar (navegar, buscar, agarrar, soltar, etc.), junto con sus precondiciones.
-
-\item \textbf{Objetivo en lenguaje natural:} Se presenta la tarea que debe cumplirse, expresada en lenguaje natural.
-
-\item \textbf{Ejemplos few-shot:} Se incluyen ejemplos de objetivos similares y los planes generados, para guiar al modelo hacia el formato deseado \cite{citation:4}.
-
-\item \textbf{Restricciones de formato:} Se especifica que el plan debe producirse como una secuencia numerada de acciones, cada una con parámetros explícitos.
-
-\end{enumerate}
-
-Un ejemplo de prompt estructurado para planificación con ChatGPT es el siguiente:
+Aunque las expresiones presentan diferencias sintácticas, ambas pueden
+representar una intención equivalente:
 
 \begin{verbatim}
-Eres un planificador de acciones para un robot de servicio doméstico.
-
-Entorno:
-- Habitaciones: cocina, sala, comedor, habitacion_principal
-- Objetos: vaso_rojo (en cocina, mesa); libro (en sala, estante)
-- Ubicación actual del robot: entrada
-
-Capacidades del robot:
-- goto(habitacion)
-- find_object(objeto)
-- grasp(objeto)
-- release(objeto)
-- bring_object(objeto, destino)
-
-Objetivo: "Tráeme el vaso rojo que está en la cocina a la sala"
-
-Ejemplo de plan válido:
-1. goto(cocina)
-2. find_object(vaso_rojo)
-3. grasp(vaso_rojo)
-4. goto(sala)
-5. release(vaso_rojo)
-
-Genera un plan para el objetivo indicado. 
-Responde únicamente con la secuencia numerada de acciones.
+go(kitchen)
+find(Robin, kind=person)
 \end{verbatim}
 
-Este enfoque de prompting estructurado ha demostrado ser efectivo para generar planes coherentes y ejecutables en entornos robóticos \cite{Shi2023}.
+El propósito de la interpretación semántica consiste precisamente en reducir
+esta variabilidad lingüística y obtener una representación común de la
+intención.
 
-\subsection{Mecanismos de Selección y Validación de Planes}
+Por tanto, la entrada del sistema no se restringe a reproducir literalmente
+las plantillas empleadas para generar las órdenes de referencia. No obstante,
+la libertad en la formulación lingüística tampoco implica un dominio semántico
+ilimitado.
 
-La planificación dual introduce un desafío crítico: cómo seleccionar el plan más adecuado cuando los dos motores generan propuestas potencialmente divergentes. Para abordar este desafío, la arquitectura implementa un módulo de selección y validación que evalúa los planes generados según múltiples criterios y aplica heurísticas de decisión.
+Puede establecerse conceptualmente la relación:
 
-\subsubsection*{Criterios de Evaluación}
+\begin{equation}
+\boxed{
+\text{formulación lingüística variable}
+\rightarrow
+\text{dominio semántico definido}
+\rightarrow
+\text{capacidades disponibles}
+}
+\end{equation}
 
-Los planes generados por CLIPS y ChatGPT se evalúan según los siguientes criterios \cite{Shi2023, Russell2020}:
+En otras palabras, una instrucción puede expresarse de diferentes maneras,
+pero solamente puede convertirse en un plan cuando su intención puede
+representarse mediante los objetivos y las capacidades contemplados por el
+sistema.
 
-\begin{table}[htbp]
-\centering
-\caption{Criterios de evaluación para selección de planes}
-\label{tab:criterios_planes}
-\begin{tabular}{p{3cm} p{7cm} p{4cm}}
-\hline
-\textbf{Criterio} & \textbf{Descripción} & \textbf{Métrica} \\
-\hline
-Seguridad & El plan no debe incluir acciones que puedan causar daño al robot, al entorno o a las personas. & Evaluación de reglas de seguridad (verificación de precondiciones críticas) \\
-Factibilidad & Todas las acciones deben ser ejecutables por el robot dadas sus capacidades físicas. & Verificación de acciones contra capacidades declaradas \\
-Consistencia & La secuencia de acciones debe respetar los efectos de acciones previas. & Verificación de encadenamiento de precondiciones \\
-Eficiencia & El plan debe minimizar el número de acciones o el tiempo estimado de ejecución. & Longitud del plan, estimación de tiempo por acción \\
-Adecuación contextual & El plan debe respetar normas sociales implícitas (ej., no interrumpir actividades humanas). & Evaluación mediante reglas sociales o LLM supervisor \\
-\hline
-\end{tabular}
-\end{table}
+El dominio experimental utilizado en esta investigación considera
+principalmente instrucciones en inglés. Por ello, el estudio de la variabilidad
+lingüística se concentra en diferentes formas de expresar las tareas
+soportadas dentro de dicho idioma y no pretende demostrar independencia
+respecto al lenguaje utilizado.
 
-\subsubsection*{Estrategias de Selección}
 
-El módulo de selección puede implementar diversas estrategias según los requisitos de la aplicación:
+% ============================================================
+\section{Formalización de órdenes, objetivos y planes}
+\label{sec:formalizacion_ordenes}
+
+\subsection{Orden en lenguaje natural}
+\label{subsec:orden_natural}
+
+Sea:
+
+\begin{equation}
+x \in \mathcal{X}
+\end{equation}
+
+una instrucción expresada en lenguaje natural perteneciente al conjunto
+$\mathcal{X}$ de órdenes consideradas dentro del dominio experimental.
+
+La instrucción puede contener una o varias intenciones. Por ejemplo:
+
+\begin{quote}
+\textit{``Go to the living room, find Robin and follow Robin to the kitchen.''}
+\end{quote}
+
+contiene tres subtareas diferentes:
 
 \begin{enumerate}
-
-\item \textbf{Selección por defecto priorizando CLIPS:} El plan de CLIPS se ejecuta por defecto. El plan de ChatGPT solo se utiliza cuando CLIPS no puede generar un plan (base de reglas incompleta) o cuando el plan de CLIPS viola criterios de eficiencia (longitud excesiva). Esta estrategia prioriza la seguridad y previsibilidad.
-
-\item \textbf{Selección por defecto priorizando ChatGPT:} El plan de ChatGPT se ejecuta por defecto para maximizar adaptabilidad. El plan de CLIPS se utiliza como respaldo cuando el plan de ChatGPT no supera la validación de seguridad. Esta estrategia es adecuada para entornos muy dinámicos donde la rigidez de CLIPS sería limitante.
-
-\item \textbf{Selección basada en voto ponderado:} Cada plan recibe una puntuación agregada según los criterios de evaluación. Se selecciona el plan con mayor puntuación. Los pesos de los criterios pueden configurarse según la aplicación.
-
-\item \textbf{Fusión de planes:} En lugar de seleccionar un plan completo, el módulo puede fusionar elementos de ambos planes, por ejemplo, utilizando la secuencia de navegación de CLIPS (más segura) y la estrategia de manipulación de ChatGPT (más adaptativa).
-
+    \item desplazarse a una ubicación;
+    \item localizar una persona;
+    \item realizar una tarea relacionada con dicha persona.
 \end{enumerate}
 
-\subsubsection*{Validación de Seguridad Pre-Ejecución}
+El objetivo de la etapa de interpretación es transformar esta expresión en una
+representación que elimine información lingüística innecesaria y conserve los
+elementos relevantes para la planificación.
 
-Independientemente de la estrategia de selección, todos los planes pasan por una fase de validación de seguridad pre-ejecución antes de ser enviados al módulo de ejecución \cite{citation:1}. Esta validación incluye:
+
+\subsection{Entidades y conocimiento del dominio}
+\label{subsec:entidades_dominio}
+
+La interpretación de una orden requiere conocer las entidades que pueden
+aparecer dentro de las tareas consideradas.
+
+Se define el conocimiento del dominio como:
+
+\begin{equation}
+K =
+\{
+K_P,
+K_O,
+K_C,
+K_L,
+K_R
+\},
+\end{equation}
+
+donde:
 
 \begin{itemize}
 
-\item \textbf{Verificación de precondiciones:} Para cada acción en la secuencia, se verifica que sus precondiciones se cumplan en el estado esperado.
+    \item $K_P$ representa el conjunto de personas o nombres conocidos;
 
-\item \textbf{Detección de acciones inseguras:} Se aplican reglas de seguridad explícitas (ej., no acercarse a áreas restringidas, no manipular objetos frágiles sin verificación) que pueden rechazar acciones específicas.
+    \item $K_O$ representa el conjunto de objetos;
 
-\item \textbf{Simulación de ejecución:} Se ejecuta una simulación rápida del plan en un modelo simplificado del entorno para detectar conflictos espaciales o temporales.
+    \item $K_C$ representa categorías de objetos;
 
-\item \textbf{Validación de límites físicos:} Se verifican restricciones como alcance del brazo, capacidad de carga, o niveles de batería.
+    \item $K_L$ representa ubicaciones o lugares relevantes;
+
+    \item $K_R$ representa habitaciones.
 
 \end{itemize}
 
-En caso de que un plan no supere la validación de seguridad, se recurre al plan alternativo (si está disponible) o se solicita una replanificación con restricciones adicionales.
+Estos catálogos permiten delimitar las entidades que pueden ser utilizadas en
+la interpretación de una instrucción y proporcionan información adicional
+para determinar su función semántica.
 
-\subsection{Ventajas y Riesgos de la Planificación con LLMs en Robótica}
+Por ejemplo, en:
 
-La integración de LLMs como motores de planificación autónomos en sistemas robóticos ofrece ventajas significativas, pero también introduce riesgos que deben gestionarse cuidadosamente.
+\begin{verbatim}
+find(Robin, kind=person)
+\end{verbatim}
 
-\subsubsection*{Ventajas}
+\texttt{Robin} corresponde a una entidad de tipo persona, mientras que en:
 
-\begin{enumerate}
+\begin{verbatim}
+find(apple, kind=object)
+\end{verbatim}
 
-\item \textbf{Flexibilidad semántica sin precedentes:} Los LLMs pueden interpretar objetivos expresados en lenguaje natural con alta variabilidad léxica y sintáctica, adaptando sus respuestas al contexto \cite{Shi2023}. Un usuario puede decir ''trae lo que está en la mesa de la cocina'' y el modelo inferirá que se refiere al objeto que estaba allí previamente.
+\texttt{apple} corresponde a un objeto.
 
-\item \textbf{Razonamiento de sentido común:} Incorporan conocimiento del mundo que no está explícitamente programado, como saber que un vaso suele estar en la cocina o que los libros no deben dejarse en el suelo \cite{Zeng2020}.
+Esta información resulta relevante porque una misma estructura de objetivo
+puede operar sobre tipos de entidades diferentes.
 
-\item \textbf{Adaptación dinámica a restricciones:} Pueden replanificar en tiempo real cuando se introducen nuevas restricciones (ej.,''pero no pases por la sala porque hay personas comiendo'') sin necesidad de reprogramación \cite{citation:1}.
 
-\item \textbf{Reducción de la ingeniería del conocimiento:} Eliminan la necesidad de codificar explícitamente todas las posibles situaciones y respuestas, reduciendo el esfuerzo de desarrollo y mantenimiento.
+\subsection{Representación canónica de objetivos}
+\label{subsec:objetivos_canonicos}
 
-\item \textbf{Interacción explicativa:} Pueden generar explicaciones de sus decisiones en lenguaje natural, mejorando la transparencia para usuarios no técnicos \cite{Shi2023}.
+La interpretación de una orden se representa mediante una secuencia ordenada:
 
-\end{enumerate}
+\begin{equation}
+G=(g_1,g_2,\ldots,g_n),
+\end{equation}
 
-\subsubsection*{Riesgos y Desafíos}
+donde cada $g_i$ representa un objetivo semántico.
 
-\begin{enumerate}
+De manera general, un objetivo puede expresarse como:
 
-\item \textbf{Falta de garantías de seguridad:} No existe un marco formal para verificar que los planes generados por LLMs sean seguros en todas las circunstancias. Un modelo puede generar acciones aparentemente razonables que, en el contexto físico, resulten peligrosas \cite{Shi2023}.
+\begin{equation}
+g_i=(t_i,\theta_i),
+\end{equation}
 
-\item \textbf{Comportamiento no determinista:} La misma entrada puede generar planes diferentes en distintas ejecuciones, dificultando la predicción del comportamiento y la certificación del sistema.
+donde $t_i$ identifica el tipo de objetivo y $\theta_i$ contiene sus
+argumentos y calificadores.
 
-\item \textbf{Alucinaciones (hallucinations):} Los LLMs pueden generar acciones o referencias a objetos inexistentes, con total confianza y plausibilidad superficial \cite{Shi2023}. Por ejemplo, un modelo podría sugerir buscar un objeto en una habitación que no existe en el entorno.
+En la representación utilizada por esta investigación, $G$ se serializa
+mediante una estructura JSON:
 
-\item \textbf{Dependencia de la calidad del prompt:} La calidad del plan generado es altamente sensible a la formulación del prompt. Pequeñas variaciones pueden llevar a planes radicalmente diferentes.
+\begin{verbatim}
+{
+  "goals": [
+    "go(living room)",
+    "find(Robin, kind=person)",
+    "follow(Robin, to=kitchen)"
+  ]
+}
+\end{verbatim}
 
-\item \textbf{Latencia y recursos:} La inferencia con LLMs de gran escala requiere recursos computacionales significativos y puede introducir latencias inaceptables para aplicaciones de tiempo real.
+El vocabulario canónico contempla los siguientes tipos principales de
+objetivos:
 
-\item \textbf{Privacidad de datos:} El uso de APIs externas implica enviar información contextual potencialmente sensible a servidores de terceros.
+\begin{verbatim}
+go
+find
+take
+deliver
+place
+drop
+guide
+follow
+count
+tell
+talk
+save
+answer_question
+greet
+\end{verbatim}
 
-\item \textbf{Sesgos y equidad:} Los LLMs pueden heredar sesgos presentes en los datos de entrenamiento, que podrían manifestarse como comportamientos inapropiados en contextos sociales \cite{Shi2023}.
+Cada objetivo posee una semántica definida y puede requerir parámetros
+adicionales.
 
-\end{enumerate}
+Por ejemplo:
 
-\subsubsection*{Estrategias de Mitigación}
+\begin{verbatim}
+go(kitchen)
+find(Robin, kind=person)
+find(apple, kind=object)
+deliver(apple, to=Robin)
+guide(Robin, to=kitchen)
+\end{verbatim}
 
-Para gestionar estos riesgos, la arquitectura propuesta implementa múltiples capas de mitigación:
+Los objetivos \texttt{find} y \texttt{count} requieren una indicación
+explícita del tipo de entidad debido a que pueden operar tanto sobre personas
+como sobre objetos:
+
+\begin{verbatim}
+find(person, kind=person)
+find(apple, kind=object)
+count(person, kind=person)
+count(drinks, kind=object)
+\end{verbatim}
+
+También pueden utilizarse calificadores para conservar información relevante
+de la instrucción, por ejemplo:
+
+\begin{verbatim}
+find(person, kind=person, gesture='waving person')
+find(drink, kind=object, property=largest)
+place(apple, on=table)
+follow(Robin, to=kitchen)
+\end{verbatim}
+
+La representación canónica tiene como objetivo establecer una interfaz estable
+entre el lenguaje natural y la planificación. Dos expresiones lingüísticas
+diferentes que describen una misma intención deberían, idealmente, producir la
+misma secuencia $G$.
+
+
+\subsection{Objetivos semánticos y acciones ejecutables}
+\label{subsec:objetivos_acciones}
+
+La representación canónica describe \textbf{qué} debe realizar el robot, pero
+no necesariamente especifica directamente \textbf{cómo} debe realizarlo.
+
+Sea:
+
+\begin{equation}
+\mathcal{G}
+\end{equation}
+
+el vocabulario de objetivos semánticos y:
+
+\begin{equation}
+\mathcal{A}
+\end{equation}
+
+el repertorio de acciones que pueden ser procesadas por el ejecutor.
+
+En general:
+
+\begin{equation}
+\mathcal{G} \neq \mathcal{A}.
+\end{equation}
+
+Por ejemplo, \texttt{deliver} representa una intención de alto nivel:
+
+\begin{verbatim}
+deliver(apple, to=Robin)
+\end{verbatim}
+
+pero su realización puede requerir operaciones relacionadas con la
+localización de la persona, aproximación, entrega del objeto y comunicación.
+
+De manera similar:
+
+\begin{verbatim}
+place(apple, on=table)
+\end{verbatim}
+
+puede requerir localizar un espacio adecuado antes de liberar el objeto.
+
+Entre las acciones utilizadas por el ejecutor se encuentran, por ejemplo:
+
+\begin{verbatim}
+go_to
+find_person
+find_pose
+approach
+focus
+find_object
+analyze_objects
+analyze_person
+take
+find_space
+drop
+give
+listen
+say
+\end{verbatim}
+
+Por tanto, un objetivo $g_i$ puede producir una subsecuencia de acciones:
+
+\begin{equation}
+g_i
+\rightarrow
+(a_j,a_{j+1},\ldots,a_k),
+\qquad
+a_j,\ldots,a_k \in \mathcal{A}.
+\end{equation}
+
+El plan completo se define entonces como:
+
+\begin{equation}
+P=(a_1,a_2,\ldots,a_m),
+\qquad
+a_i\in\mathcal{A}.
+\end{equation}
+
+La transformación:
+
+\begin{equation}
+G\rightarrow P
+\end{equation}
+
+constituye el problema de planificación considerado en esta tesis.
+
+
+\subsection{Dependencias y contexto entre objetivos}
+\label{subsec:dependencias_objetivos}
+
+Los elementos de $G$ no pueden considerarse siempre de manera independiente.
+Algunas tareas presentan relaciones que deben conservarse durante la
+interpretación y la planificación.
+
+Por ejemplo:
+
+\begin{verbatim}
+find(apple, kind=object)
+take(apple)
+deliver(apple, to=Robin)
+\end{verbatim}
+
+contiene una dependencia entre la adquisición del objeto y su entrega.
+
+Puede representarse mediante una relación de precedencia:
+
+\begin{equation}
+take(o) \prec deliver(o,p),
+\end{equation}
+
+donde $\prec$ indica que el primer objetivo debe encontrarse antes que el
+segundo dentro de la secuencia.
+
+De forma similar:
+
+\begin{equation}
+take(o) \prec place(o,l).
+\end{equation}
+
+La secuencia de objetivos también debe conservar referencias entre entidades.
+Considérese:
+
+\begin{verbatim}
+find(person, kind=person, gesture='waving person')
+guide(person, to=kitchen)
+\end{verbatim}
+
+El argumento \texttt{person} del segundo objetivo debe mantener la referencia
+a la persona identificada por el objetivo anterior.
+
+Por ello, $G$ no se considera únicamente un conjunto de intenciones, sino una
+\textbf{secuencia ordenada con relaciones de dependencia y contexto}:
+
+\begin{equation}
+G=(g_1,\ldots,g_n).
+\end{equation}
+
+Esta característica resulta especialmente importante en instrucciones
+compuestas, donde el resultado de una subtarea proporciona información o una
+condición necesaria para las siguientes.
+
+
+% ============================================================
+\section{Arquitecturas conceptuales evaluadas}
+\label{sec:arquitecturas_conceptuales}
+
+A partir de la formalización anterior, las dos arquitecturas estudiadas pueden
+describirse de acuerdo con la manera en que realizan las transformaciones:
+
+\begin{equation}
+x\rightarrow G
+\end{equation}
+
+y:
+
+\begin{equation}
+G\rightarrow P.
+\end{equation}
+
+Las arquitecturas se evalúan de forma independiente y no existe un mecanismo
+de selección, votación o fusión entre los planes producidos.
+
+
+\subsection{Arquitectura Qwen--CLIPS}
+\label{subsec:qwen_clips}
+
+La primera arquitectura divide explícitamente las funciones de interpretación
+y planificación.
+
+Qwen2.5-7B recibe una orden $x$ y produce la secuencia canónica de objetivos:
+
+\begin{equation}
+I_Q:x\rightarrow G,
+\end{equation}
+
+donde $I_Q$ representa el intérprete semántico basado en Qwen.
+
+La secuencia resultante se somete a comprobaciones deterministas antes de ser
+entregada al componente simbólico. CLIPS recibe posteriormente la
+representación de dichos objetivos y aplica las reglas correspondientes para
+producir el plan:
+
+\begin{equation}
+R_C:G\rightarrow P,
+\end{equation}
+
+donde $R_C$ representa la expansión basada en reglas.
+
+Conceptualmente, la arquitectura puede expresarse como:
+
+\begin{equation}
+\boxed{
+x
+\xrightarrow{\text{Qwen}}
+G
+\xrightarrow{\text{validación y adaptación}}
+G'
+\xrightarrow{\text{CLIPS}}
+P
+}
+\label{eq:qwen_clips}
+\end{equation}
+
+En esta arquitectura, Qwen no genera las acciones primitivas del robot. Su
+responsabilidad se limita a interpretar la instrucción y producir los objetivos
+correspondientes. La forma en que cada objetivo se transforma en acciones se
+encuentra definida en la base de reglas del componente simbólico.
+
+La separación permite distinguir conceptualmente dos posibles fuentes de
+error:
+
+\begin{equation}
+x\rightarrow G
+\qquad
+\text{e}
+\qquad
+G\rightarrow P.
+\end{equation}
+
+Un plan incorrecto puede originarse porque Qwen interpretó incorrectamente la
+orden o porque la etapa simbólica no produjo una expansión adecuada para los
+objetivos recibidos.
+
+La arquitectura se considera local o autoalojada en el sentido de que el
+modelo Qwen y el componente CLIPS pueden ejecutarse dentro de infraestructura
+controlada por el sistema, sin requerir un servicio externo de inferencia para
+cada orden. La configuración física concreta empleada durante los experimentos
+se describe en el capítulo de implementación.
+
+
+\subsection{Arquitectura de planificación directa con GPT}
+\label{subsec:gpt_directo}
+
+La segunda arquitectura concentra las funciones de interpretación y
+planificación en un mismo modelo.
+
+Para una orden considerada ejecutable, GPT produce tanto una representación
+canónica de los objetivos como el plan propuesto:
+
+\begin{equation}
+D_{\mathrm{GPT}}:
+(x,K,\mathcal{G},\mathcal{A})
+\rightarrow
+(G,P),
+\end{equation}
+
+donde $K$ representa el conocimiento del dominio, $\mathcal{G}$ el vocabulario
+de objetivos permitido y $\mathcal{A}$ el repertorio de acciones disponibles.
+
+Conceptualmente:
+
+\begin{equation}
+\boxed{
+x
+\xrightarrow{\text{GPT}}
+(G,P)
+\xrightarrow{\text{validación}}
+(G',P')
+}
+\label{eq:gpt_directo}
+\end{equation}
+
+Los objetivos $G$ se conservan como representación auditable de la
+interpretación realizada por el modelo. Sin embargo, a diferencia de la
+arquitectura anterior, no son enviados a CLIPS.
+
+Por tanto:
+
+\begin{equation}
+G_{\mathrm{GPT}}
+\not\xrightarrow{\text{CLIPS}}
+P.
+\end{equation}
+
+El mismo modelo debe interpretar la orden y determinar la expansión necesaria
+para producir acciones pertenecientes a $\mathcal{A}$.
+
+Esta característica permite comparar dos formas diferentes de distribuir la
+responsabilidad del proceso:
+
+\begin{equation}
+\boxed{
+\begin{array}{ll}
+\text{Qwen--CLIPS:}
+&
+x \xrightarrow{\text{Qwen}} G
+\xrightarrow{\text{CLIPS}} P
+\\[0.4cm]
+\text{GPT directo:}
+&
+x \xrightarrow{\text{GPT}} (G,P)
+\end{array}
+}
+\end{equation}
+
+En ambos casos se conserva una representación semántica de los objetivos, lo
+que permite evaluar posteriormente la interpretación de forma separada del
+plan generado.
+
+El contrato completo utilizado por GPT, incluida la posibilidad de solicitar
+una aclaración o rechazar una instrucción que no pueda convertirse de manera
+válida en un plan, se desarrolla en los capítulos de metodología e
+implementación.
+
+
+% ============================================================
+\section{Criterios conceptuales de validez}
+\label{sec:criterios_validez}
+
+La generación de una representación estructurada no implica por sí misma que
+la interpretación o el plan sean correctos. Como se explicó en el capítulo
+anterior, la conformidad con un formato constituye solamente uno de los niveles
+de validación.
+
+Para la formalización de esta investigación resulta útil distinguir la validez
+de la interpretación de la validez del plan.
+
+
+\subsection{Validez de la interpretación semántica}
+\label{subsec:validez_interpretacion}
+
+Sea:
+
+\begin{equation}
+V_I(x,G,K)
+\end{equation}
+
+una función que evalúa si la secuencia $G$ representa adecuadamente la
+instrucción $x$ dentro del conocimiento de dominio $K$.
+
+Conceptualmente:
+
+\begin{equation}
+V_I(x,G,K)
+\in
+\{0,1\}.
+\end{equation}
+
+Una interpretación válida debe conservar, entre otros elementos:
 
 \begin{itemize}
 
-\item \textbf{Validación por reglas de seguridad:} Todos los planes generados por ChatGPT son filtrados por un conjunto de reglas de seguridad en CLIPS que bloquean acciones peligrosas.
-
-\item \textbf{Ejecución supervisada:} Un módulo supervisor monitorea la ejecución y puede interrumpir acciones que se desvíen del comportamiento esperado.
-
-\item \textbf{Simulación previa:} Los planes se simulan en un entorno virtual antes de la ejecución física para detectar problemas potenciales.
-
-\item \textbf{Uso limitado a tareas no críticas:} En la implementación inicial, ChatGPT se utiliza principalmente para tareas donde el fallo no implica riesgos de seguridad significativos.
-
-\item \textbf{Fallback a CLIPS:} En caso de que ChatGPT no genere un plan válido o este no supere la validación, el sistema recurre automáticamente al plan generado por CLIPS.
+    \item las subtareas solicitadas por la orden;
+    \item el orden lógico de dichas subtareas;
+    \item las entidades involucradas;
+    \item sus tipos semánticos;
+    \item las ubicaciones y destinos;
+    \item los calificadores relevantes;
+    \item las relaciones entre referencias presentes en la instrucción.
 
 \end{itemize}
 
-Esta combinación de flexibilidad y control permite aprovechar las ventajas de los LLMs mientras se mantienen los estándares de seguridad requeridos en robótica de servicio.
+Por ejemplo, para:
+
+\begin{quote}
+\textit{``Go to the kitchen and find Robin.''}
+\end{quote}
+
+una representación esperada es:
+
+\begin{verbatim}
+go(kitchen)
+find(Robin, kind=person)
+\end{verbatim}
+
+Una salida estructuralmente correcta que omitiera la navegación, cambiara a
+Robin por otra persona o clasificara a Robin como objeto no representaría
+correctamente la intención original.
+
+Las métricas concretas utilizadas para determinar esta validez se presentan
+posteriormente en el capítulo de experimentación.
+
+
+\subsection{Validez y consistencia del plan}
+\label{subsec:validez_plan}
+
+Sea:
+
+\begin{equation}
+V_P(G,P,K,\mathcal{A})
+\end{equation}
+
+una función destinada a evaluar si un plan $P$ constituye una expansión
+coherente de los objetivos $G$.
+
+De manera conceptual:
+
+\begin{equation}
+V_P(G,P,K,\mathcal{A})
+\in
+\{0,1\}.
+\end{equation}
+
+Un plan válido debe utilizar acciones pertenecientes al repertorio permitido y
+mantener consistencia con los objetivos que pretende satisfacer.
+
+Entre las propiedades relevantes se encuentran:
+
+\begin{itemize}
+
+    \item utilización de acciones pertenecientes a $\mathcal{A}$;
+    \item parámetros compatibles con cada acción;
+    \item conservación del orden y las dependencias necesarias;
+    \item inclusión de las subtareas requeridas;
+    \item coherencia entre las entidades utilizadas en objetivos y acciones;
+    \item ausencia de operaciones incompatibles con el estado esperado de la
+    tarea.
+
+\end{itemize}
+
+Esta separación entre interpretación y planificación permite analizar los
+errores de manera más precisa.
+
+Puede ocurrir:
+
+\begin{equation}
+V_I(x,G,K)=0,
+\end{equation}
+
+aunque la expansión de $G$ sea internamente consistente. En este caso, el
+problema se encuentra principalmente en la interpretación de la orden.
+
+También puede ocurrir:
+
+\begin{equation}
+V_I(x,G,K)=1
+\qquad\text{y}\qquad
+V_P(G,P,K,\mathcal{A})=0,
+\end{equation}
+
+lo que indica que la intención fue identificada correctamente pero el plan
+generado presenta un problema.
+
+Esta distinción motiva además la utilización posterior de una condición
+experimental de control en la que los objetivos de referencia son
+proporcionados directamente a CLIPS:
+
+\begin{equation}
+\boxed{
+G_{\mathrm{ref}}
+\xrightarrow{\text{CLIPS}}
+P_{\mathrm{ref}}
+}
+\end{equation}
+
+Esta condición no constituye una tercera arquitectura de planificación. Su
+función es permitir observar el comportamiento del componente simbólico cuando
+la entrada semántica se considera correcta, facilitando la separación entre
+errores de interpretación y errores de planificación.
+
+
+\subsection{Planificación y ejecución física}
+\label{subsec:planificacion_ejecucion}
+
+Finalmente, debe distinguirse entre la validez de un plan y el resultado de su
+ejecución física.
+
+El planificador trabaja con una representación de las acciones que se espera
+que el robot pueda realizar. Sin embargo, la ejecución se desarrolla en un
+entorno físico en el que pueden presentarse condiciones que no fueron
+consideradas durante la generación del plan.
+
+Por tanto:
+
+\begin{equation}
+\boxed{
+\text{plan válido}
+\not\Rightarrow
+\text{ejecución física exitosa}
+}
+\end{equation}
+
+Por ejemplo, un plan puede contener correctamente una acción destinada a tomar
+un objeto, pero la ejecución puede fallar porque el objeto no fue detectado, no
+se encuentra en la posición esperada o el manipulador no logra sujetarlo.
+
+De manera similar, una acción de navegación puede ser correcta desde el punto
+de vista del plan y no completarse debido a cambios en el entorno o a una
+trayectoria bloqueada.
+
+Esta distinción implica que los criterios utilizados para evaluar la
+interpretación y la planificación no sustituyen la evaluación del desempeño
+físico del robot. La ejecución sobre Justina constituye un nivel adicional de
+validación que se describe posteriormente en el diseño experimental.
+
+En consecuencia, el problema central de esta tesis queda definido mediante
+tres representaciones:
+
+\begin{equation}
+\boxed{
+x
+\rightarrow
+G
+\rightarrow
+P
+\rightarrow
+\text{ejecución}
+}
+\end{equation}
+
+Las dos arquitecturas evaluadas difieren principalmente en el mecanismo
+utilizado para realizar las dos primeras transformaciones. Qwen--CLIPS separa
+la interpretación lingüística de la expansión simbólica del plan, mientras que
+GPT directo concentra ambas funciones en un único modelo generativo. Esta
+diferencia proporciona la base conceptual para el diseño metodológico y la
+comparación experimental desarrollados en los capítulos siguientes.

@@ -1,18 +1,22 @@
 \chapter{Antecedentes y Estado del Arte}
 
-Este capítulo presenta los trabajos y tecnologías relacionados con la transformación de instrucciones de lenguaje natural a planes para robots de servicio. La revisión se concentra en cuatro componentes relevantes para la tesis: sistemas de producción, CLIPS, modelos de lenguaje para interpretación y planeación, y arquitecturas neuro-simbólicas. Los métodos de percepción, navegación o control se mencionan únicamente cuando contribuyen directamente a la interfaz entre la orden y el plan de tareas.
+Este capítulo presenta los trabajos y tecnologías relacionados con la transformación de instrucciones de lenguaje natural a planes para robots de servicio. La revisión se concentra en cuatro componentes relevantes para la tesis: sistemas basados en reglas, CLIPS, modelos de lenguaje para interpretación y planificación, y arquitecturas neuro-simbólicas. Los métodos de percepción, navegación o control se mencionan únicamente cuando contribuyen directamente a la interfaz entre la orden y el plan de tareas.
+
+
+
+
 
 \section{Sistemas Basados en Reglas}
 
-Los sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, constituyen uno de los paradigmas más antiguos y consolidados en inteligencia artificial \cite{Giarratano2005}. Su origen se remonta a los sistemas expertos de la década de 1970, donde se utilizaban para representar el conocimiento de especialistas humanos en dominios bien delimitados, como el diagnóstico médico o la configuración de sistemas complejos \cite{Russell2020}. En robótica, la adopción de estos sistemas se popularizó en los años 80 y 90, particularmente en entornos industriales estructurados, donde la previsibilidad y seguridad eran prioritarias.
+Los sistemas basados en reglas \textit{(Rule-Based Systems, RBS)} constituyen uno de los paradigmas clásicos de la inteligencia artificial \cite{Giarratano2005}. Su utilización se consolidó con el desarrollo de los sistemas expertos durante las décadas de 1970 y 1980, en los que el conocimiento de especialistas humanos era representado explícitamente mediante hechos y reglas dentro de dominios bien delimitados \cite{Russell2020}. En robótica, la adopción de estos sistemas se popularizó en los años 80 y 90, particularmente en entornos industriales estructurados, donde la previsibilidad y seguridad eran prioritarias.
 
-Históricamente, los RBS han sido fundamentales en arquitecturas de control robótico jerárquico, como la propuesta por Brooks \cite{Brooks1986}, donde capas de comportamientos reactivos podían ser coordinadas mediante reglas de supresión. Más adelante, motores de inferencia como CLIPS \textit{(C Language Integrated Production System)}, desarrollado por la NASA en 1985, se convirtieron en herramientas estándar para la implementación de sistemas de planificación y toma de decisiones en robots autónomos \cite{NASA_CLIPS}. CLIPS permitió la representación simbólica del conocimiento a través de hechos, reglas, en conjunto con un ciclo de inferencia (\textit{reconocer-actuar}), que ofreció un marco eficiente para el razonamiento en tiempo real.
+Este tipo de representación resulta útil cuando las condiciones bajo las cuales deben ejecutarse determinadas acciones pueden expresarse de manera explícita. Las reglas permiten relacionar estados, eventos u objetivos con decisiones específicas, facilitando la construcción de comportamientos reproducibles dentro de dominios previamente definidos. Entre las herramientas desarrolladas para implementar este paradigma se encuentra CLIPS \textit{(C Language Integrated Production System)}, desarrollado originalmente por la NASA. CLIPS proporciona mecanismos para representar conocimiento mediante hechos y reglas de producción, junto con un motor de inferencia encargado de determinar qué reglas deben activarse de acuerdo con el estado de la base de conocimiento \cite{NASA_CLIPS}.
 
 En cuanto a aplicaciones, los sistemas basados en reglas han demostrado su utilidad en diversos dominios robóticos:
 
 \begin{enumerate}
 	\item \textbf{Robótica industrial:}
-	 En cadenas de montaje automatizadas, donde las tareas son repetitivas y el entorno está controlado. Los RBS se utilizan para secuenciar operaciones, gestionar excepciones y garantizar la seguridad de los operarios humanos \cite{Murphy2019}.
+	 Cadenas de montaje automatizadas, donde las tareas son repetitivas y el entorno está controlado. Los RBS se utilizan para secuenciar operaciones, gestionar excepciones y garantizar la seguridad de los operarios humanos \cite{Murphy2019}.
 	\item \textbf{Robótica de servicio y doméstica:}
 	En tareas simples como la entrega de objetos, navegación en interiores y asistencia a personas con movilidad reducida. 
 	\item \textbf{Robótica espacial y de exploración:}
@@ -20,66 +24,92 @@ En cuanto a aplicaciones, los sistemas basados en reglas han demostrado su utili
 	
 \end{enumerate}
 
-Su principal ventaja para esta tesis es que permiten establecer una correspondencia explícita entre un objetivo simbólico y las acciones emitidas para el ejecutor. Sin embargo, la cobertura del sistema está limitada por las reglas y los tipos de hechos definidos previamente.
+
+Su principal ventaja para esta tesis es que permiten establecer una correspondencia explícita entre un objetivo simbólico y las acciones emitidas para el robot. Sin embargo, la cobertura del sistema está limitada por las reglas y los tipos de hechos definidos previamente.
 
 \section{El Lenguaje CLIPS: Características, Ventajas y Limitaciones}
 
-CLIPS es un lenguaje de programación basado en reglas, diseñado específicamente para la construcción de sistemas expertos y aplicaciones basadas en conocimiento \cite{NASA_CLIPS}. Concebido originalmente como una alternativa a los costosos sistemas implementados en LISP y en estaciones de trabajo especializadas, CLIPS destacó por su portabilidad, eficiencia y su capacidad para ejecutarse en hardware de bajo costo \cite{Giarratano2005}. Su adopción se extendió rápidamente en la comunidad de robótica e inteligencia artificial, convirtiéndose en una herramienta de referencia para la implementación de sistemas de producción \cite{Russell2020}.
+CLIPS es un lenguaje de programación basado en reglas, diseñado específicamente para la construcción de sistemas expertos y aplicaciones basadas en conocimiento \cite{NASA_CLIPS}. Concebido originalmente como una alternativa a los costosos sistemas implementados en \textit{(LISP, LISt Processing)} en estaciones de trabajo especializadas, CLIPS destacó por su portabilidad, eficiencia y su capacidad para ejecutarse en hardware de bajo costo \cite{Giarratano2005}. Su adopción se extendió rápidamente en la comunidad de robótica e inteligencia artificial, convirtiéndose en una herramienta de referencia para la implementación de sistemas de producción \cite{Russell2020}.
 
 \subsection{Características Fundamentales de CLIPS}
 
-CLIPS es un entorno para el desarrollo de sistemas basados en conocimiento que ofrece hechos, plantillas, reglas de producción, funciones y un motor de inferencia que permite razonar sobre una base de eventos utilizando reglas del tipo if-then \cite{Giarratano2005}. 
+CLIPS es un entorno para el desarrollo de sistemas basados en conocimiento que ofrece hechos, plantillas, reglas de producción, funciones y un motor de inferencia que permite razonar sobre una base de conocimiento mediante reglas de producción \cite{Giarratano2005}.
 
 En el contexto de esta tesis, las propiedades relevantes de CLIPS son:
 
 \begin{enumerate}
-\item \textbf{Encadenamiento hacia adelante \textit{(forward chaining)}:} CLIPS utiliza predominantemente encadenamiento hacia adelante, lo que significa que, partiendo de un conjunto de hechos iniciales, el motor de inferencia aplica reglas para derivar nuevos hechos de manera iterativa \cite{NASA_CLIPS}. Este enfoque es especialmente adecuado para aplicaciones en tiempo real donde los cambios en el entorno deben reflejarse inmediatamente en la base de conocimiento \cite{Murphy2019}.
 
-\item \textbf{Representación del conocimiento multifacética:} Además de reglas, CLIPS permite representar conocimiento mediante hechos ordenados y plantillas \textit{(deftemplate)}, así como mediante funciones definidas por el usuario en C \cite{NASA_CLIPS}. Esto facilita la integración con sistemas de percepción y control de bajo nivel \cite{Savage2024}.
+\item \textbf{Encadenamiento hacia adelante \textit{(forward chaining)}:} CLIPS utiliza predominantemente encadenamiento hacia adelante. A partir de los hechos presentes en la base de conocimiento, el motor identifica las reglas cuyas condiciones se satisfacen y las incorpora a la agenda de ejecución. La ejecución de estas reglas puede modificar posteriormente la base de hechos y habilitar nuevas reglas \cite{NASA_CLIPS}.
 
-\item \textbf{Trazabilidad de las reglas activadas:} El comportamiento es reproducible cuando se mantienen constantes los hechos, las reglas y la estrategia de resolución de conflictos.
 
-\item \textbf{Portabilidad y código abierto:} Escrito en C, CLIPS puede ejecutarse en prácticamente cualquier plataforma debido a su bajo costo, desde microcontroladores hasta sistemas de alto rendimiento \cite{Giarratano2005}. Su naturaleza open source ha permitido su adaptación en múltiples contextos robóticos, como el control de robots de exploración y sistemas de inspección \cite{NASA_CLIPS}.
 
-\item \textbf{Integración con otros lenguajes:} CLIPS ofrece una API en C y una librería en python, lo que le permite ser empleado en aplicaciones más grandes, posibilitado su integración con frameworks robóticos como ROS y entornos de simulación \cite{Murphy2019}.
+\item \textbf{Representación explícita del conocimiento:} Además de reglas, CLIPS permite representar conocimiento mediante hechos ordenados y plantillas \textit{(deftemplate)}, así como mediante funciones definidas por el usuario en C \cite{NASA_CLIPS}. Esto facilita la integración con sistemas de percepción y control de bajo nivel \cite{Savage2024}.
+
+\item \textbf{Trazabilidad de las reglas activadas:} Debido a que las decisiones dependen de hechos y reglas explícitas, es posible inspeccionar las reglas que son activadas durante una ejecución. Cuando se mantienen constantes los hechos iniciales, las reglas y la estrategia de resolución de conflictos, el comportamiento del motor puede reproducirse de manera determinista.
+
+\item \textbf{Portabilidad:} CLIPS fue implementado en C con el propósito de facilitar su utilización en diferentes plataformas. Esta característica permite incorporar el motor de inferencia dentro de sistemas de software más amplios sin depender de una plataforma especializada \cite{Giarratano2005,NASA_CLIPS}.
+
+\item \textbf{Integración con otros lenguajes:} CLIPS proporciona interfaces que permiten incorporarlo dentro de aplicaciones desarrolladas en otros lenguajes. En el caso de Python, esta comunicación puede realizarse mediante bindings externos que exponen las funciones del motor de CLIPS. Esto permite utilizar el sistema basado en reglas como un componente dentro de una arquitectura robótica más amplia.
+
 \end{enumerate}
 
-Estas propiedades no implican por sí mismas seguridad garantizada ni verificación formal. Una base CLIPS puede contener reglas incompletas o contradictorias, y su comportamiento depende de la cobertura del conocimiento y de la resolución de conflictos. En consecuencia, esta tesis utiliza CLIPS como mecanismo explícito y trazable de expansión de objetivos, no como prueba formal de seguridad.
+Estas propiedades contribuyen a restringir y validar el comportamiento del sistema, pero no implican, por sí mismas, una garantía de seguridad ni constituyen un mecanismo de verificación formal.
 
 CLIPS tampoco interpreta directamente lenguaje natural ni aprende reglas a partir de los ejemplos empleados en esta investigación. Para recibir una orden requiere una etapa externa que produzca objetivos estructurados. Además, la integración con ROS 2 no es una capacidad intrínseca de CLIPS, sino una interfaz implementada específicamente para comunicar el motor de reglas con los nodos del robot.
 
 
 \section{Modelos de lenguaje para interpretación de instrucciones robóticas}
 
-El desarrollo del aprendizaje automático, y en particular del aprendizaje profundo, ha transformado radicalmente la robótica contemporánea, habilitando capacidades que eran difíciles de lograr con enfoques puramente simbólicos o geométricos \cite{Cheng2025}. A diferencia de los sistemas basados en reglas, que requieren la especificación explícita de todo el conocimiento del dominio, los enfoques de ML permiten a los robots aprender directamente de los datos, extrayendo patrones complejos y adaptándose a entornos variables sin necesidad de programación explícita  \cite{Russell2020}.
+El desarrollo del aprendizaje automático, y en particular del aprendizaje profundo, ha ampliado las capacidades de los sistemas robóticos para procesar información compleja y entradas con un alto grado de variabilidad \cite{Cheng2025}. A diferencia de los sistemas basados en reglas, en los que parte del conocimiento del dominio debe representarse explícitamente, los enfoques de aprendizaje automático permiten obtener representaciones y patrones a partir de datos \cite{Russell2020}.
 
-\subsection{Principales Paradigmas de Aprendizaje Automático en Robótica}
+En el procesamiento de información secuencial, arquitecturas como las redes neuronales recurrentes (RNN), LSTM y GRU permitieron modelar dependencias entre los elementos de una secuencia y fueron utilizadas en diferentes tareas relacionadas con el procesamiento del lenguaje natural \cite{Cheng2025}.
 
-\textbf{Aprendizaje Supervisado y Visión por Computadora:} Las redes neuronales convolucionales (CNNs) se han convertido en el estándar de facto para tareas de percepción robótica, incluyendo detección y reconocimiento de objetos, segmentación semántica y estimación de poses \cite{Raj2025}. Arquitecturas como YOLO (You Only Look Once) y sus variantes permiten a robots como Justina identificar objetos en tiempo real con alta precisión, incluso en entornos domésticos desordenados . Las CNNs operan mediante capas de convolución que extraen jerárquicamente características visuales, desde bordes simples hasta formas complejas, permitiendo una representación robusta del entorno \cite{Raj2025}.
+Posteriormente, la arquitectura Transformer introdujo un enfoque basado principalmente en mecanismos de atención, permitiendo modelar relaciones entre los elementos de una secuencia sin depender exclusivamente de recurrencia \cite{Vaswani2017}. Esta arquitectura constituye la base de gran parte de los modelos de lenguaje de gran escala desarrollados posteriormente.
 
-\textbf{Aprendizaje por Refuerzo para Control y Navegación:} El aprendizaje por refuerzo profundo (Deep RL) ha emergido como una herramienta poderosa para desarrollar políticas de control en tareas secuenciales. Mediante la interacción con el entorno, los agentes aprenden a maximizar recompensas acumulativas, descubriendo estrategias óptimas para navegación, manipulación y evitación de obstáculos \cite{Sadek2024}. En navegación robótica, se han desarrollado políticas híbridas que combinan representaciones aprendidas con modelos geométricos tradicionales para operar robustamente en entornos reales \cite{Sadek2024}.
+Los \textit{Large Language Models} (LLMs) basados en Transformers pueden procesar y generar lenguaje natural utilizando el contexto de una instrucción para producir diferentes tipos de representaciones. En robótica, estos modelos se han utilizado para interpretar comandos complejos, traducir lenguaje natural a representaciones simbólicas e incluso generar planes a partir de descripciones de tareas de alto nivel \cite{Shi2023}.
 
-\textbf{Redes Recurrentes y Modelado Secuencial:} Las redes neuronales recurrentes (RNNs) y sus variantes (LSTM, GRU) son fundamentales para tareas que requieren memoria temporal, como el seguimiento de objetos en movimiento, la predicción de trayectorias humanas o la interpretación de comandos verbales en contexto \cite{Cheng2025}. Estas arquitecturas mantienen un estado interno que evoluciona con la secuencia de entradas, permitiendo modelar dependencias temporales de largo alcance.
-
-\textbf{Modelos de Lenguaje Grande (LLMs) en Robótica:} La irrupción de modelos transformadores, como los descritos por  \cite{Vaswani2017}, han dado lugar a los Large Language Models (LLMs), capaces de procesar y generar lenguaje natural con una fluidez sin precedentes. En robótica, estos modelos se utilizan para interpretar comandos complejos, traducir lenguaje natural a representaciones simbólicas, e incluso generar planes completos a partir de descripciones de alto nivel \cite{Shi2023}. Su capacidad para captar matices semánticos y contextuales los hace especialmente valiosos para la interacción humano-robot en entornos domésticos.
+Estas capacidades resultan relevantes para esta investigación debido a que permiten utilizar un modelo de lenguaje como interfaz entre las expresiones proporcionadas por el usuario y las representaciones estructuradas utilizadas posteriormente por los componentes de planificación.
 
 \subsection{Familia de modelos Qwen}
 
-Qwen es una familia de modelos de lenguaje desarrollada por el equipo Qwen de Alibaba Cloud. La familia incluye modelos de distintos tamaños y variantes destinadas a tareas generales o al seguimiento de instrucciones \cite{alibabacloudqwen}. Estos modelos están basados en Transformers y pueden utilizarse para tareas como generación de texto, respuesta a preguntas, extracción de información y producción de contenido estructurado.
+Qwen es una familia de modelos de lenguaje desarrollada por el equipo Qwen de Alibaba Cloud. La familia incluye modelos de diferentes tamaños y variantes destinadas a tareas generales y al seguimiento de instrucciones \cite{alibabacloudqwen}. Estos modelos están basados en la arquitectura Transformer y pueden utilizarse en tareas como generación de texto, respuesta a preguntas, extracción de información y producción de contenido estructurado.
 
-Qwen2.5 es una generación de esta familia que incluye modelos con diferentes números de parámetros. Para esta investigación se seleccionó `Qwen/Qwen2.5-7B`, un modelo de aproximadamente siete mil millones de parámetros. 
+Qwen2.5 corresponde a una generación de esta familia que incluye modelos con diferentes números de parámetros. Para esta investigación se utiliza \texttt{Qwen/Qwen2.5-7B} como componente neuronal encargado de la interpretación de las instrucciones proporcionadas al robot. Los criterios que motivaron la selección de esta variante se desarrollan posteriormente.
 
-En la arquitectura propuesta, Qwen2.5-7B funciona como intérprete semántico y no como generador del plan final. El modelo recibe una orden y produce una secuencia de objetivos canónicos representada en JSON. Esta secuencia identifica tipos de objetivo, entidades, ubicaciones y relaciones expresadas en la instrucción. Posteriormente, un módulo determinista normaliza y valida la respuesta antes de convertirla en hechos para CLIPS.
+En la arquitectura propuesta, Qwen2.5-7B funciona como intérprete semántico y no como generador del plan final. El modelo recibe una orden expresada en lenguaje natural y produce una secuencia de objetivos canónicos representada en formato JSON. Esta secuencia identifica los tipos de objetivo, las entidades, las ubicaciones y las relaciones extraídas de la instrucción. Posteriormente, un módulo determinista normaliza y valida la respuesta antes de convertirla en hechos que pueden ser procesados por CLIPS.
 
-La selección de un modelo de siete mil millones de parámetros busca un compromiso entre capacidad lingüística y recursos computacionales. Además, su disponibilidad para ejecución en infraestructura controlada permite estudiar una alternativa local frente al consumo de un servicio externo. Estas ventajas no eliminan la necesidad de medir memoria, latencia y consumo computacional. Los detalles del despliegue, el conjunto de entrenamiento y los resultados pertenecen a los capítulos de implementación y evaluación.
+De esta manera, el modelo de lenguaje se utiliza específicamente para reducir la variabilidad lingüística presente en las instrucciones, mientras que la generación de las acciones necesarias para alcanzar los objetivos permanece bajo responsabilidad del componente simbólico.
+
+\subsubsection{Justificación de la selección de Qwen2.5-7B}
+
+La selección de Qwen2.5-7B como modelo base responde tanto a las características requeridas por la tarea como a las restricciones computacionales disponibles durante el desarrollo de esta investigación. La tarea planteada requiere interpretar instrucciones expresadas en lenguaje natural y transformarlas en una representación estructurada de objetivos canónicos, por lo que resulta conveniente utilizar un modelo con capacidad suficiente para seguir instrucciones, conservar las relaciones semánticas presentes en una orden y generar salidas con una estructura consistente.
+
+
+Durante las etapas preliminares de desarrollo se realizaron pruebas con Qwen2.5-0.5B debido a sus menores requerimientos computacionales y a la posibilidad de efectuar rápidamente iteraciones de ajuste y evaluación. Estas pruebas tuvieron un carácter exploratorio y permitieron validar inicialmente el flujo de entrenamiento y la representación utilizada para los objetivos.
+
+Sin embargo, durante estas pruebas se observó que las respuestas del modelo presentaban una consistencia insuficiente para los requerimientos de la tarea, particularmente ante instrucciones con mayor complejidad o variabilidad lingüística. Debido a ello, se optó por utilizar una variante con mayor capacidad para los experimentos posteriores.
+
+Estas observaciones iniciales se utilizaron como criterio de diseño para seleccionar la siguiente variante del modelo y no constituyen, por sí mismas, una comparación exhaustiva entre los diferentes tamaños de la familia Qwen2.5.
+
+
+
+Se seleccionó finalmente Qwen2.5-7B como un compromiso entre capacidad del modelo y viabilidad computacional. Bajo la configuración de entrenamiento utilizada y los recursos computacionales disponibles durante esta investigación, la variante de siete mil millones de parámetros representó el mayor tamaño que resultó práctico para realizar de manera local los procesos de ajuste y experimentación. La plataforma utilizada estuvo compuesta por una GPU NVIDIA GeForce RTX 4070 Ti, un procesador Intel Core i7 de undécima generación y 32 GB de memoria RAM.
+
+La utilización de modelos de mayor tamaño habría incrementado los requerimientos de memoria y procesamiento, además de reducir la flexibilidad para realizar múltiples iteraciones experimentales dentro de la infraestructura disponible. Por esta razón, se optó por mantener el modelo dentro de un tamaño que permitiera realizar tanto su adaptación como su evaluación localmente.
+
+La elección de Qwen2.5-7B no pretende establecer que este modelo sea superior de manera general a otras familias de modelos de lenguaje. Existen diversas alternativas que podrían emplearse para una tarea de este tipo; sin embargo, la selección se realizó considerando el equilibrio entre capacidad para procesar instrucciones, disponibilidad del modelo, posibilidad de ejecutarlo y adaptarlo localmente, y los recursos computacionales disponibles. De esta manera, Qwen2.5-7B constituye una solución viable para evaluar la integración de un modelo de lenguaje especializado dentro de la arquitectura neuro-simbólica propuesta.
 
 \subsection{Modelos GPT}
 
-Los modelos GPT constituyen otra familia de modelos generativos basados en Transformers. En esta tesis se accede al modelo seleccionado mediante la API de OpenAI, en lugar de desplegar sus parámetros en la infraestructura local. La API recibe las instrucciones y el contexto de la tarea y devuelve la respuesta generada por el modelo. El capítulo de implementación la versión utilizada, porque la denominación general “ChatGPT” no identifica de manera reproducible un modelo de API \cite{openaidocs2026}.
+Los modelos GPT constituyen otra familia de modelos generativos basados en la arquitectura Transformer. En esta tesis, el modelo seleccionado se utiliza mediante la API de OpenAI, en lugar de desplegar sus parámetros dentro de la infraestructura local. La API recibe la instrucción y el contexto proporcionado para la tarea y devuelve una respuesta generada por el modelo.
 
-En la arquitectura experimental GPT directo, el modelo recibe la orden, el catálogo de entidades, el repertorio de acciones, las restricciones del dominio y ejemplos de respuesta. A diferencia de Qwen en la arquitectura neuro-simbólica, este modelo genera tanto la representación de los objetivos como la secuencia propuesta de acciones. Por ello, constituye un planificador generativo independiente y no un módulo interno de la cadena Qwen–CLIPS.
+En el capítulo de implementación se especifican el modelo y la configuración utilizados durante los experimentos, debido a que una denominación general como ``ChatGPT'' no identifica de manera reproducible un modelo específico accesible mediante API \cite{openaidocs2026}.
 
-La respuesta se solicita mediante una salida estructurada definida con JSON Schema. La documentación de la API denomina *Structured Outputs* al mecanismo mediante el cual el modelo debe ajustar su respuesta al esquema proporcionado \cite{openaidocs2026}. Esta restricción permite comprobar la estructura de la respuesta, pero no demuestra que las entidades existan, que los parámetros sean apropiados ni que el plan sea físicamente seguro. Estas propiedades se comprueban mediante un validador determinista separado.
+En la arquitectura experimental GPT directo, el modelo recibe la orden, el catálogo de entidades, el repertorio de acciones, las restricciones del dominio y ejemplos de respuesta. A diferencia de Qwen implementado en la arquitectura neuro-simbólica, este modelo genera tanto la representación de los objetivos como la secuencia propuesta de acciones. Por ello, constituye un planificador generativo independiente y no un módulo interno de la cadena Qwen–CLIPS.
+
+La respuesta del modelo se solicita mediante una salida estructurada definida a partir de JSON Schema. La documentación de la API denomina \textit{Structured Outputs} al mecanismo mediante el cual la respuesta generada debe ajustarse al esquema proporcionado \cite{openaidocs2026}. Este mecanismo facilita la integración de la salida con los componentes posteriores del sistema, aunque el cumplimiento del esquema no garantiza por sí mismo la validez semántica del contenido generado.
+
+Los distintos niveles de validación empleados para las salidas de los modelos se describen posteriormente en la subsección de salidas estructuradas y validación.
 
 El uso de una API externa introduce variables que deben incluirse en la evaluación, como latencia de comunicación, disponibilidad del servicio, tokens de entrada y salida, coste monetario y posibles cambios entre versiones del modelo. En consecuencia, las pruebas deben fijar y documentar el modelo, los parámetros de generación y el prompt.
 
@@ -89,28 +119,21 @@ Para esta tesis conviene distinguir dos funciones:
 
 \textbf{Interpretación semántica:} Transformación de una orden en una representación intermedia de objetivos, entidades y relaciones.
 
-\textbf{Planeación generativa:} Producción directa de una secuencia de acciones a partir de la orden, el contexto y las capacidades declaradas del robot.
+\textbf{Planificación generativa:} Producción directa de una secuencia de acciones a partir de la orden, el contexto y las capacidades declaradas del robot.
 
-La primera función se asigna a Qwen en la arquitectura neuro-simbólica. La segunda se estudia mediante un modelo GPT como condición experimental independiente. Esta distinción permite comparar el efecto de conservar una etapa simbólica explícita frente a delegar al modelo tanto la interpretación como la composición del plan.
+En la arquitectura Qwen--CLIPS estas funciones se mantienen separadas: Qwen realiza la interpretación semántica de la orden y CLIPS expande los objetivos obtenidos en una secuencia de acciones. En la arquitectura GPT directo, ambas funciones se concentran en un único modelo, que produce tanto la representación de los objetivos como el plan propuesto. Esta distinción
+permite comparar el efecto de mantener una etapa simbólica explícita frente a delegar conjuntamente la interpretación y la composición del plan a un modelo generativo.
 
-La interpretación semántica puede evaluarse comparando la secuencia de objetivos producida por el modelo con una anotación de referencia. La planeación requiere criterios adicionales: pertenencia de las acciones al repertorio del robot, validez de parámetros, conservación de dependencias, cumplimiento de precondiciones y compatibilidad con el ejecutor. Evaluar ambas etapas de forma separada permite localizar el origen de los errores.
+La interpretación semántica puede evaluarse comparando la secuencia de objetivos producida por el modelo con una anotación de referencia. La planificación requiere criterios adicionales: pertenencia de las acciones al repertorio del robot, validez de parámetros, conservación de dependencias, cumplimiento de precondiciones y compatibilidad con el ejecutor. Evaluar ambas etapas de forma separada permite localizar el origen de los errores.
 
 \subsection{Limitaciones de los modelos de lenguaje en robótica}
 
 
-El uso de un modelo de lenguaje introduce riesgos específicos: generación de entidades o acciones inexistentes, incumplimiento del formato, variabilidad entre ejecuciones, sensibilidad al *prompt* y costes de inferencia. Asimismo, una instrucción ambigua puede dar lugar a una interpretación plausible pero diferente de la intención del usuario.
+El uso de un modelo de lenguaje introduce riesgos específicos: generación de entidades o acciones inexistentes, incumplimiento del formato, variabilidad entre ejecuciones, sensibilidad al \textit{prompt} y costes de inferencia. Asimismo, una instrucción ambigua puede dar lugar a una interpretación plausible pero diferente de la intención del usuario.
 
 Estas limitaciones son especialmente relevantes cuando la salida se utiliza para controlar un sistema físico. Por ello, una respuesta lingüísticamente coherente no debe considerarse automáticamente un plan ejecutable. En esta investigación se separan la generación, la validación estructural y la validación semántica; los módulos de ejecución del robot conservan la responsabilidad sobre restricciones físicas y condiciones observadas durante la tarea.
 
-
-\subsection{Adaptación eficiente de modelos: LoRA y QLoRA}
-
-El ajuste completo de un modelo de lenguaje requiere actualizar todos sus parámetros y mantener estados adicionales durante el entrenamiento. Los métodos de adaptación eficiente en parámetros permiten reducir este coste al entrenar únicamente un subconjunto reducido de parámetros, manteniendo congelada gran parte del modelo preentrenado \cite{houlsby2019parameter,hu2022lora}. LoRA (\textit{Low-Rank Adaptation}) introduce matrices entrenables de bajo rango en determinadas capas del modelo, manteniendo congelados los pesos originales \cite{hu2022lora}, mientras que QLoRA combina estos adaptadores con la cuantización del modelo base para reducir significativamente el uso de memoria durante el ajuste fino \cite{dettmers2023qlora}.
-
-
-En esta investigación se utiliza QLoRA para especializar Qwen2.5-7B en la conversión de órdenes a objetivos canónicos. Los detalles del conjunto de datos, cuantización, hiperparámetros y plataforma pertenecen al capítulo de implementación; esta sección debe limitarse a explicar el fundamento y justificar la elección del método.
-
-\subsection*{Salidas estructuradas y validación}
+\subsection{Salidas estructuradas y validación}
 
 Una estrategia para integrar modelos de lenguaje con software convencional consiste en restringir la salida a una estructura legible por máquina. JSON permite representar objetivos, parámetros y acciones, mientras que JSON Schema permite comprobar tipos, campos obligatorios, enumeraciones y restricciones estructurales.
 
@@ -125,33 +148,69 @@ No obstante, una respuesta conforme al esquema puede seguir siendo semánticamen
 
 Esta separación es aplicable tanto a los objetivos producidos por Qwen como al plan generado directamente por GPT.
 
-```latex
-\subsection{Arquitecturas neuro-simbólicas}
+
+\subsection{Adaptación eficiente de modelos: LoRA y QLoRA}
+
+El ajuste completo de un modelo de lenguaje requiere actualizar todos sus parámetros y mantener estados adicionales durante el entrenamiento. Los métodos de adaptación eficiente en parámetros permiten reducir este coste al entrenar únicamente un subconjunto reducido de parámetros, manteniendo congelada gran parte del modelo preentrenado \cite{houlsby2019parameter,hu2022lora}. LoRA (\textit{Low-Rank Adaptation}) introduce matrices entrenables de bajo rango en determinadas capas del modelo, manteniendo congelados los pesos originales \cite{hu2022lora}, mientras que QLoRA combina estos adaptadores con la cuantización del modelo base para reducir significativamente el uso de memoria durante el ajuste fino \cite{dettmers2023qlora}.
+
+
+En esta investigación se utiliza QLoRA para especializar Qwen2.5-7B en la conversión de órdenes a objetivos canónicos. Los detalles del conjunto de datos, cuantización, hiperparámetros y plataforma pertenecen al capítulo de implementación.
+
+
+
+
+\section{Arquitecturas neuro-simbólicas}
 
 Las arquitecturas neuro-simbólicas buscan combinar las capacidades de aprendizaje y generalización de los modelos neuronales con mecanismos explícitos de representación de conocimiento y razonamiento simbólico. Mientras que los modelos neuronales son especialmente adecuados para procesar información no estructurada y aprender representaciones a partir de datos, los sistemas simbólicos permiten expresar conocimiento mediante estructuras discretas, reglas y relaciones que pueden ser utilizadas durante un proceso de inferencia \cite{garcez2015neural,besold2017neural}. El objetivo de este enfoque es aprovechar las fortalezas de ambos paradigmas en lugar de utilizar cada uno de manera aislada.
 
-La integración entre ambos componentes puede realizarse de diferentes maneras. Un modelo neuronal puede, por ejemplo, transformar una entrada no estructurada en una representación simbólica que posteriormente es procesada por un sistema de razonamiento. En la dirección opuesta, el conocimiento simbólico puede utilizarse para imponer restricciones, validar resultados o proporcionar información adicional durante el aprendizaje o la inferencia del modelo neuronal \cite{besold2017neural}. Por tanto, una arquitectura neuro-simbólica no implica necesariamente que el aprendizaje neuronal y el razonamiento simbólico se realicen dentro de un único modelo; también pueden implementarse como componentes especializados conectados mediante representaciones intermedias.
+La integración entre ambos componentes puede realizarse de diferentes maneras. Un modelo neuronal puede, por ejemplo, transformar una entrada no estructurada en una representación simbólica que posteriormente es procesada por un sistema de razonamiento. En la dirección opuesta, el conocimiento simbólico puede utilizarse para imponer restricciones, validar resultados o proporcionar información adicional durante el aprendizaje o la inferencia del modelo neuronal \cite{besold2017neural}. Por tanto, una arquitectura neuro-simbólica no implica necesariamente que el aprendizaje neuronal y el razonamiento simbólico se realicen dentro de un único modelo.
 
-Esta separación resulta particularmente útil cuando la entrada del sistema se encuentra expresada en lenguaje natural, pero la ejecución posterior requiere representaciones estructuradas y operaciones sujetas a reglas explícitas. En este tipo de arquitecturas, el modelo neuronal puede encargarse de interpretar la variabilidad lingüística y transformarla en una representación formal o canónica, mientras que un componente simbólico utiliza dicha representación para realizar razonamiento o planificación. Un esquema similar puede observarse en LLM+P, donde un modelo de lenguaje convierte la descripción de un problema de planificación expresado en lenguaje natural a PDDL y posteriormente delega la generación del plan a un planificador clásico \cite{liu2023llmp}.
+Esta separación resulta particularmente útil cuando la entrada del sistema se encuentra expresada en lenguaje natural, pero la ejecución posterior requiere representaciones estructuradas y operaciones sujetas a reglas explícitas. En este tipo de arquitecturas, el modelo neuronal puede encargarse de interpretar la variabilidad lingüística y transformarla en una representación formal o canónica, mientras que un componente simbólico utiliza dicha representación para realizar razonamiento o planificación. 
 
-La arquitectura principal propuesta en esta tesis sigue una estrategia de acoplamiento secuencial entre ambos paradigmas. En la primera etapa, un modelo de la familia Qwen2.5 \cite{yang2024qwen25}, adaptado al dominio de tareas de servicio del robot, recibe una instrucción expresada en lenguaje natural y la transforma en una representación canónica de los objetivos solicitados. Esta etapa permite abstraer variaciones lingüísticas como diferentes estructuras gramaticales, sinónimos o formas alternativas de expresar una misma intención, produciendo una representación estructurada que puede ser consumida por el sistema de planificación.
+Un ejemplo de integración entre modelos de lenguaje y planificación simbólica es la arquitectura LLM+P, propuesta en \textit{Empowering Large Language Models with Optimal Planning Proficiency} \cite{liu2023llmp}. En este enfoque, el modelo de lenguaje no se utiliza directamente como el mecanismo encargado de buscar la secuencia final de acciones. En su lugar, participa en la transformación de una descripción expresada en lenguaje natural hacia una representación formal que posteriormente puede ser procesada por un planificador clásico.
+
+Para esta representación se utiliza PDDL (\textit{Planning Domain Definition Language}), un lenguaje destinado a describir problemas de planificación automática. De manera general, PDDL permite representar los elementos que caracterizan al dominio de planificación, como las acciones disponibles, sus parámetros, precondiciones y efectos, así como los elementos específicos de un problema, entre ellos los objetos involucrados, el estado inicial y el objetivo que debe alcanzarse.
+
+Una vez obtenida la representación formal del problema, la búsqueda de una secuencia de acciones que satisfaga el objetivo se delega a un planificador clásico. De esta manera, el modelo de lenguaje participa principalmente en la interpretación y formalización de la descripción proporcionada, mientras que el razonamiento necesario para obtener el plan se realiza mediante un mecanismo simbólico.
+
+De manera simplificada, este flujo puede representarse como:
+
+\[
+\text{Lenguaje natural}
+\rightarrow
+\text{Modelo de lenguaje}
+\rightarrow
+\text{PDDL}
+\rightarrow
+\text{Planificador clásico}
+\rightarrow
+\text{Plan}.
+\]
+Esta separación permite asignar a cada componente una función distinta: el modelo de lenguaje se encarga principalmente de interpretar expresiones lingüísticas y convertirlas en una representación estructurada, mientras que el planificador trabaja sobre dicha representación para determinar una secuencia de acciones que satisfaga las restricciones del problema \cite{liu2023llmp}. Este enfoque constituye un ejemplo de cómo un componente neuronal puede utilizarse como interfaz entre lenguaje natural y un mecanismo simbólico de planificación.
+
+
+La arquitectura principal de esta tesis sigue una idea conceptualmente relacionada, aunque no utiliza PDDL ni reproduce directamente la arquitectura LLM+P. En este trabajo, el modelo Qwen2.5 \cite{yang2024qwen25}, adaptado al dominio de tareas de servicio del robot, recibe una instrucción expresada en lenguaje natural y la transforma en una representación canónica de los objetivos solicitados. Esta representación constituye la interfaz entre el componente neuronal y el componente simbólico de la arquitectura.
+
+El propósito de esta primera etapa es abstraer parte de la variabilidad presente en el lenguaje natural, como diferentes estructuras gramaticales, sinónimos o formas alternativas de expresar una misma intención. De este modo, distintas instrucciones que representan una intención equivalente pueden transformarse en objetivos con una estructura común antes de ser procesadas por el sistema de planificación.
 
 En la segunda etapa, los objetivos obtenidos son enviados a CLIPS. A diferencia del modelo neuronal, CLIPS no interpreta directamente la instrucción original en lenguaje natural. Su función consiste en trabajar sobre los símbolos previamente obtenidos, incorporar los objetivos al estado de conocimiento y aplicar las reglas definidas para descomponerlos y expandirlos en las acciones necesarias para su ejecución. De esta manera, la interpretación lingüística y la expansión simbólica del plan permanecen como responsabilidades diferenciadas dentro de la arquitectura.
+
+
+Por tanto, aunque LLM+P y la arquitectura propuesta en esta tesis utilizan mecanismos y representaciones diferentes, ambas ilustran una separación entre interpretación neuronal y razonamiento simbólico. En LLM+P, el modelo de lenguaje genera una representación PDDL que posteriormente es procesada por un planificador clásico; en esta tesis, Qwen genera objetivos canónicos que son posteriormente procesados mediante reglas de producción en CLIPS. La semejanza se encuentra, por tanto, en la separación funcional entre ambos paradigmas y no en el formalismo simbólico empleado.
+
 
 Esta división permite que el modelo neuronal se concentre en el problema de correspondencia entre lenguaje natural y representaciones canónicas, mientras que el conocimiento sobre la estructura de las tareas, sus relaciones y su descomposición se mantiene explícitamente en la base de reglas de CLIPS. En consecuencia, una modificación en las reglas de planificación no requiere necesariamente modificar el modelo de lenguaje y, de forma análoga, las mejoras realizadas sobre el componente de interpretación pueden introducirse sin sustituir el mecanismo simbólico de planificación.
 
 En esta tesis, por tanto, la integración neuro-simbólica se describe como una composición secuencial: Qwen transforma el lenguaje natural en objetivos canónicos y CLIPS expande dichos objetivos mediante reglas de producción. Los componentes no actúan como dos planificadores concurrentes ni se realiza una fusión automática de planes generados independientemente. El denominado planificador GPT directo se implementa como una arquitectura alternativa con fines de comparación experimental y no como un componente adicional de la cadena neuro-simbólica Qwen--CLIPS.
 
+\section{Síntesis y conexión con la propuesta}
 
-\subsection{Conexión con la Propuesta de Tesis}
+Los antecedentes revisados muestran que los sistemas simbólicos permiten mantener una representación explícita del conocimiento utilizado durante la planificación, mientras que los modelos de lenguaje ofrecen mecanismos para procesar la variabilidad presente en las instrucciones expresadas en lenguaje natural. En una arquitectura híbrida, la combinación de ambos enfoques permite separar el problema de interpretación lingüística del proceso encargado de expandir los objetivos en acciones ejecutables.
 
-Los antecedentes muestran que los sistemas simbólicos ofrecen una representación explícita del dominio, mientras que los modelos de lenguaje permiten procesar una mayor variedad de expresiones. Sin embargo, sigue siendo necesario medir de forma separada la calidad de la interpretación semántica y la ejecutabilidad del plan resultante bajo un mismo dominio, catálogo de entidades y repertorio de acciones.
+Esta tesis estudia dicha separación mediante una comparación controlada entre una arquitectura secuencial Qwen--CLIPS y un planificador GPT directo. Adicionalmente, se utiliza una condición experimental de control en la que los objetivos de referencia son proporcionados directamente a CLIPS. Esta condición permite observar el comportamiento de la etapa simbólica cuando los objetivos de entrada corresponden directamente a la referencia, evitando introducir los errores provenientes de la etapa de interpretación del lenguaje natural. De esta manera, es posible distinguir los errores asociados con la interpretación lingüística de aquellos relacionados con la cobertura y expansión de las reglas de planificación. Esta condición no constituye una tercera arquitectura de planificación, sino un mecanismo auxiliar para aislar los errores correspondientes a la etapa simbólica.
 
-Esta tesis aborda dicho problema mediante una comparación controlada entre una arquitectura secuencial Qwen–CLIPS y un planificador GPT directo. Adicionalmente, la condición de objetivos de referencia procesados por CLIPS permite estimar el rendimiento máximo de la etapa simbólica y distinguir los errores introducidos por la interpretación lingüística de aquellos causados por la cobertura de reglas.
+El modelo Qwen2.5-7B ajustado mediante QLoRA recibe una instrucción y produce una secuencia de objetivos canónicos representada en JSON. Un módulo determinista valida y normaliza la respuesta, la convierte en hechos y la envía al motor CLIPS. Finalmente, las reglas de producción expanden cada objetivo en acciones compatibles con el ejecutor del robot.
 
+Como segunda arquitectura evaluada, se implementa un planificador basado en GPT que genera conjuntamente una representación estructurada de los objetivos interpretados y del plan propuesto. Su salida se restringe mediante JSON Schema y posteriormente se somete a validación determinista. Ambas arquitecturas se evalúan de forma independiente; por tanto, el trabajo no propone una selección concurrente ni una fusión automática de los planes generados.
 
-La propuesta principal específicamente corresponde a una arquitectura neuro-simbólica de composición secuencial. Un modelo Qwen2.5-7B ajustado mediante QLoRA recibe una instrucción y produce una secuencia de objetivos canónicos representada en JSON. Un módulo determinista valida y normaliza la respuesta, la convierte en hechos y la envía al motor CLIPS. Finalmente, las reglas de producción expanden cada objetivo en acciones compatibles con el ejecutor del robot.
-
-Como punto de comparación anteriormente mencionado se implementa un planificador basado en GPT que genera directamente una representación estructurada de los objetivos y el plan. Su salida se restringe mediante JSON Schema y se somete a validación determinista. Ambas arquitecturas se evalúan de forma independiente; por tanto, el trabajo no propone selección concurrente ni fusión automática de planes.
-
-La contribución experimental consiste en comparar ambos enfoques bajo el mismo conjunto de órdenes, catálogos y acciones, separando los errores de interpretación de los errores de planeación y cuantificando exactitud, ejecutabilidad, robustez, latencia, recursos y coste.
+La contribución experimental consiste en comparar ambos enfoques bajo el mismo conjunto de órdenes, catálogos y acciones, separando los errores de interpretación de los errores de planificación y cuantificando su desempeño mediante métricas de exactitud, ejecutabilidad, consistencia, latencia, uso de recursos y coste.
