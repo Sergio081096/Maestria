@@ -133,92 +133,274 @@ comparar las arquitecturas Qwen--CLIPS y GPT directo.
 \label{subsec:gpsr}
 
 General Purpose Service Robot (GPSR) es una prueba de RoboCup@Home orientada a
-evaluar la capacidad de un robot de servicio para recibir instrucciones y
-resolver tareas que pueden involucrar diferentes capacidades del sistema.
+evaluar la capacidad de un robot de servicio para comprender instrucciones
+expresadas en lenguaje natural y ejecutar tareas que pueden requerir la
+combinación de distintas habilidades. Entre ellas se encuentran la navegación,
+la búsqueda y reconocimiento de personas u objetos, la manipulación y la
+interacción humano--robot\cite{robocuphome2026rulebook}.
 
-% TODO: agregar referencia oficial correspondiente al reglamento RoboCup@Home.
+Una característica importante de GPSR es que una instrucción puede representar
+una tarea compuesta. Por ejemplo, una orden puede requerir que el robot se
+desplace hacia una habitación, localice un objeto, lo tome y posteriormente lo
+entregue a una persona. En consecuencia, el problema no consiste únicamente en
+reconocer palabras o entidades aisladas, sino en identificar las diferentes
+intenciones contenidas en la instrucción y conservar las relaciones existentes
+entre ellas.
 
-Las instrucciones utilizadas en este tipo de escenario pueden combinar
-operaciones relacionadas con navegación, búsqueda de personas u objetos,
-manipulación, entrega, seguimiento, guiado e interacción verbal. Como
-consecuencia, una sola orden puede requerir que el robot identifique varias
-subtareas y conserve relaciones entre ellas.
+En la prueba considerada en esta investigación se proporcionan tres comandos al
+robot. Al comenzar, el robot se desplaza hacia un \textit{Instruction Point},
+que funciona como el punto de interacción con el operador. Desde esta posición
+recibe una instrucción y, una vez que ha realizado suficientemente la tarea
+solicitada, regresa al mismo punto para recibir el siguiente comando. La
+determinación de que una tarea ha sido completada de manera suficiente para
+continuar con la prueba corresponde al árbitro.
 
-Por ejemplo, una orden puede requerir que el robot se desplace a una
-habitación, localice un objeto, lo tome y posteriormente lo entregue a una
-persona. De esta forma, GPSR proporciona un escenario adecuado para estudiar
-el problema de transformar instrucciones de alto nivel en secuencias de
-acciones robóticas.
+La entrega de las órdenes se realiza de manera secuencial. Por tanto, el robot
+no recibe un nuevo comando mientras la ejecución de la tarea anterior continúe
+en curso. Una vez concluida la tarea y después de regresar al
+\textit{Instruction Point}, puede solicitar la siguiente instrucción hasta
+completar los tres comandos contemplados por la prueba.
+
+Cuando el robot no logra comprender adecuadamente la instrucción recibida
+mediante su sistema de entrada de audio, puede solicitar explícitamente que la orden sea reformulada. En este caso, el árbitro u operador puede expresar la
+misma tarea mediante una construcción lingüística más sencilla, pero debe
+mantener los objetivos contenidos en la instrucción original. La reformulación
+no constituye una modificación de la tarea ni permite que el operador indique
+directamente al robot cómo resolverla.
+
+Este mecanismo es particularmente relevante para la presente investigación,
+pues permite distinguir entre la tarea que debe realizarse y la forma
+lingüística utilizada para comunicarla. Dos instrucciones con estructuras
+sintácticas diferentes pueden representar los mismos objetivos y, por tanto,
+deberían conducir a una interpretación semántica equivalente.
+
+Durante la ejecución no se contempla que una persona intervenga para
+descomponer la orden, seleccionar las acciones del robot o corregir
+manualmente el plan generado. La interpretación de la instrucción y la
+determinación de las acciones necesarias corresponden al propio sistema
+robótico. De esta manera, GPSR proporciona un escenario apropiado para evaluar
+la transformación de instrucciones en lenguaje natural en representaciones
+semánticas y planes de acción.
+
+\subsection{Generación de comandos y conocimiento del dominio}
+\label{subsec:gpsr_generador}
+
+Una característica relevante de GPSR es que los comandos utilizados durante la
+prueba no se seleccionan únicamente a partir de una lista fija de oraciones.
+El reglamento establece que las tareas se construyen mediante el
+\textit{CommandGenerator} oficial de RoboCup@Home
+\cite{robocuphome2026rulebook,robocup_command_generator}. Sobre esta herramienta se realizaron posteriormente adaptaciones específicas para construir el conjunto de datos empleado en el entrenamiento y evaluación del modelo. Dichas modificaciones se
+describen en el capítulo de metodología.
+
+El generador define diferentes familias de instrucciones relacionadas con
+personas y objetos. Entre ellas se encuentran tareas para desplazarse hacia una
+ubicación, encontrar personas u objetos, contar entidades, obtener información,
+seguir o guiar personas, tomar objetos y entregarlos o colocarlos en una
+ubicación determinada. Algunas de estas estructuras permiten incorporar
+continuaciones que producen comandos compuestos. De esta manera, una
+instrucción inicial puede extenderse con subtareas posteriores que dependen del
+resultado de las anteriores \cite{robocup_command_generator}.
+
+De forma simplificada, el proceso puede representarse como:
+
+\begin{equation}
+\boxed{
+\text{familia de tarea}
++
+\text{estructura lingüística}
++
+\text{entidades del dominio}
+\rightarrow
+\text{comando GPSR}
+}
+\end{equation}
+
+Las estructuras del generador utilizan elementos variables para representar
+entidades y relaciones del dominio. Por ejemplo, una plantilla puede contener
+una habitación, una persona, un objeto o una ubicación que posteriormente son
+sustituidos por valores concretos. De forma similar, diferentes verbos pueden
+representar una intención relacionada; por ejemplo, una tarea de navegación
+puede expresarse mediante verbos como \textit{go} o \textit{navigate}, mientras
+que una búsqueda puede utilizar expresiones como \textit{find},
+\textit{locate} o \textit{look for}
+\cite{robocup_command_generator}.
+
+El conocimiento utilizado para realizar estas sustituciones se mantiene
+separado de las estructuras de los comandos. El generador distingue, entre
+otros elementos, nombres de personas, habitaciones, ubicaciones, superficies
+de colocación, objetos y categorías de objetos
+\cite{robocup_command_generator}. La herramienta permite recibir este
+conocimiento desde un directorio externo y señala el repositorio
+\textit{CompetitionTemplate} como referencia para su organización
+\cite{robocup_command_generator,robocup_competition_template}.
+
+En \textit{CompetitionTemplate}, la información específica de una competencia
+se organiza en archivos relacionados con el mapa y las ubicaciones, los nombres
+de personas y los objetos disponibles
+\cite{robocup_competition_template}. Esta separación resulta importante porque
+permite mantener las estructuras generales de las tareas mientras se modifican
+las entidades concretas presentes en una edición o escenario determinado.
+
+Conceptualmente, puede representarse el dominio de referencia como:
+
+\begin{equation}
+D_{\mathrm{GPSR}}=(F,K),
+\end{equation}
+
+donde $F$ representa las familias de tareas contempladas por el generador y $K$
+el conocimiento específico utilizado para instanciarlas. La estructura
+detallada de $K$ y su utilización en esta investigación se formalizan en la
+Sección~\ref{subsec:entidades_dominio}.
 
 
 \subsection{Dominio de referencia y alcance lingüístico}
 \label{subsec:dominio_referencia}
 
-En esta investigación, GPSR se utiliza principalmente como dominio de
-referencia para definir las familias de tareas y las entidades utilizadas en
-la generación y evaluación de las instrucciones. A partir de este dominio se
-establecen catálogos de personas, objetos, categorías, habitaciones y
-ubicaciones que permiten delimitar el conocimiento utilizado por los sistemas
-evaluados.
+La utilización de GPSR como referencia no implica que el sistema desarrollado
+en esta tesis deba reconocer únicamente las frases producidas literalmente por
+el generador oficial. Esta distinción resulta especialmente importante debido
+a que una misma intención puede expresarse mediante diferentes construcciones
+lingüísticas.
 
-Sin embargo, debe distinguirse entre el dominio de una tarea y la forma
-lingüística mediante la cual se expresa.
+El propio procedimiento de GPSR 2026 introduce variación sobre las órdenes
+generadas. Una vez producido un comando mediante el generador oficial, el
+reglamento establece que éste se proporciona a un modelo de lenguaje para
+obtener una formulación similar. Además, una instrucción puede ser reformulada
+hasta tres veces, utilizando expresiones progresivamente más simples cuando sea
+necesario \cite{robocuphome2026rulebook}.
 
-Considérense las siguientes instrucciones:
+Por ejemplo, el reglamento presenta una transformación equivalente a pasar de
+una instrucción como:
+
+\begin{quote}
+\textit{``Get me a coke from the kitchen.''}
+\end{quote}
+
+a una formulación que explicita sus subtareas, como:
+
+\begin{quote}
+\textit{``Go to the kitchen, find a coke, and bring it to me.''}
+\end{quote}
+
+Aunque la estructura superficial de ambas expresiones es diferente, la tarea
+subyacente permanece esencialmente sin cambios. Esto permite distinguir dos
+niveles:
+
+\begin{equation}
+\text{forma lingüística}
+\qquad\text{y}\qquad
+\text{intención semántica}.
+\end{equation}
+
+Esta distinción es central para la presente investigación. GPSR proporciona un
+conjunto controlado de tareas y entidades, pero la entrada lingüística puede
+presentar diferentes formas de expresar una misma intención. El objetivo del
+intérprete no consiste, por tanto, en memorizar las plantillas del generador,
+sino en establecer una correspondencia entre distintas realizaciones
+lingüísticas y una representación semántica común.
+
+Por ejemplo, considérese:
 
 \begin{quote}
 \textit{``Go to the kitchen and find Robin.''}
 \end{quote}
 
+y:
+
 \begin{quote}
 \textit{``Could you look for Robin in the kitchen?''}
 \end{quote}
 
-Aunque las expresiones presentan diferencias sintácticas, ambas pueden
-representar una intención equivalente:
+Dentro del dominio considerado, ambas pueden corresponder a la misma secuencia
+de objetivos:
 
 \begin{verbatim}
 go(kitchen)
 find(Robin, kind=person)
 \end{verbatim}
 
-El propósito de la interpretación semántica consiste precisamente en reducir
-esta variabilidad lingüística y obtener una representación común de la
-intención.
+Por tanto, en esta tesis GPSR se utiliza como una fuente controlada para definir
+las tareas, entidades y relaciones que forman parte del dominio experimental,
+pero no como una gramática que limite las únicas formulaciones aceptables por
+el sistema.
 
-Por tanto, la entrada del sistema no se restringe a reproducir literalmente
-las plantillas empleadas para generar las órdenes de referencia. No obstante,
-la libertad en la formulación lingüística tampoco implica un dominio semántico
-ilimitado.
-
-Puede establecerse conceptualmente la relación:
+Puede resumirse esta relación mediante:
 
 \begin{equation}
 \boxed{
-\text{formulación lingüística variable}
-\rightarrow
-\text{dominio semántico definido}
-\rightarrow
-\text{capacidades disponibles}
+\begin{array}{c}
+\text{múltiples formulaciones lingüísticas}
+\\
+\downarrow
+\\
+\text{representación semántica canónica}
+\\
+\downarrow
+\\
+\text{capacidades implementadas del robot}
+\end{array}
 }
 \end{equation}
 
-En otras palabras, una instrucción puede expresarse de diferentes maneras,
-pero solamente puede convertirse en un plan cuando su intención puede
-representarse mediante los objetivos y las capacidades contemplados por el
-sistema.
+En consecuencia, la entrada lingüística puede variar en su formulación, pero
+la interpretación permanece acotada por el dominio semántico y las capacidades
+operativas disponibles. Una instrucción puede ser perfectamente comprensible
+para una persona y, aun así, quedar fuera del alcance del sistema si requiere
+una intención que no puede representarse mediante los objetivos contemplados o
+una capacidad que el robot no posee.
 
-El dominio experimental utilizado en esta investigación considera
-principalmente instrucciones en inglés. Por ello, el estudio de la variabilidad
-lingüística se concentra en diferentes formas de expresar las tareas
-soportadas dentro de dicho idioma y no pretende demostrar independencia
-respecto al lenguaje utilizado.
-
+El dominio experimental de esta investigación considera principalmente
+instrucciones en inglés, en correspondencia con las estructuras utilizadas por
+el generador y con el escenario de evaluación. Por ello, los resultados
+relacionados con variabilidad lingüística deben interpretarse como capacidad
+para procesar diferentes formulaciones de las tareas soportadas dentro de dicho
+idioma, y no como evidencia de independencia respecto al idioma o de
+comprensión irrestricta del lenguaje natural.
 
 % ============================================================
 \section{Formalización de órdenes, objetivos y planes}
 \label{sec:formalizacion_ordenes}
 
+La transformación de una instrucción en lenguaje natural a un plan para un
+robot de servicio implica relacionar representaciones con diferentes niveles
+de abstracción. La expresión proporcionada por el usuario describe una tarea
+mediante lenguaje natural, mientras que el sistema de ejecución requiere una
+secuencia de acciones pertenecientes a un repertorio previamente definido.
+
+En esta investigación se introduce una representación semántica intermedia que
+permite separar ambos problemas. De manera general, el proceso se representa
+como:
+
+\begin{equation}
+\boxed{
+x \rightarrow G \rightarrow P
+}
+\label{eq:orden_goals_plan}
+\end{equation}
+
+donde $x$ representa la instrucción expresada en lenguaje natural, $G$ una
+secuencia ordenada de objetivos semánticos y $P$ el plan compuesto por acciones
+compatibles con las capacidades del robot.
+
+Esta separación permite analizar independientemente dos problemas. El primero
+consiste en determinar qué solicita el usuario:
+
+\begin{equation}
+x \rightarrow G,
+\end{equation}
+
+mientras que el segundo consiste en determinar qué acciones son necesarias
+para realizar los objetivos obtenidos:
+
+\begin{equation}
+G \rightarrow P.
+\end{equation}
+
+Las siguientes subsecciones formalizan las representaciones utilizadas para
+describir estas transformaciones.
+
+
+% ------------------------------------------------------------
 \subsection{Orden en lenguaje natural}
 \label{subsec:orden_natural}
 
@@ -231,35 +413,189 @@ x \in \mathcal{X}
 una instrucción expresada en lenguaje natural perteneciente al conjunto
 $\mathcal{X}$ de órdenes consideradas dentro del dominio experimental.
 
-La instrucción puede contener una o varias intenciones. Por ejemplo:
+Una instrucción puede describir una tarea simple o una composición de varias
+subtareas relacionadas. Por ejemplo:
 
 \begin{quote}
-\textit{``Go to the living room, find Robin and follow Robin to the kitchen.''}
+\textit{``Go to the kitchen, find an apple and bring it to me.''}
 \end{quote}
 
-contiene tres subtareas diferentes:
+contiene información relacionada con navegación, búsqueda, manipulación y
+entrega de un objeto.
 
-\begin{enumerate}
-    \item desplazarse a una ubicación;
-    \item localizar una persona;
-    \item realizar una tarea relacionada con dicha persona.
-\end{enumerate}
+Por tanto, una instrucción lingüística no corresponde necesariamente con una
+única acción del robot:
 
-El objetivo de la etapa de interpretación es transformar esta expresión en una
-representación que elimine información lingüística innecesaria y conserve los
-elementos relevantes para la planificación.
+\begin{equation}
+\boxed{
+\text{una instrucción}
+\not\equiv
+\text{una acción}
+}
+\end{equation}
+
+Incluso una expresión lingüísticamente breve puede implicar varias operaciones.
+Por ejemplo:
+
+\begin{quote}
+\textit{``Bring me an apple from the kitchen.''}
+\end{quote}
+
+puede representarse mediante la siguiente secuencia semántica:
+
+\begin{verbatim}
+go(kitchen)
+find(apple, kind=object)
+take(apple)
+deliver(apple, to=me)
+\end{verbatim}
+
+En consecuencia, el objetivo de la interpretación no consiste únicamente en
+identificar palabras clave, sino en determinar las subtareas implícitas o
+explícitas en la instrucción, las entidades involucradas y las relaciones
+existentes entre ellas.
+
+Formalmente, la interpretación puede expresarse mediante una función:
+
+\begin{equation}
+I:
+\mathcal{X}
+\rightarrow
+\mathcal{G}^{*},
+\end{equation}
+
+donde $\mathcal{G}^{*}$ representa el conjunto de secuencias finitas que pueden
+formarse a partir del vocabulario de objetivos semánticos $\mathcal{G}$.
+
+Para una instrucción particular $x$, la función produce:
+
+\begin{equation}
+I(x)=G=(g_1,g_2,\ldots,g_n).
+\end{equation}
+
+El número $n$ de objetivos obtenidos depende de la tarea representada por la
+instrucción y no necesariamente de su longitud superficial.
 
 
+% ------------------------------------------------------------
+\subsection{Equivalencia semántica entre formulaciones}
+\label{subsec:equivalencia_semantica}
+
+Como se describió en la Sección~\ref{sec:gpsr_referencia}, una misma tarea puede
+ser expresada mediante diferentes formulaciones lingüísticas. Esta propiedad
+es particularmente relevante en GPSR, donde una orden puede ser reformulada
+manteniendo los objetivos de la instrucción original.
+
+Sean dos instrucciones:
+
+\begin{equation}
+x_1,x_2\in\mathcal{X}.
+\end{equation}
+
+En el contexto de esta investigación, se consideran semánticamente
+equivalentes cuando ambas representan la misma secuencia canónica de
+objetivos. Esta relación se denota mediante:
+
+\begin{equation}
+x_1 \sim x_2
+\end{equation}
+
+si:
+
+\begin{equation}
+I(x_1)=I(x_2)=G.
+\label{eq:equivalencia_semantica}
+\end{equation}
+
+Por ejemplo, las instrucciones:
+
+\begin{quote}
+\textit{``Bring me an apple from the kitchen.''}
+\end{quote}
+
+y:
+
+\begin{quote}
+\textit{``Go to the kitchen, find an apple, take it and bring it to me.''}
+\end{quote}
+
+presentan estructuras lingüísticas diferentes, pero pueden corresponder a la
+misma secuencia semántica:
+
+\begin{verbatim}
+go(kitchen)
+find(apple, kind=object)
+take(apple)
+deliver(apple, to=me)
+\end{verbatim}
+
+Por tanto, ambas expresiones pertenecen conceptualmente a una misma clase de
+equivalencia:
+
+\begin{equation}
+[x]
+=
+\{
+x'\in\mathcal{X}
+\mid
+I(x')=I(x)
+\}.
+\end{equation}
+
+Esta representación permite expresar uno de los objetivos principales de la
+etapa de interpretación: diferentes realizaciones superficiales de una misma
+tarea deben converger hacia una representación semántica común.
+
+De manera esquemática:
+
+\begin{equation}
+\boxed{
+\begin{array}{ccc}
+x_1 & & \\
+x_2 & \longrightarrow & G \\
+\vdots & & \\
+x_k & &
+\end{array}
+}
+\end{equation}
+
+donde $x_1,\ldots,x_k$ representan distintas formas de expresar una intención
+equivalente.
+
+Esta propiedad permite separar la variabilidad lingüística del dominio
+semántico. El sistema puede admitir diferentes formas de formular una tarea sin
+que ello implique incrementar indefinidamente el conjunto de objetivos que debe
+ser capaz de representar.
+
+En consecuencia, el problema de interpretación puede entenderse como una
+transformación desde un espacio lingüístico de alta variabilidad hacia un
+espacio semántico más reducido y estructurado:
+
+\begin{equation}
+\boxed{
+\mathcal{X}
+\xrightarrow{I}
+\mathcal{G}^{*}
+}
+\end{equation}
+
+El objetivo no es memorizar las estructuras superficiales utilizadas para
+generar los comandos de referencia, sino identificar la intención que dichas
+estructuras representan.
+
+
+% ------------------------------------------------------------
 \subsection{Entidades y conocimiento del dominio}
 \label{subsec:entidades_dominio}
 
-La interpretación de una orden requiere conocer las entidades que pueden
-aparecer dentro de las tareas consideradas.
+La interpretación de una instrucción requiere disponer de información sobre
+las entidades que pueden participar en las tareas consideradas.
 
-Se define el conocimiento del dominio como:
+En esta investigación, el conocimiento relevante del dominio se representa
+como:
 
 \begin{equation}
-K =
+K=
 \{
 K_P,
 K_O,
@@ -267,6 +603,7 @@ K_C,
 K_L,
 K_R
 \},
+\label{eq:conocimiento_dominio}
 \end{equation}
 
 donde:
@@ -277,58 +614,270 @@ donde:
 
     \item $K_O$ representa el conjunto de objetos;
 
-    \item $K_C$ representa categorías de objetos;
+    \item $K_C$ representa las categorías de objetos;
 
-    \item $K_L$ representa ubicaciones o lugares relevantes;
+    \item $K_L$ representa las ubicaciones específicas;
 
-    \item $K_R$ representa habitaciones.
+    \item $K_R$ representa las habitaciones.
 
 \end{itemize}
 
-Estos catálogos permiten delimitar las entidades que pueden ser utilizadas en
-la interpretación de una instrucción y proporcionan información adicional
-para determinar su función semántica.
+Cada uno de estos subconjuntos puede expresarse, de manera general, como:
 
-Por ejemplo, en:
+\begin{equation}
+K_P=\{p_1,p_2,\ldots,p_{n_P}\},
+\end{equation}
+
+\begin{equation}
+K_O=\{o_1,o_2,\ldots,o_{n_O}\},
+\end{equation}
+
+y de forma equivalente para los demás componentes del dominio.
+
+Esta información permite determinar el tipo semántico de diferentes
+referencias. Por ejemplo:
+
+\begin{equation}
+Robin\in K_P,
+\end{equation}
+
+mientras que:
+
+\begin{equation}
+apple\in K_O.
+\end{equation}
+
+Por tanto:
 
 \begin{verbatim}
 find(Robin, kind=person)
 \end{verbatim}
 
-\texttt{Robin} corresponde a una entidad de tipo persona, mientras que en:
+y:
 
 \begin{verbatim}
 find(apple, kind=object)
 \end{verbatim}
 
-\texttt{apple} corresponde a un objeto.
+comparten el mismo tipo general de objetivo, pero operan sobre entidades
+semánticamente diferentes.
 
-Esta información resulta relevante porque una misma estructura de objetivo
-puede operar sobre tipos de entidades diferentes.
+El conocimiento del dominio cumple al menos dos funciones. En primer lugar,
+permite restringir las entidades nominales que pueden ser consideradas
+válidas. Una salida que introduzca arbitrariamente una persona, objeto o
+ubicación que no pertenece al dominio no debe interpretarse automáticamente
+como correcta.
+
+En segundo lugar, proporciona información para resolver el tipo de las
+entidades y verificar la compatibilidad entre ellas y los objetivos en los que
+participan.
+
+Las referencias presentes en una instrucción pueden adoptar distintas formas.
+En esta investigación se distinguen, de manera conceptual, tres casos
+principales:
+
+\begin{enumerate}
+
+    \item \textbf{Entidades nominales:} referencias explícitas a una entidad
+    conocida, como \texttt{Robin}, \texttt{apple} o \texttt{kitchen}.
+
+    \item \textbf{Entidades genéricas:} referencias a una clase de entidad,
+    como \texttt{person}, \texttt{drink} o \texttt{fruit}.
+
+    \item \textbf{Entidades descritas mediante propiedades:} referencias que
+    requieren identificar una entidad a partir de alguna característica, como
+    una persona saludando o el objeto de mayor tamaño.
+
+\end{enumerate}
+
+Por ejemplo:
+
+\begin{verbatim}
+find(person, kind=person, gesture='waving person')
+\end{verbatim}
+
+no identifica inicialmente a una persona mediante un nombre, sino mediante una
+propiedad observable.
+
+De manera similar:
+
+\begin{verbatim}
+find(drink, kind=object, property=largest)
+\end{verbatim}
+
+representa la búsqueda de un objeto perteneciente a una categoría y sujeto a
+una propiedad adicional.
+
+Esta distinción permite conservar información semántica que posteriormente
+puede ser utilizada por los componentes de percepción y planificación.
 
 
+% ------------------------------------------------------------
 \subsection{Representación canónica de objetivos}
 \label{subsec:objetivos_canonicos}
 
-La interpretación de una orden se representa mediante una secuencia ordenada:
+El resultado de la interpretación se representa mediante una secuencia
+ordenada:
 
 \begin{equation}
 G=(g_1,g_2,\ldots,g_n),
+\label{eq:secuencia_goals}
 \end{equation}
 
 donde cada $g_i$ representa un objetivo semántico.
 
-De manera general, un objetivo puede expresarse como:
+De manera general:
 
 \begin{equation}
 g_i=(t_i,\theta_i),
 \end{equation}
 
-donde $t_i$ identifica el tipo de objetivo y $\theta_i$ contiene sus
-argumentos y calificadores.
+donde $t_i$ identifica el tipo de objetivo y $\theta_i$ contiene los
+argumentos y calificadores necesarios para describirlo.
 
-En la representación utilizada por esta investigación, $G$ se serializa
-mediante una estructura JSON:
+Equivalentemente, puede utilizarse una notación funcional:
+
+\begin{equation}
+g_i=t_i(\theta_i).
+\end{equation}
+
+El vocabulario semántico utilizado en esta investigación se define como:
+
+\begin{equation}
+\begin{split}
+\mathcal{G}=\{&
+\texttt{go},
+\texttt{find},
+\texttt{take},
+\texttt{deliver},
+\texttt{place},
+\texttt{drop},\\
+&
+\texttt{guide},
+\texttt{follow},
+\texttt{count},
+\texttt{tell},
+\texttt{talk},
+\texttt{save},\\
+&
+\texttt{answer\_question},
+\texttt{greet}
+\}.
+\end{split}
+\label{eq:vocabulario_goals}
+\end{equation}
+
+La Tabla~\ref{tab:vocabulario_goals} resume el propósito general de cada tipo
+de objetivo y sus argumentos principales.
+
+\begin{table}[ht]
+\centering
+\caption{Vocabulario de objetivos semánticos utilizado en la representación canónica.}
+\label{tab:vocabulario_goals}
+\begin{tabular}{|p{0.19\textwidth} | p{0.34\textwidth} | p{0.35\textwidth}|}
+\hline
+\textbf{Objetivo} & \textbf{Propósito} & \textbf{Argumentos principales} \\
+\hline
+
+\texttt{go}
+& Desplazarse hacia una ubicación
+& ubicación \\
+
+\texttt{find}
+& Localizar una persona u objeto
+& objetivo, \texttt{kind}, gesto, pose, vestimenta o propiedad \\
+
+\texttt{take}
+& Tomar un objeto
+& objeto \\
+
+\texttt{deliver}
+& Entregar un objeto
+& objeto, destinatario \\
+
+\texttt{place}
+& Colocar un objeto en un destino
+& objeto, destino y relación espacial \\
+
+\texttt{drop}
+& Depositar un objeto
+& objeto, destino y relación espacial \\
+
+\texttt{guide}
+& Guiar a una persona
+& persona, destino \\
+
+\texttt{follow}
+& Seguir a una persona
+& persona, destino opcional \\
+
+\texttt{count}
+& Contar personas u objetos
+& objetivo, \texttt{kind} y atributos opcionales \\
+
+\texttt{tell}
+& Comunicar información
+& información o propiedad \\
+
+\texttt{talk}
+& Producir información verbal
+& contenido \\
+
+\texttt{save}
+& Conservar información obtenida durante una interacción
+& nombre, pose o gesto \\
+
+\texttt{answer\_question}
+& Atender una pregunta
+& --- \\
+
+\texttt{greet}
+& Saludar a una persona
+& persona \\
+
+\hline
+\end{tabular}
+\end{table}
+
+Los objetivos \texttt{find} y \texttt{count} requieren distinguir
+explícitamente si operan sobre personas u objetos. Para ello se utiliza el
+argumento \texttt{kind}:
+
+\begin{verbatim}
+find(Robin, kind=person)
+find(apple, kind=object)
+
+count(person, kind=person)
+count(drinks, kind=object)
+\end{verbatim}
+
+Otros objetivos poseen un dominio semántico implícito. Por ejemplo,
+\texttt{take}, \texttt{deliver}, \texttt{place} y \texttt{drop} operan sobre
+objetos, mientras que \texttt{guide}, \texttt{follow} y \texttt{greet}
+operan sobre personas.
+
+Los objetivos también pueden conservar calificadores relevantes presentes en
+la instrucción. Entre ellos se encuentran propiedades relacionadas con gestos,
+poses, vestimenta, características de objetos y relaciones de destino.
+
+Por ejemplo:
+
+\begin{verbatim}
+find(person, kind=person, gesture='waving person')
+
+find(person, kind=person, pose='sitting person')
+
+find(person, kind=person, wearing='red shirt')
+
+find(drink, kind=object, property=largest)
+
+guide(Robin, to=kitchen)
+
+place(apple, on=table)
+\end{verbatim}
+
+La secuencia completa se serializa posteriormente mediante una estructura
+JSON. Por ejemplo:
 
 \begin{verbatim}
 {
@@ -340,100 +889,164 @@ mediante una estructura JSON:
 }
 \end{verbatim}
 
-El vocabulario canónico contempla los siguientes tipos principales de
-objetivos:
+El formato de serialización no modifica la naturaleza conceptual de la
+representación. El elemento relevante para la formalización es la secuencia
+$G$, mientras que JSON constituye el mecanismo utilizado para intercambiar
+dicha información entre componentes.
 
-\begin{verbatim}
-go
-find
-take
-deliver
-place
-drop
-guide
-follow
-count
-tell
-talk
-save
-answer_question
-greet
-\end{verbatim}
 
-Cada objetivo posee una semántica definida y puede requerir parámetros
-adicionales.
+\subsubsection{Fidelidad de la representación semántica}
+\label{subsubsec:fidelidad_semantica}
 
-Por ejemplo:
+Una secuencia compuesta únicamente por objetivos válidos no constituye
+necesariamente una interpretación correcta de una instrucción.
+
+La representación canónica debe conservar las intenciones relevantes de la
+orden y eliminar únicamente la variabilidad superficial que no modifica su
+significado dentro del dominio.
+
+Considérese la instrucción:
+
+\begin{quote}
+\textit{``Go to the kitchen and find Robin.''}
+\end{quote}
+
+La secuencia esperada es:
 
 \begin{verbatim}
 go(kitchen)
 find(Robin, kind=person)
-find(apple, kind=object)
-deliver(apple, to=Robin)
-guide(Robin, to=kitchen)
 \end{verbatim}
 
-Los objetivos \texttt{find} y \texttt{count} requieren una indicación
-explícita del tipo de entidad debido a que pueden operar tanto sobre personas
-como sobre objetos:
+Una salida como:
 
 \begin{verbatim}
-find(person, kind=person)
-find(apple, kind=object)
-count(person, kind=person)
-count(drinks, kind=object)
+find(Robin, kind=person)
 \end{verbatim}
 
-También pueden utilizarse calificadores para conservar información relevante
-de la instrucción, por ejemplo:
+utiliza un objetivo válido, pero omite una subtarea solicitada explícitamente
+por la orden.
+
+De manera similar:
 
 \begin{verbatim}
-find(person, kind=person, gesture='waving person')
-find(drink, kind=object, property=largest)
-place(apple, on=table)
-follow(Robin, to=kitchen)
+go(kitchen)
+find(Robin, kind=person)
+greet(Robin)
 \end{verbatim}
 
-La representación canónica tiene como objetivo establecer una interfaz estable
-entre el lenguaje natural y la planificación. Dos expresiones lingüísticas
-diferentes que describen una misma intención deberían, idealmente, producir la
-misma secuencia $G$.
+incorpora una intención adicional que no forma parte de la instrucción
+original.
+
+Por tanto, una interpretación correcta debe satisfacer, conceptualmente, las
+siguientes propiedades:
+
+\begin{itemize}
+
+    \item preservar las subtareas solicitadas;
+
+    \item no introducir objetivos ajenos a la instrucción;
+
+    \item conservar las entidades relevantes;
+
+    \item conservar las relaciones entre dichas entidades;
+
+    \item mantener las restricciones de orden necesarias para completar la
+    tarea.
+
+\end{itemize}
+
+Si se dispone de una secuencia de referencia $G_{\mathrm{ref}}$, una condición
+ideal de interpretación puede expresarse como:
+
+\begin{equation}
+G_{\mathrm{pred}} = G_{\mathrm{ref}},
+\end{equation}
+
+donde $G_{\mathrm{pred}}$ representa la interpretación producida por el modelo.
+
+Esta igualdad constituye una condición estricta y posteriormente puede
+descomponerse en métricas más específicas para analizar qué componentes de la
+interpretación fueron correctos o incorrectos.
 
 
+% ------------------------------------------------------------
 \subsection{Objetivos semánticos y acciones ejecutables}
 \label{subsec:objetivos_acciones}
 
-La representación canónica describe \textbf{qué} debe realizar el robot, pero
-no necesariamente especifica directamente \textbf{cómo} debe realizarlo.
+Los objetivos canónicos describen \textbf{qué} debe conseguir el robot, pero no
+necesariamente especifican directamente todas las operaciones requeridas para
+conseguirlo.
 
-Sea:
-
-\begin{equation}
-\mathcal{G}
-\end{equation}
-
-el vocabulario de objetivos semánticos y:
+Sea $\mathcal{G}$ el vocabulario de objetivos semánticos definido
+anteriormente y sea:
 
 \begin{equation}
 \mathcal{A}
 \end{equation}
 
-el repertorio de acciones que pueden ser procesadas por el ejecutor.
+el repertorio de acciones disponibles para el sistema de ejecución.
 
-En general:
+En esta investigación:
 
 \begin{equation}
-\mathcal{G} \neq \mathcal{A}.
+\boxed{
+\mathcal{G}\neq\mathcal{A}.
+}
+\label{eq:goals_acciones_distintas}
 \end{equation}
 
-Por ejemplo, \texttt{deliver} representa una intención de alto nivel:
+Entre las acciones utilizadas por el ejecutor se encuentran, por ejemplo:
+
+\begin{equation}
+\begin{split}
+\mathcal{A}\supseteq\{&
+\texttt{go\_to},
+\texttt{say},
+\texttt{listen},
+\texttt{find\_person},
+\texttt{find\_pose},\\
+&
+\texttt{approach},
+\texttt{focus},
+\texttt{find\_object},
+\texttt{analyze\_objects},\\
+&
+\texttt{analyze\_person},
+\texttt{take},
+\texttt{find\_space},
+\texttt{drop},
+\texttt{give}
+\}.
+\end{split}
+\end{equation}
+
+Algunos elementos pueden poseer nombres similares en ambos vocabularios, como
+\texttt{take}, pero esto no implica que ambas representaciones sean
+equivalentes en general.
+
+Por ejemplo, el objetivo semántico:
 
 \begin{verbatim}
 deliver(apple, to=Robin)
 \end{verbatim}
 
-pero su realización puede requerir operaciones relacionadas con la
-localización de la persona, aproximación, entrega del objeto y comunicación.
+representa una intención de alto nivel. Su realización puede requerir varias
+operaciones, como localizar al destinatario, aproximarse y ejecutar la entrega
+mediante la acción correspondiente.
+
+Conceptualmente:
+
+\begin{equation}
+\texttt{deliver}(o,p)
+\rightarrow
+(
+\texttt{find\_person},
+\texttt{approach},
+\texttt{give},
+\ldots
+).
+\end{equation}
 
 De manera similar:
 
@@ -441,87 +1054,127 @@ De manera similar:
 place(apple, on=table)
 \end{verbatim}
 
-puede requerir localizar un espacio adecuado antes de liberar el objeto.
+puede requerir identificar un espacio adecuado antes de ejecutar la acción de
+liberar el objeto:
 
-Entre las acciones utilizadas por el ejecutor se encuentran, por ejemplo:
+\begin{equation}
+\texttt{place}(o,l)
+\rightarrow
+(
+\texttt{find\_space},
+\texttt{drop},
+\ldots
+).
+\end{equation}
 
-\begin{verbatim}
-go_to
-find_person
-find_pose
-approach
-focus
-find_object
-analyze_objects
-analyze_person
-take
-find_space
-drop
-give
-listen
-say
-\end{verbatim}
+La secuencia completa de acciones se define como:
 
-Por tanto, un objetivo $g_i$ puede producir una subsecuencia de acciones:
+\begin{equation}
+P=(a_1,a_2,\ldots,a_m),
+\end{equation}
+
+donde:
+
+\begin{equation}
+a_i\in\mathcal{A}.
+\end{equation}
+
+Cada objetivo puede producir una subsecuencia de acciones:
 
 \begin{equation}
 g_i
 \rightarrow
-(a_j,a_{j+1},\ldots,a_k),
-\qquad
-a_j,\ldots,a_k \in \mathcal{A}.
+(a_j,a_{j+1},\ldots,a_k).
 \end{equation}
 
-El plan completo se define entonces como:
+Por tanto, el problema de planificación considerado puede expresarse de manera
+general como una transformación:
 
 \begin{equation}
-P=(a_1,a_2,\ldots,a_m),
-\qquad
-a_i\in\mathcal{A}.
+R:
+\mathcal{G}^{*}
+\rightarrow
+\mathcal{A}^{*},
 \end{equation}
 
-La transformación:
+de forma que:
 
 \begin{equation}
-G\rightarrow P
+R(G)=P.
 \end{equation}
 
-constituye el problema de planificación considerado en esta tesis.
+Esta distinción es fundamental para las arquitecturas comparadas en esta
+investigación. La etapa de interpretación produce elementos pertenecientes a
+$\mathcal{G}$, mientras que el resultado final de planificación debe estar
+compuesto por elementos pertenecientes a $\mathcal{A}$.
 
 
+% ------------------------------------------------------------
 \subsection{Dependencias y contexto entre objetivos}
 \label{subsec:dependencias_objetivos}
 
-Los elementos de $G$ no pueden considerarse siempre de manera independiente.
-Algunas tareas presentan relaciones que deben conservarse durante la
-interpretación y la planificación.
+La secuencia $G$ no puede tratarse únicamente como un conjunto independiente de
+objetivos. Algunas subtareas presentan relaciones de precedencia, referencias
+compartidas o condiciones que dependen del resultado de objetivos anteriores.
+
+Por este motivo:
+
+\begin{equation}
+G=(g_1,g_2,\ldots,g_n)
+\end{equation}
+
+se considera una \textbf{secuencia ordenada de objetivos} y no simplemente un
+conjunto:
+
+\begin{equation}
+G\neq\{g_1,g_2,\ldots,g_n\}.
+\end{equation}
+
+
+\subsubsection{Dependencias de precedencia}
+\label{subsubsec:dependencia_precedencia}
+
+Algunos objetivos requieren que otra subtarea haya sido realizada
+previamente.
 
 Por ejemplo:
 
 \begin{verbatim}
-find(apple, kind=object)
 take(apple)
 deliver(apple, to=Robin)
 \end{verbatim}
 
-contiene una dependencia entre la adquisición del objeto y su entrega.
+requiere que el objeto haya sido adquirido antes de intentar entregarlo.
 
-Puede representarse mediante una relación de precedencia:
-
-\begin{equation}
-take(o) \prec deliver(o,p),
-\end{equation}
-
-donde $\prec$ indica que el primer objetivo debe encontrarse antes que el
-segundo dentro de la secuencia.
-
-De forma similar:
+Esta relación puede representarse como:
 
 \begin{equation}
-take(o) \prec place(o,l).
+\texttt{take}(o)
+\prec
+\texttt{deliver}(o,p),
 \end{equation}
 
-La secuencia de objetivos también debe conservar referencias entre entidades.
+donde $\prec$ representa una relación de precedencia.
+
+De manera equivalente:
+
+\begin{equation}
+\texttt{take}(o)
+\prec
+\texttt{place}(o,l).
+\end{equation}
+
+Una secuencia que invirtiera estas relaciones podría contener objetivos
+individualmente válidos, pero no representaría una composición coherente de la
+tarea.
+
+
+\subsubsection{Dependencias referenciales}
+\label{subsubsec:dependencia_referencial}
+
+Algunas instrucciones introducen entidades que posteriormente deben ser
+reutilizadas.
+
 Considérese:
 
 \begin{verbatim}
@@ -529,19 +1182,174 @@ find(person, kind=person, gesture='waving person')
 guide(person, to=kitchen)
 \end{verbatim}
 
-El argumento \texttt{person} del segundo objetivo debe mantener la referencia
-a la persona identificada por el objetivo anterior.
+El argumento \texttt{person} utilizado en el segundo objetivo no representa una
+persona arbitraria, sino la entidad identificada como resultado del objetivo
+anterior.
 
-Por ello, $G$ no se considera únicamente un conjunto de intenciones, sino una
-\textbf{secuencia ordenada con relaciones de dependencia y contexto}:
+Conceptualmente, esta relación puede expresarse como:
 
 \begin{equation}
-G=(g_1,\ldots,g_n).
+ref(g_j)=result(g_i),
+\qquad i<j,
 \end{equation}
 
-Esta característica resulta especialmente importante en instrucciones
-compuestas, donde el resultado de una subtarea proporciona información o una
-condición necesaria para las siguientes.
+donde $result(g_i)$ representa la entidad obtenida como resultado de una
+subtarea anterior.
+
+Estas relaciones permiten representar expresiones lingüísticas que utilizan
+pronombres, referencias genéricas o descripciones cuyo referente se determina
+durante la ejecución de la tarea.
+
+
+\subsubsection{Dependencias espaciales}
+\label{subsubsec:dependencia_espacial}
+
+La interpretación de una subtarea también puede depender del contexto espacial
+establecido por objetivos anteriores.
+
+Por ejemplo:
+
+\begin{verbatim}
+go(kitchen)
+find(apple, kind=object)
+\end{verbatim}
+
+establece que la búsqueda del objeto debe realizarse después de desplazarse
+hacia la cocina.
+
+En este caso, el primer objetivo establece el contexto espacial esperado para
+la ejecución del segundo.
+
+De manera conceptual, puede considerarse que determinados objetivos producen
+una actualización del estado esperado:
+
+\begin{equation}
+S_{i+1}=T(S_i,g_i),
+\label{eq:estado_semantico}
+\end{equation}
+
+donde $S_i$ representa un estado abstracto antes de procesar el objetivo
+$g_i$ y $T$ una función conceptual de transición.
+
+Así, un objetivo:
+
+\begin{equation}
+\texttt{go}(l)
+\end{equation}
+
+puede producir conceptualmente:
+
+\begin{equation}
+location(S_{i+1})=l.
+\end{equation}
+
+Esta representación no implica que el movimiento físico haya sido ejecutado
+con éxito; únicamente representa el estado esperado utilizado durante la
+composición del plan.
+
+
+\subsubsection{Dependencias de estado}
+\label{subsubsec:dependencia_estado}
+
+Algunas subtareas modifican condiciones que son necesarias para objetivos
+posteriores.
+
+Por ejemplo:
+
+\begin{verbatim}
+take(apple)
+deliver(apple, to=Robin)
+\end{verbatim}
+
+establece conceptualmente un estado intermedio en el que el robot posee el
+objeto:
+
+\begin{equation}
+holding(S_{i+1})=apple.
+\end{equation}
+
+El objetivo posterior de entrega presupone esta condición.
+
+De esta forma, las relaciones entre objetivos no dependen exclusivamente de su
+posición dentro de la secuencia, sino también del estado esperado producido por
+las subtareas anteriores.
+
+
+\subsubsection{Orden lingüístico y orden semántico}
+\label{subsubsec:orden_semantico}
+
+Finalmente, debe distinguirse entre el orden superficial en que aparecen los
+elementos dentro de una oración y el orden lógico requerido para realizar la
+tarea.
+
+Por ejemplo:
+
+\begin{quote}
+\textit{``Bring me the apple from the kitchen.''}
+\end{quote}
+
+expresa directamente la intención de entrega, pero para realizarla es
+necesario construir una secuencia semántica como:
+
+\begin{verbatim}
+go(kitchen)
+find(apple, kind=object)
+take(apple)
+deliver(apple, to=me)
+\end{verbatim}
+
+Por tanto, la interpretación no consiste en copiar el orden de aparición de las
+palabras, sino en recuperar las relaciones necesarias entre las subtareas.
+
+Para este ejemplo:
+
+\begin{equation}
+\texttt{go}
+\prec
+\texttt{find}
+\prec
+\texttt{take}
+\prec
+\texttt{deliver}.
+\end{equation}
+
+Esta propiedad resulta especialmente importante en instrucciones compactas,
+donde algunas operaciones necesarias para cumplir la intención pueden no
+aparecer expresadas como verbos independientes.
+
+En consecuencia, la representación semántica $G$ debe conservar tanto la
+intención de la orden como las relaciones necesarias para que sus objetivos
+puedan ser posteriormente transformados en un plan coherente.
+
+La formalización desarrollada en esta sección permite resumir el problema
+considerado mediante:
+
+\begin{equation}
+\boxed{
+x
+\xrightarrow{I}
+G
+\xrightarrow{R}
+P
+}
+\end{equation}
+
+con:
+
+\begin{equation}
+x\in\mathcal{X},
+\qquad
+G\in\mathcal{G}^{*},
+\qquad
+P\in\mathcal{A}^{*}.
+\end{equation}
+
+La transformación $I$ abstrae la variabilidad del lenguaje natural y conserva
+la intención mediante una representación canónica, mientras que $R$ transforma
+dicha representación en una secuencia de acciones pertenecientes al repertorio
+del robot. Las dos arquitecturas estudiadas en esta tesis se diferencian
+principalmente en la manera en que implementan estas transformaciones, como se
+describe en la sección siguiente.
 
 
 % ============================================================
