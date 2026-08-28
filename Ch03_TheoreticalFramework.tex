@@ -1356,163 +1356,799 @@ describe en la sección siguiente.
 \section{Arquitecturas conceptuales evaluadas}
 \label{sec:arquitecturas_conceptuales}
 
-A partir de la formalización anterior, las dos arquitecturas estudiadas pueden
-describirse de acuerdo con la manera en que realizan las transformaciones:
+A partir de la formalización presentada en la Sección~\ref{sec:formalizacion_ordenes},
+el problema estudiado puede expresarse mediante dos transformaciones principales:
 
 \begin{equation}
-x\rightarrow G
+x \rightarrow G
 \end{equation}
 
 y:
 
 \begin{equation}
-G\rightarrow P.
+G \rightarrow P,
 \end{equation}
 
-Las arquitecturas se evalúan de forma independiente y no existe un mecanismo
-de selección, votación o fusión entre los planes producidos.
+donde $x$ representa una instrucción en lenguaje natural, $G$ una secuencia
+ordenada de objetivos semánticos y $P$ una secuencia de acciones pertenecientes
+al repertorio ejecutable del robot.
+
+Las dos arquitecturas consideradas en esta investigación resuelven el mismo
+problema general y utilizan un dominio conceptual común, pero distribuyen de
+manera diferente la responsabilidad de realizar estas transformaciones. En la
+arquitectura Qwen--CLIPS, la interpretación lingüística y la expansión del plan
+se encuentran separadas entre un componente neuronal y uno simbólico. En la
+arquitectura GPT directo, ambas funciones se concentran en un mismo modelo de
+lenguaje.
+
+Esta diferencia constituye el eje principal de la comparación experimental. El
+objetivo no consiste únicamente en comparar dos modelos de lenguaje, sino en
+analizar dos estrategias distintas para relacionar lenguaje natural, objetivos
+semánticos y acciones ejecutables.
 
 
+% ------------------------------------------------------------
+\subsection{Base común de las arquitecturas evaluadas}
+\label{subsec:base_comun_arquitecturas}
+
+Para que la comparación sea significativa, ambas arquitecturas se consideran
+sobre una misma definición del problema. En particular, comparten el dominio
+de conocimiento $K$, el vocabulario de objetivos semánticos $\mathcal{G}$ y el
+repertorio de acciones ejecutables $\mathcal{A}$ definidos previamente.
+
+De manera general:
+
+\begin{equation}
+K=
+\{
+K_P,
+K_O,
+K_C,
+K_L,
+K_R
+\},
+\end{equation}
+
+mientras que:
+
+\begin{equation}
+G\in\mathcal{G}^{*}
+\end{equation}
+
+y:
+
+\begin{equation}
+P\in\mathcal{A}^{*}.
+\end{equation}
+
+En consecuencia, las dos arquitecturas deben interpretar instrucciones dentro
+del mismo dominio semántico y producir planes compatibles con las mismas
+capacidades del robot.
+
+La comparación utiliza además un mismo conjunto de órdenes de evaluación y una
+misma representación de referencia para los objetivos. Esto permite contrastar
+los resultados sin modificar la definición de las tareas entre una arquitectura
+y otra.
+
+Sin embargo, compartir el mismo problema no implica que todos los componentes
+reciban exactamente la misma información ni que el conocimiento necesario para
+resolverlo se encuentre ubicado en el mismo lugar.
+
+En la arquitectura Qwen--CLIPS, Qwen únicamente debe resolver la transformación:
+
+\begin{equation}
+x\rightarrow G.
+\end{equation}
+
+El conocimiento necesario para transformar posteriormente esos objetivos en
+acciones se encuentra representado de forma explícita en el componente
+simbólico.
+
+Por el contrario, el planificador GPT directo debe producir tanto la
+interpretación como el plan:
+
+\begin{equation}
+x\rightarrow(G,P).
+\end{equation}
+
+Por ello, además del conocimiento necesario para interpretar las entidades y
+objetivos, esta arquitectura debe disponer de información suficiente acerca de
+las acciones disponibles y de las relaciones necesarias para componer un plan.
+
+Esta diferencia puede resumirse mediante:
+
+\begin{equation}
+\boxed{
+\text{mismo dominio y problema}
+\not\Rightarrow
+\text{misma distribución del conocimiento}
+}
+\end{equation}
+
+La comparación se establece, por tanto, sobre el resultado funcional esperado:
+interpretar correctamente la orden y producir un plan compatible con las
+capacidades definidas para el robot.
+
+
+% ------------------------------------------------------------
 \subsection{Arquitectura Qwen--CLIPS}
 \label{subsec:qwen_clips}
 
-La primera arquitectura divide explícitamente las funciones de interpretación
-y planificación.
+La primera arquitectura divide explícitamente el proceso en dos etapas. Qwen
+se utiliza como intérprete semántico, mientras que CLIPS se encarga de expandir
+los objetivos obtenidos mediante reglas de producción.
 
-Qwen2.5-7B recibe una orden $x$ y produce la secuencia canónica de objetivos:
-
-\begin{equation}
-I_Q:x\rightarrow G,
-\end{equation}
-
-donde $I_Q$ representa el intérprete semántico basado en Qwen.
-
-La secuencia resultante se somete a comprobaciones deterministas antes de ser
-entregada al componente simbólico. CLIPS recibe posteriormente la
-representación de dichos objetivos y aplica las reglas correspondientes para
-producir el plan:
+Sea:
 
 \begin{equation}
-R_C:G\rightarrow P,
+I_Q:
+\mathcal{X}
+\rightarrow
+\mathcal{G}^{*}
 \end{equation}
 
-donde $R_C$ representa la expansión basada en reglas.
+la función de interpretación implementada mediante Qwen. Para una instrucción
+$x$, el modelo produce una secuencia:
 
-Conceptualmente, la arquitectura puede expresarse como:
+\begin{equation}
+G_{\mathrm{pred}}=I_Q(x).
+\end{equation}
+
+El modelo no genera directamente el plan final ni selecciona acciones
+primitivas del robot. Su responsabilidad termina en la identificación de los
+objetivos semánticos contenidos en la instrucción.
+
+Antes de que la secuencia pueda ser procesada por el componente simbólico, se
+aplican comprobaciones deterministas destinadas a verificar que la
+representación producida pertenece al lenguaje canónico definido para el
+sistema.
+
+De manera conceptual, esta etapa puede representarse mediante:
+
+\begin{equation}
+V_G:
+(G,K)
+\rightarrow
+\{
+\text{válido},
+\text{inválido}
+\}.
+\end{equation}
+
+Cuando la representación es aceptada, una función de adaptación:
+
+\begin{equation}
+C:
+\mathcal{G}^{*}
+\rightarrow
+\mathcal{F}
+\end{equation}
+
+convierte la secuencia de objetivos en una representación simbólica $F$
+adecuada para el motor de reglas.
+
+El tipo concreto de hechos utilizado para implementar $F$ se describe en el
+capítulo de implementación; para la formalización actual basta considerar que
+esta representación conserva la información contenida en $G$ de una forma que
+puede ser procesada por CLIPS.
+
+El componente simbólico implementa posteriormente una función:
+
+\begin{equation}
+R_C:
+\mathcal{F}
+\rightarrow
+\mathcal{A}^{*},
+\end{equation}
+
+de manera que:
+
+\begin{equation}
+P=R_C(C(G)).
+\end{equation}
+
+La arquitectura completa puede representarse entonces como:
 
 \begin{equation}
 \boxed{
 x
 \xrightarrow{\text{Qwen}}
-G
-\xrightarrow{\text{validación y adaptación}}
+G_{\mathrm{pred}}
+\xrightarrow{\text{validación}}
 G'
+\xrightarrow{C}
+F
 \xrightarrow{\text{CLIPS}}
 P
 }
-\label{eq:qwen_clips}
+\label{eq:arquitectura_qwen_clips}
 \end{equation}
 
-En esta arquitectura, Qwen no genera las acciones primitivas del robot. Su
-responsabilidad se limita a interpretar la instrucción y producir los objetivos
-correspondientes. La forma en que cada objetivo se transforma en acciones se
-encuentra definida en la base de reglas del componente simbólico.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/Arquitectura Qwen–CLIPS.png}
+    \caption{Arquitecturas Qwen--CLIPS.}
+    \label{fig:arquitectura_QC}
+\end{figure}
 
-La separación permite distinguir conceptualmente dos posibles fuentes de
-error:
+En esta arquitectura, CLIPS funciona como un expansor determinista de objetivos
+basado en reglas. Su función no consiste en interpretar nuevamente la
+instrucción original ni en realizar una búsqueda libre entre planes posibles.
+En cambio, cada objetivo aceptado activa conocimiento explícito que determina
+las acciones necesarias para atenderlo.
+
+Conceptualmente, un objetivo:
 
 \begin{equation}
-x\rightarrow G
-\qquad
-\text{e}
-\qquad
-G\rightarrow P.
+g_i\in\mathcal{G}
 \end{equation}
 
-Un plan incorrecto puede originarse porque Qwen interpretó incorrectamente la
-orden o porque la etapa simbólica no produjo una expansión adecuada para los
-objetivos recibidos.
+puede expandirse en una subsecuencia:
 
-La arquitectura se considera local o autoalojada en el sentido de que el
-modelo Qwen y el componente CLIPS pueden ejecutarse dentro de infraestructura
-controlada por el sistema, sin requerir un servicio externo de inferencia para
-cada orden. La configuración física concreta empleada durante los experimentos
-se describe en el capítulo de implementación.
+\begin{equation}
+g_i
+\rightarrow
+(a_j,a_{j+1},\ldots,a_k),
+\qquad
+a_j,\ldots,a_k\in\mathcal{A}.
+\end{equation}
+
+Por ejemplo, un objetivo de alto nivel asociado con la entrega de un objeto
+puede requerir localizar al destinatario, aproximarse y ejecutar posteriormente
+la acción de entrega. De forma similar, un objetivo de colocación puede
+requerir identificar primero una superficie o espacio adecuado.
+
+La expansión de los objetivos conserva el orden de la secuencia semántica
+obtenida durante la interpretación. Esto permite mantener las relaciones de
+precedencia y contexto descritas en la Sección~\ref{subsec:dependencias_objetivos}.
 
 
+\subsubsection{Estado predictivo durante la expansión}
+\label{subsubsec:estado_predictivo_clips}
+
+La expansión de cada objetivo no se realiza necesariamente de forma aislada.
+Algunas decisiones dependen del resultado esperado de objetivos anteriores.
+
+Para representar esta información se considera un estado predictivo:
+
+\begin{equation}
+S_i^{p},
+\end{equation}
+
+donde el superíndice $p$ indica que se trata de un estado utilizado durante la
+planificación y no de una observación confirmada del mundo físico.
+
+El procesamiento de un objetivo puede representarse conceptualmente como:
+
+\begin{equation}
+(g_i,S_i^{p})
+\xrightarrow{R_C}
+(P_i,S_{i+1}^{p}),
+\label{eq:estado_predictivo_clips}
+\end{equation}
+
+donde $P_i$ representa la subsecuencia de acciones producida para atender
+$g_i$.
+
+Por ejemplo, después de procesar un objetivo de navegación hacia una ubicación
+$l$, el estado predictivo puede asumir:
+
+\begin{equation}
+location(S_{i+1}^{p})=l.
+\end{equation}
+
+De manera semejante, después de procesar un objetivo de adquisición de un
+objeto $o$, puede mantenerse conceptualmente:
+
+\begin{equation}
+holding(S_{i+1}^{p})=o.
+\end{equation}
+
+Estas actualizaciones permiten evitar determinadas inconsistencias durante la
+expansión de objetivos posteriores. Sin embargo, no deben interpretarse como
+evidencia de que la acción física haya sido completada.
+
+En consecuencia:
+
+\begin{equation}
+\boxed{
+S_i^{p}
+\neq
+S_i^{\mathrm{fisico}}
+}
+\end{equation}
+
+en general, ya que la confirmación del estado real corresponde a los
+componentes encargados de ejecutar y observar las acciones del robot.
+
+
+\subsubsection{Propagación y localización de errores}
+\label{subsubsec:errores_qwen_clips}
+
+La separación entre interpretación y expansión permite identificar con mayor
+claridad el origen de ciertos errores.
+
+Si Qwen produce:
+
+\begin{equation}
+G_{\mathrm{pred}}\neq G_{\mathrm{ref}},
+\end{equation}
+
+pero $G_{\mathrm{pred}}$ es estructuralmente válida, CLIPS puede generar un plan
+internamente coherente con dicha interpretación aunque ésta no corresponda con
+la intención original del usuario.
+
+En ese caso puede ocurrir:
+
+\begin{equation}
+x
+\rightarrow
+G_{\mathrm{incorrecto}}
+\rightarrow
+P_{\mathrm{coherente\ con}\ G_{\mathrm{incorrecto}}}.
+\end{equation}
+
+Por tanto:
+
+\begin{equation}
+\boxed{
+\text{plan internamente coherente}
+\not\Rightarrow
+\text{interpretación correcta}
+}
+\end{equation}
+
+Esta propiedad motiva la evaluación independiente de $G$ y $P$, así como la
+utilización posterior de una condición de control en la que los objetivos de
+referencia se proporcionan directamente al componente CLIPS.
+
+
+% ------------------------------------------------------------
 \subsection{Arquitectura de planificación directa con GPT}
 \label{subsec:gpt_directo}
 
-La segunda arquitectura concentra las funciones de interpretación y
-planificación en un mismo modelo.
+La segunda arquitectura concentra en un mismo modelo las funciones de
+interpretación semántica y generación del plan.
 
-Para una orden considerada ejecutable, GPT produce tanto una representación
-canónica de los objetivos como el plan propuesto:
+A diferencia de Qwen--CLIPS, el modelo no produce una representación que deba
+ser enviada posteriormente a un componente simbólico para obtener las acciones.
+Para una instrucción considerada ejecutable, GPT produce simultáneamente una
+secuencia de objetivos $G$ y un plan $P$.
+
+De forma general, se define:
 
 \begin{equation}
 D_{\mathrm{GPT}}:
-(x,K,\mathcal{G},\mathcal{A})
+(\mathcal{X},K,\mathcal{G},\mathcal{A})
 \rightarrow
-(G,P),
+\mathcal{Y},
 \end{equation}
 
-donde $K$ representa el conocimiento del dominio, $\mathcal{G}$ el vocabulario
-de objetivos permitido y $\mathcal{A}$ el repertorio de acciones disponibles.
+donde $\mathcal{Y}$ representa el espacio de respuestas admitidas por la
+arquitectura.
 
-Conceptualmente:
+La salida no se limita al caso en el que siempre sea posible generar un plan.
+En esta investigación se consideran tres clases conceptuales de respuesta:
+
+\begin{equation}
+\boxed{
+Y=
+\operatorname{Executable}(G,P)
+\mid
+\operatorname{Clarification}(q)
+\mid
+\operatorname{Rejected}(r)
+}
+\label{eq:salidas_gpt}
+\end{equation}
+
+La primera corresponde a una orden que puede interpretarse y convertirse en un
+plan dentro del dominio:
+
+\begin{equation}
+Y=\operatorname{Executable}(G,P).
+\end{equation}
+
+La segunda representa una situación en la que falta información necesaria o
+existe una ambigüedad que puede resolverse mediante una respuesta breve del
+usuario:
+
+\begin{equation}
+Y=\operatorname{Clarification}(q),
+\end{equation}
+
+donde $q$ representa la pregunta necesaria para completar la interpretación.
+
+Finalmente:
+
+\begin{equation}
+Y=\operatorname{Rejected}(r)
+\end{equation}
+
+representa una instrucción que no puede convertirse de manera válida en un
+plan dentro del dominio o las capacidades declaradas, y $r$ contiene la razón
+correspondiente.
+
+Cuando el resultado es ejecutable, el proceso conceptual puede representarse
+como:
 
 \begin{equation}
 \boxed{
 x
 \xrightarrow{\text{GPT}}
-(G,P)
+(G_{\mathrm{pred}},P_{\mathrm{pred}})
 \xrightarrow{\text{validación}}
 (G',P')
 }
-\label{eq:gpt_directo}
+\label{eq:arquitectura_gpt}
 \end{equation}
 
-Los objetivos $G$ se conservan como representación auditable de la
-interpretación realizada por el modelo. Sin embargo, a diferencia de la
-arquitectura anterior, no son enviados a CLIPS.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/Arquitectura GPT directo.png}
+    \caption{Arquitectura GPT directo.}
+    \label{fig:arquitectura_gpt}
+\end{figure}
+
+Los objetivos generados por GPT se conservan como una representación explícita
+de la interpretación realizada por el modelo:
+
+\begin{equation}
+G_{\mathrm{GPT}}\in\mathcal{G}^{*},
+\end{equation}
+
+mientras que el plan debe estar compuesto por acciones pertenecientes al
+repertorio ejecutable:
+
+\begin{equation}
+P_{\mathrm{GPT}}\in\mathcal{A}^{*}.
+\end{equation}
+
+Aunque ambos artefactos se producen durante una misma inferencia, representan
+niveles de abstracción diferentes y pueden ser evaluados de manera
+independiente.
+
+Una diferencia fundamental respecto a Qwen--CLIPS es que los objetivos
+producidos por GPT no son utilizados como entrada para CLIPS:
+
+\begin{equation}
+G_{\mathrm{GPT}}
+\not\xrightarrow{\mathrm{CLIPS}}
+P_{\mathrm{GPT}}.
+\end{equation}
+
+En cambio, el propio modelo realiza la composición del plan.
+
+
+\subsubsection{Planificación directa bajo restricciones}
+\label{subsubsec:gpt_restringido}
+
+El término \textit{planificación directa} se utiliza en esta tesis para indicar
+que el modelo produce las acciones del plan sin delegar la expansión de los
+objetivos a CLIPS. Esto no implica que la generación se realice sin
+restricciones.
+
+El modelo opera dentro de un contexto que especifica, entre otros elementos,
+el conocimiento del dominio $K$, el vocabulario permitido de objetivos
+$\mathcal{G}$, el repertorio de acciones $\mathcal{A}$ y las relaciones
+necesarias para construir planes compatibles con las tareas consideradas.
+
+Por tanto, la generación puede expresarse como:
+
+\begin{equation}
+(G,P)
+=
+D_{\mathrm{GPT}}
+(
+x,
+K,
+\mathcal{G},
+\mathcal{A},
+\mathcal{R}
+),
+\end{equation}
+
+donde $\mathcal{R}$ representa el conjunto de restricciones y relaciones de
+composición proporcionadas al modelo.
+
+Estas restricciones permiten, por ejemplo, impedir que una intención de alto
+nivel como \texttt{guide} o \texttt{deliver} aparezca directamente como una
+acción ejecutable cuando no pertenece al repertorio $\mathcal{A}$.
+
+De esta forma, GPT debe conservar la distinción previamente establecida entre:
+
+\begin{equation}
+\mathcal{G}
+\qquad\text{y}\qquad
+\mathcal{A}.
+\end{equation}
+
+El conocimiento que en Qwen--CLIPS se encuentra representado explícitamente
+mediante reglas de producción debe estar disponible para GPT a través del
+contexto y las restricciones utilizadas durante la generación.
+
+
+\subsubsection{Estado predictivo durante la generación}
+\label{subsubsec:estado_predictivo_gpt}
+
+La generación directa del plan también requiere conservar coherencia entre las
+acciones producidas.
+
+Sea:
+
+\begin{equation}
+S_0^{p}
+\end{equation}
+
+el estado predictivo inicial utilizado para razonar sobre la tarea. Después de
+una acción $a_i$, el estado esperado puede representarse como:
+
+\begin{equation}
+S_{i+1}^{p}
+=
+T(S_i^{p},a_i).
+\end{equation}
+
+Por ejemplo, después de generar una acción destinada a tomar un objeto $o$,
+las acciones posteriores pueden considerar conceptualmente:
+
+\begin{equation}
+holding(S_{i+1}^{p})=o.
+\end{equation}
+
+Esto permite conservar dependencias como:
+
+\begin{equation}
+\texttt{take}(o)
+\prec
+\texttt{give}(o,p).
+\end{equation}
+
+Al igual que en la arquitectura Qwen--CLIPS, este estado es predictivo y no
+representa retroalimentación física proveniente del robot.
 
 Por tanto:
 
 \begin{equation}
-G_{\mathrm{GPT}}
-\not\xrightarrow{\text{CLIPS}}
-P.
+\boxed{
+\text{estado utilizado para generar el plan}
+\neq
+\text{confirmación del estado físico}
+}
 \end{equation}
 
-El mismo modelo debe interpretar la orden y determinar la expansión necesaria
-para producir acciones pertenecientes a $\mathcal{A}$.
+La diferencia se encuentra en el mecanismo que mantiene dicha coherencia:
+Qwen--CLIPS utiliza representaciones y reglas simbólicas explícitas, mientras
+que GPT debe conservarla durante la generación condicionada por el contexto
+proporcionado.
 
-Esta característica permite comparar dos formas diferentes de distribuir la
-responsabilidad del proceso:
+
+\subsubsection{Separación posterior de interpretación y planificación}
+\label{subsubsec:errores_gpt}
+
+Aunque GPT realice ambas funciones dentro de una misma inferencia, la
+preservación explícita de $G$ y $P$ permite separar posteriormente los errores
+observados.
+
+Si:
+
+\begin{equation}
+G_{\mathrm{GPT}}\neq G_{\mathrm{ref}},
+\end{equation}
+
+el error puede asociarse principalmente con la interpretación de la orden.
+
+En cambio, si:
+
+\begin{equation}
+G_{\mathrm{GPT}}=G_{\mathrm{ref}}
+\end{equation}
+
+pero:
+
+\begin{equation}
+P_{\mathrm{GPT}}
+\end{equation}
+
+viola las restricciones de la tarea o no constituye una expansión adecuada de
+los objetivos, puede identificarse un error de planificación.
+
+Esta separación no corresponde a dos módulos internos independientes, como en
+Qwen--CLIPS, sino a un análisis posterior basado en los dos artefactos
+producidos por el modelo.
+
+
+% ------------------------------------------------------------
+\subsection{Comparación conceptual de las arquitecturas}
+\label{subsec:comparacion_conceptual}
+
+Las dos arquitecturas pueden resumirse mediante:
 
 \begin{equation}
 \boxed{
 \begin{array}{ll}
 \text{Qwen--CLIPS:}
 &
-x \xrightarrow{\text{Qwen}} G
-\xrightarrow{\text{CLIPS}} P
-\\[0.4cm]
+x
+\xrightarrow{\text{Qwen}}
+G
+\xrightarrow{\text{CLIPS}}
+P
+\\[0.5cm]
 \text{GPT directo:}
 &
-x \xrightarrow{\text{GPT}} (G,P)
+x
+\xrightarrow{\text{GPT}}
+(G,P)
+\end{array}
+}
+\label{eq:comparacion_arquitecturas}
+\end{equation}
+
+La diferencia principal no consiste solamente en el modelo de lenguaje
+utilizado. En Qwen--CLIPS, el conocimiento necesario para interpretar el
+lenguaje y el conocimiento necesario para expandir las tareas se encuentran
+separados entre dos componentes:
+
+\begin{equation}
+\boxed{
+\underbrace{x\rightarrow G}_{\text{interpretación mediante Qwen}}
++
+\underbrace{G\rightarrow P}_{\text{expansión mediante CLIPS}}
+}
+\end{equation}
+
+En GPT directo, ambas transformaciones se concentran en un mismo modelo:
+
+\begin{equation}
+\boxed{
+\underbrace{x\rightarrow(G,P)}_{\text{interpretación y planificación mediante GPT}}
+}
+\end{equation}
+
+La Tabla~\ref{tab:comparacion_arquitecturas} resume las principales diferencias
+conceptuales.
+
+\begin{table}[ht]
+\centering
+\caption{Comparación conceptual entre las arquitecturas evaluadas.}
+\label{tab:comparacion_arquitecturas}
+\begin{tabular}{p{0.29\textwidth} p{0.29\textwidth} p{0.29\textwidth}}
+\hline
+\textbf{Característica}
+&
+\textbf{Qwen--CLIPS}
+&
+\textbf{GPT directo}
+\\
+\hline
+
+Interpretación semántica
+&
+Qwen
+&
+GPT
+\\
+
+Generación del plan
+&
+CLIPS
+&
+GPT
+\\
+
+Representación explícita de $G$
+&
+Sí
+&
+Sí
+\\
+
+Generación de $P$
+&
+Reglas de producción
+&
+Generación condicionada del LLM
+\\
+
+Conocimiento de expansión
+&
+Representado explícitamente en CLIPS
+&
+Proporcionado mediante contexto y restricciones
+\\
+
+Separación entre interpretación y planificación
+&
+Explícita entre componentes
+&
+Integrada en una misma inferencia
+\\
+
+Estado durante planificación
+&
+Predictivo y simbólico
+&
+Predictivo durante la generación
+\\
+
+Dependencia de un servicio externo para la inferencia estudiada
+&
+No
+&
+Sí
+\\
+
+Análisis de errores
+&
+Separación directa entre etapas
+&
+Separación posterior mediante $G$ y $P$
+\\
+
+Variabilidad del resultado
+&
+Determinada por los objetivos, reglas, hechos iniciales y estrategia de resolución
+&
+Puede presentar variación entre inferencias
+\\
+
+\hline
+\end{tabular}
+\end{table}
+
+La Figura~\ref{fig:arquitecturas_comparacion} presenta gráficamente esta
+distribución de responsabilidades.
+
+\begin{figure}[ht]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/arquitecturas_comparacion.png}
+    \caption{Distribución conceptual de las funciones de interpretación y
+    planificación en las arquitecturas Qwen--CLIPS y GPT directo.}
+    \label{fig:arquitecturas_comparacion}
+\end{figure}
+
+Debe señalarse que el carácter basado en reglas de CLIPS no implica por sí
+mismo que cualquier plan producido sea correcto desde el punto de vista físico.
+La reproducibilidad de su expansión depende de mantener constantes los hechos
+iniciales, las reglas y la estrategia de resolución de conflictos. De manera
+similar, restringir la respuesta de GPT a un vocabulario y una estructura
+determinados no garantiza que la interpretación o el plan sean semánticamente
+correctos.
+
+En ambos casos es necesario evaluar por separado la representación de objetivos
+y el plan resultante.
+
+En consecuencia, la comparación propuesta en esta investigación puede
+interpretarse como el contraste entre dos estrategias:
+
+\begin{equation}
+\boxed{
+\begin{array}{c}
+\text{separación explícita entre interpretación y planificación}
+\\
+\text{Qwen--CLIPS}
 \end{array}
 }
 \end{equation}
 
-En ambos casos se conserva una representación semántica de los objetivos, lo
-que permite evaluar posteriormente la interpretación de forma separada del
-plan generado.
+frente a:
 
-El contrato completo utilizado por GPT, incluida la posibilidad de solicitar
-una aclaración o rechazar una instrucción que no pueda convertirse de manera
-válida en un plan, se desarrolla en los capítulos de metodología e
-implementación.
+\begin{equation}
+\boxed{
+\begin{array}{c}
+\text{integración de interpretación y planificación}
+\\
+\text{GPT directo}
+\end{array}
+}
+\end{equation}
+
+Esta diferencia proporciona la base para analizar posteriormente no sólo qué
+arquitectura obtiene una mayor proporción de resultados correctos, sino también
+en qué etapa se originan los errores, qué grado de consistencia presenta cada
+estrategia y qué recursos requiere para transformar una instrucción en un plan
+compatible con el robot.
 
 
 % ============================================================
