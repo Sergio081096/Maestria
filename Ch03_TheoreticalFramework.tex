@@ -38,12 +38,10 @@ diferente la responsabilidad de transformar una orden en un plan.
 \label{subsec:integracion_virbot}
 
 La investigación se desarrolla sobre el robot de servicio Justina y su
-arquitectura de software ViRBot. Esta arquitectura integra diferentes
+arquitectura de software ViRBot (véase la Figura~\ref{fig:virbot}). Esta arquitectura integra diferentes
 capacidades necesarias para la operación del robot, entre ellas percepción,
 interacción humano--robot, navegación, manipulación, representación de
 conocimiento, planificación y ejecución.
-
-% TODO: revisar referencia correspondiente a ViRBot y procedencia de la figura.
 
 \begin{figure}[ht]
     \centering
@@ -79,21 +77,8 @@ responsables de intentar realizar las acciones especificadas en el plan.
 
 \subsection{Alcance del problema abordado}
 \label{subsec:alcance_problema}
-El trabajo se concentra en la transformación de instrucciones en lenguaje natural en planes de acciones compatibles con las capacidades del robot.
 
-Una instrucción proporcionada por una persona puede contener diferentes
-subtareas relacionadas entre sí. Por ejemplo:
-
-\begin{quote}
-\textit{``Go to the kitchen, find an apple and bring it to me.''}
-\end{quote}
-
-Esta instrucción contiene información relacionada con navegación, búsqueda,
-manipulación y entrega. Para que pueda ser procesada por el robot es necesario
-identificar dichas intenciones y convertirlas posteriormente en operaciones
-compatibles con sus capacidades.
-
- Los módulos se consideran componentes externos al problema de planificación estudiado y se utilizan posteriormente para realizar las acciones producidas.
+El trabajo se concentra en la transformación de instrucciones en lenguaje natural en planes de acciones compatibles con las capacidades del robot. Una instrucción puede contener varias subtareas relacionadas que deben ser identificadas antes de generar las acciones correspondientes compatibles con sus capacidades. Los módulos de percepción, navegación y manipulación se consideran externos al problema de planificación estudiado y se utilizan posteriormente para realizar las acciones producidas.
 
 
 % ============================================================
@@ -120,11 +105,11 @@ entre ellas.
 
 En la prueba considerada en esta investigación se proporcionan tres comandos al
 robot. Al comenzar, el robot se desplaza hacia un \textit{Instruction Point},
-que funciona como el punto de interacción con el operador. Desde esta posición
-recibe una instrucción y, una vez que ha realizado suficientemente la tarea
+que funciona como el punto de interacción con un operador. Desde esta posición
+recibe una instrucción y, una vez que ha realizado la tarea
 solicitada, regresa al mismo punto para recibir el siguiente comando. La
 determinación de que una tarea ha sido completada de manera suficiente para
-continuar con la prueba corresponde al árbitro.
+continuar con la prueba corresponde a un árbitro.
 
 La entrega de las órdenes se realiza de manera secuencial. Por tanto, el robot
 no recibe un nuevo comando mientras la ejecución de la tarea anterior continúe
@@ -133,7 +118,7 @@ en curso. Una vez concluida la tarea y después de regresar al
 completar los tres comandos contemplados por la prueba.
 
 Cuando el robot no logra comprender adecuadamente la instrucción recibida
-mediante su sistema de entrada de audio, puede solicitar explícitamente que la orden sea repetida. En este caso, el árbitro u operador expresara la
+mediante su sistema de entrada de audio, puede solicitar explícitamente que la orden sea repetida. En este caso, el operador expresará la
 misma tarea mediante una construcción lingüística más sencilla, pero manteniendo los objetivos contenidos en la instrucción original. La reformulación
 no constituye una modificación de la tarea ni permite que el operador indique
 directamente al robot cómo resolverla.
@@ -239,14 +224,14 @@ obtener una formulación similar. Además, una instrucción puede ser reformulad
 hasta tres veces, utilizando expresiones progresivamente más simples cuando sea
 necesario \cite{robocuphome2026rulebook}.
 
-Por ejemplo, el reglamento presenta una transformación equivalente a pasar de
+Por ejemplo, el reglamento presenta una transformación equivalente para pasar de
 una instrucción como:
 
 \begin{quote}
 \textit{``Get me a coke from the kitchen.''}
 \end{quote}
 
-a una formulación que explicita sus subtareas, como:
+a una formulación más explícita, como:
 
 \begin{quote}
 \textit{``Go to the kitchen, find a coke, and bring it to me.''}
@@ -263,18 +248,14 @@ intérprete no consiste, por tanto, en memorizar las plantillas del generador,
 sino en establecer una correspondencia entre distintas realizaciones
 lingüísticas y una representación semántica común.
 
-Por ejemplo, considérese:
-
-\begin{quote}
-\textit{``Go to the kitchen and find Robin.'' y ``Could you look for Robin in the kitchen?''}
-\end{quote} 
-
-
-Dentro del dominio considerado, ambas pueden corresponder a la misma secuencia
+Usando los ejemplos anteriores, ambos deben corresponder a la misma secuencia
 de objetivos:
 
 \begin{verbatim}
-go(kitchen), find(Robin, kind=person)
+go(kitchen)
+find(coke, kind=object)
+take(coke)
+deliver(coke, to=me)
 \end{verbatim}
 
 Por tanto, en esta tesis GPSR se utiliza como una fuente controlada para definir
@@ -315,19 +296,20 @@ para procesar diferentes formulaciones de las tareas soportadas dentro de dicho
 idioma, y no como evidencia de independencia respecto al idioma o de
 comprensión irrestricta del lenguaje natural.
 
+
 % ============================================================
 \section{Formalización de órdenes, objetivos y planes}
 \label{sec:formalizacion_ordenes}
 
-La transformación de una instrucción en lenguaje natural a un plan para un
+La transformación de una instrucción en lenguaje natural en un plan para un
 robot de servicio implica relacionar representaciones con diferentes niveles
-de abstracción. La expresión proporcionada por el usuario describe una tarea
-mediante lenguaje natural, mientras que el sistema de ejecución requiere una
-secuencia de acciones pertenecientes a un repertorio previamente definido.
+de abstracción. Por una parte, el usuario expresa una tarea mediante lenguaje
+natural; por otra, el sistema de ejecución requiere una secuencia de acciones
+compatibles con las capacidades disponibles del robot.
 
 En esta investigación se introduce una representación semántica intermedia que
-permite separar ambos problemas. De manera general, el proceso se representa
-como:
+permite separar ambos niveles. De manera general, el problema se representa
+mediante:
 
 \begin{equation}
 \boxed{
@@ -336,113 +318,45 @@ x \rightarrow G \rightarrow P
 \label{eq:orden_goals_plan}
 \end{equation}
 
-donde $x$ representa la instrucción expresada en lenguaje natural, $G$ una
-secuencia ordenada de objetivos semánticos y $P$ el plan compuesto por acciones
-compatibles con las capacidades del robot.
+donde $x$ representa la instrucción en lenguaje natural, $G$ una secuencia
+ordenada de objetivos semánticos y $P$ el plan compuesto por acciones
+ejecutables.
 
-Esta separación permite analizar independientemente dos problemas. El primero
-consiste en determinar qué solicita el usuario: $x \rightarrow G,$ mientras que el segundo consiste en determinar qué acciones son necesarias
-para realizar los objetivos obtenidos:$ G \rightarrow P. $
+La primera transformación, $x\rightarrow G$, corresponde a la interpretación
+de la orden y busca determinar qué solicita el usuario. La segunda,
+$G\rightarrow P$, corresponde a la planificación y determina qué acciones son
+necesarias para atender los objetivos identificados.
 
-Las siguientes subsecciones formalizan las representaciones utilizadas para
-describir estas transformaciones.
+Esta separación constituye la base conceptual utilizada posteriormente para
+comparar las arquitecturas Qwen--CLIPS y GPT directo.
 
 
 % ------------------------------------------------------------
 \subsection{Orden en lenguaje natural}
 \label{subsec:orden_natural}
 
-Sea: $ x \in \mathcal{X} $ una instrucción expresada en lenguaje natural perteneciente al conjunto
-$\mathcal{X}$ de órdenes consideradas dentro del dominio experimental.
+Se denota mediante $x$ una instrucción expresada en lenguaje natural dentro del
+dominio considerado en esta investigación.
 
-Una instrucción puede describir una tarea simple o una composición de varias
+Una instrucción puede representar una tarea simple o una composición de varias
 subtareas relacionadas. Por ejemplo:
 
 \begin{quote}
 \textit{``Go to the kitchen, find an apple and bring it to me.''}
 \end{quote}
 
-contiene información relacionada con navegación, búsqueda, manipulación y
-entrega de un objeto.
+incluye navegación, búsqueda, manipulación y entrega de un objeto. Por tanto,
+una instrucción lingüística no corresponde necesariamente con una única acción
+del robot.
 
-Por tanto, una instrucción lingüística no corresponde necesariamente con una
-única acción del robot: $ \boxed{
-\text{una instrucción}
-\not\equiv
-\text{una acción} } $
-
-Incluso una expresión lingüísticamente breve puede implicar varias operaciones.
-Por ejemplo:
+Incluso una expresión breve puede implicar varias operaciones. Considérese:
 
 \begin{quote}
 \textit{``Bring me an apple from the kitchen.''}
 \end{quote}
 
-puede representarse mediante la siguiente secuencia semántica:
-
-\begin{verbatim}
-go(kitchen), find(apple, kind=object), take(apple), deliver(apple, to=me)
-\end{verbatim}
-
-En consecuencia, el objetivo de la interpretación no consiste únicamente en
-identificar palabras clave, sino en determinar las subtareas implícitas o
-explícitas en la instrucción, las entidades involucradas y las relaciones
-existentes entre ellas.
-
-Formalmente, la interpretación puede expresarse mediante una función: $ I:
-\mathcal{X}
-\rightarrow
-\mathcal{G}^{*}, $ donde $\mathcal{G}^{*}$ representa el conjunto de secuencias finitas que pueden
-formarse a partir del vocabulario de objetivos semánticos $\mathcal{G}$.
-
-Para una instrucción particular $x$, la función produce: $ I(x)=G=(g_1,g_2,\ldots,g_n).$ El número $n$ de objetivos obtenidos depende de la tarea representada por la
-instrucción y no necesariamente de su longitud superficial.
-
-
-% ------------------------------------------------------------
-\subsection{Equivalencia semántica entre formulaciones}
-\label{subsec:equivalencia_semantica}
-
-Como se describió en la Sección~\ref{sec:gpsr_referencia}, una misma tarea puede
-ser expresada mediante diferentes formulaciones lingüísticas. Esta propiedad
-es particularmente relevante en GPSR, donde una orden puede ser reformulada
-manteniendo los objetivos de la instrucción original.
-
-Sean dos instrucciones:
-
-\begin{equation}
-x_1,x_2\in\mathcal{X}.
-\end{equation}
-
-En el contexto de esta investigación, se consideran semánticamente
-equivalentes cuando ambas representan la misma secuencia canónica de
-objetivos. Esta relación se denota mediante:
-
-\begin{equation}
-x_1 \sim x_2
-\end{equation}
-
-si:
-
-\begin{equation}
-I(x_1)=I(x_2)=G.
-\label{eq:equivalencia_semantica}
-\end{equation}
-
-Por ejemplo, las instrucciones:
-
-\begin{quote}
-\textit{``Bring me an apple from the kitchen.''}
-\end{quote}
-
-y:
-
-\begin{quote}
-\textit{``Go to the kitchen, find an apple, take it and bring it to me.''}
-\end{quote}
-
-presentan estructuras lingüísticas diferentes, pero pueden corresponder a la
-misma secuencia semántica:
+Dentro del dominio utilizado en esta investigación, esta orden puede
+representarse mediante la siguiente secuencia semántica:
 
 \begin{verbatim}
 go(kitchen)
@@ -451,70 +365,82 @@ take(apple)
 deliver(apple, to=me)
 \end{verbatim}
 
-Por tanto, ambas expresiones pertenecen conceptualmente a una misma clase de
-equivalencia:
+La interpretación no consiste, por tanto, únicamente en identificar palabras
+clave. También debe reconocer las subtareas explícitas o implícitas, las
+entidades involucradas y las relaciones necesarias entre ellas.
 
-\begin{equation}
-[x]
-=
-\{
-x'\in\mathcal{X}
-\mid
-I(x')=I(x)
-\}.
-\end{equation}
+El resultado de este proceso se representa mediante una secuencia:
 
-Esta representación permite expresar uno de los objetivos principales de la
-etapa de interpretación: diferentes realizaciones superficiales de una misma
-tarea deben converger hacia una representación semántica común.
+\[
+G=(g_1,g_2,\ldots,g_n),
+\]
 
-De manera esquemática:
+donde cada $g_i$ corresponde a un objetivo semántico. El número de objetivos
+depende de la tarea representada por la instrucción y no necesariamente de su
+longitud lingüística.
 
-\begin{equation}
-\boxed{
-\begin{array}{ccc}
-x_1 & & \\
-x_2 & \longrightarrow & G \\
-\vdots & & \\
-x_k & &
-\end{array}
-}
-\end{equation}
 
-donde $x_1,\ldots,x_k$ representan distintas formas de expresar una intención
-equivalente.
+% ------------------------------------------------------------
+\subsection{Equivalencia semántica entre formulaciones}
+\label{subsec:equivalencia_semantica}
 
-Esta propiedad permite separar la variabilidad lingüística del dominio
-semántico. El sistema puede admitir diferentes formas de formular una tarea sin
-que ello implique incrementar indefinidamente el conjunto de objetivos que debe
-ser capaz de representar.
+Como se describió en la Sección~\ref{sec:gpsr_referencia}, una misma tarea puede
+expresarse mediante diferentes formulaciones lingüísticas. Esta propiedad
+resulta especialmente relevante en GPSR, donde una orden puede ser repetida o
+reformulada sin modificar los objetivos que debe cumplir el robot.
 
-En consecuencia, el problema de interpretación puede entenderse como una
-transformación desde un espacio lingüístico de alta variabilidad hacia un
-espacio semántico más reducido y estructurado:
+En esta investigación se consideran semánticamente equivalentes dos
+instrucciones cuando, dentro del dominio utilizado, representan la misma
+secuencia de objetivos.
+
+Esta relación se denota mediante $x_1\sim x_2$. Idealmente:
 
 \begin{equation}
 \boxed{
-\mathcal{X}
-\xrightarrow{I}
-\mathcal{G}^{*}
+x_1\sim x_2
+\quad\Rightarrow\quad
+G_1=G_2
 }
+\label{eq:equivalencia_semantica}
 \end{equation}
 
-El objetivo no es memorizar las estructuras superficiales utilizadas para
-generar los comandos de referencia, sino identificar la intención que dichas
-estructuras representan.
+donde $G_1$ y $G_2$ son las representaciones semánticas obtenidas para cada
+instrucción.
+
+Por ejemplo:
+
+\begin{quote}
+\textit{``Fetch a bottle from the living room and throw it in the trash.''}
+\end{quote}
+
+y:
+
+\begin{quote}
+\textit{``Go to the living room, grab a bottle, and toss it in the trash.''} 
+\end{quote}
+
+presentan estructuras lingüísticas diferentes, pero pueden corresponder a la
+misma representación:
+
+\begin{verbatim}
+go(living room)
+find(bottle, kind=object)
+take(bottle)
+place(bottle, in=trash)
+\end{verbatim}
+
+Esta propiedad se utiliza en la presente investigación para representar de forma común órdenes lingüísticamente diferentes que conservan la misma intención o representación semántica canónica.
 
 
 % ------------------------------------------------------------
 \subsection{Entidades y conocimiento del dominio}
 \label{subsec:entidades_dominio}
 
-La interpretación de una instrucción requiere disponer de información sobre
-las entidades que pueden participar en las tareas consideradas.
+La interpretación de una instrucción requiere información acerca de las
+entidades que pueden participar en las tareas consideradas.
 
 En esta investigación, el conocimiento relevante del dominio se representa
-como:
+mediante:
 
 \begin{equation}
 K=
@@ -532,9 +458,9 @@ donde:
 
 \begin{itemize}
 
-    \item $K_P$ representa el conjunto de personas o nombres conocidos;
+    \item $K_P$ representa las personas o nombres conocidos;
 
-    \item $K_O$ representa el conjunto de objetos;
+    \item $K_O$ representa los objetos;
 
     \item $K_C$ representa las categorías de objetos;
 
@@ -544,59 +470,28 @@ donde:
 
 \end{itemize}
 
-Cada uno de estos subconjuntos puede expresarse, de manera general, como:
-
-\begin{equation}
-K_P=\{p_1,p_2,\ldots,p_{n_P}\},
-\end{equation}
-
-\begin{equation}
-K_O=\{o_1,o_2,\ldots,o_{n_O}\},
-\end{equation}
-
-y de forma equivalente para los demás componentes del dominio.
-
-Esta información permite determinar el tipo semántico de diferentes
-referencias. Por ejemplo:
-
-\begin{equation}
-Robin\in K_P,
-\end{equation}
-
-mientras que:
-
-\begin{equation}
-apple\in K_O.
-\end{equation}
-
-Por tanto:
+Esta información permite determinar el tipo de las entidades utilizadas en una
+instrucción. Por ejemplo, si \texttt{Robin} pertenece al conjunto de personas y
+\texttt{apple} al conjunto de objetos, pueden utilizarse representaciones como:
 
 \begin{verbatim}
 find(Robin, kind=person)
-\end{verbatim}
-
-y:
-
-\begin{verbatim}
 find(apple, kind=object)
 \end{verbatim}
 
-comparten el mismo tipo general de objetivo, pero operan sobre entidades
-semánticamente diferentes.
+Ambos ejemplos utilizan el mismo tipo general de objetivo, pero operan sobre
+entidades semánticamente diferentes.
 
-El conocimiento del dominio cumple al menos dos funciones. En primer lugar,
-permite restringir las entidades nominales que pueden ser consideradas
-válidas. Una salida que introduzca arbitrariamente una persona, objeto o
-ubicación que no pertenece al dominio no debe interpretarse automáticamente
-como correcta.
+El conocimiento $K$ cumple dos funciones principales. En primer lugar, permite
+verificar que las entidades nominales utilizadas pertenezcan al dominio. Una
+salida que introduzca arbitrariamente una persona, objeto o ubicación no debe
+considerarse correcta únicamente porque su estructura sea válida.
 
-En segundo lugar, proporciona información para resolver el tipo de las
-entidades y verificar la compatibilidad entre ellas y los objetivos en los que
-participan.
+En segundo lugar, permite verificar la compatibilidad entre las entidades y los
+objetivos en los que participan.
 
-Las referencias presentes en una instrucción pueden adoptar distintas formas.
-En esta investigación se distinguen, de manera conceptual, tres casos
-principales:
+Las referencias presentes en una instrucción pueden adoptar diferentes formas.
+En esta investigación se distinguen tres casos principales:
 
 \begin{enumerate}
 
@@ -604,11 +499,11 @@ principales:
     conocida, como \texttt{Robin}, \texttt{apple} o \texttt{kitchen}.
 
     \item \textbf{Entidades genéricas:} referencias a una clase de entidad,
-    como \texttt{person}, \texttt{drink} o \texttt{fruit}.
+    como \texttt{person}, \texttt{drink} o \texttt{object}.
 
     \item \textbf{Entidades descritas mediante propiedades:} referencias que
     requieren identificar una entidad a partir de alguna característica, como
-    una persona saludando o el objeto de mayor tamaño.
+    una persona saludando, una persona sentada o el objeto de mayor tamaño.
 
 \end{enumerate}
 
@@ -619,7 +514,7 @@ find(person, kind=person, gesture='waving person')
 \end{verbatim}
 
 no identifica inicialmente a una persona mediante un nombre, sino mediante una
-propiedad observable.
+característica observable.
 
 De manera similar:
 
@@ -630,73 +525,40 @@ find(drink, kind=object, property=largest)
 representa la búsqueda de un objeto perteneciente a una categoría y sujeto a
 una propiedad adicional.
 
-Esta distinción permite conservar información semántica que posteriormente
-puede ser utilizada por los componentes de percepción y planificación.
+Estas distinciones permiten conservar la información necesaria para que las
+etapas posteriores puedan determinar cómo realizar la tarea.
 
 
 % ------------------------------------------------------------
 \subsection{Representación canónica de objetivos}
 \label{subsec:objetivos_canonicos}
 
-El resultado de la interpretación se representa mediante una secuencia
-ordenada:
+El resultado de la interpretación se expresa mediante una secuencia ordenada de
+objetivos:
 
-\begin{equation}
-G=(g_1,g_2,\ldots,g_n),
-\label{eq:secuencia_goals}
-\end{equation}
+\[
+G=(g_1,g_2,\ldots,g_n).
+\]
 
-donde cada $g_i$ representa un objetivo semántico.
+Cada objetivo $g_i$ contiene un tipo de intención y los argumentos necesarios
+para describirla. Por ejemplo:
 
-De manera general:
+\begin{verbatim}
+go(kitchen)
+find(Robin, kind=person)
+deliver(apple, to=Robin)
+\end{verbatim}
 
-\begin{equation}
-g_i=(t_i,\theta_i),
-\end{equation}
+Se denota mediante $\mathcal{G}$ el vocabulario de tipos de objetivos
+semánticos utilizados en esta investigación. La
+Tabla~\ref{tab:vocabulario_goals} resume estos objetivos y sus argumentos
+principales.
 
-donde $t_i$ identifica el tipo de objetivo y $\theta_i$ contiene los
-argumentos y calificadores necesarios para describirlo.
-
-Equivalentemente, puede utilizarse una notación funcional:
-
-\begin{equation}
-g_i=t_i(\theta_i).
-\end{equation}
-
-El vocabulario semántico utilizado en esta investigación se define como:
-
-\begin{equation}
-\begin{split}
-\mathcal{G}=\{&
-\texttt{go},
-\texttt{find},
-\texttt{take},
-\texttt{deliver},
-\texttt{place},
-\texttt{drop},\\
-&
-\texttt{guide},
-\texttt{follow},
-\texttt{count},
-\texttt{tell},
-\texttt{talk},
-\texttt{save},\\
-&
-\texttt{answer\_question},
-\texttt{greet}
-\}.
-\end{split}
-\label{eq:vocabulario_goals}
-\end{equation}
-
-La Tabla~\ref{tab:vocabulario_goals} resume el propósito general de cada tipo
-de objetivo y sus argumentos principales.
-
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \caption{Vocabulario de objetivos semánticos utilizado en la representación canónica.}
 \label{tab:vocabulario_goals}
-\begin{tabular}{|p{0.19\textwidth} | p{0.34\textwidth} | p{0.35\textwidth}|}
+\begin{tabular}{|p{0.19\textwidth}|p{0.34\textwidth}|p{0.35\textwidth}|}
 \hline
 \textbf{Objetivo} & \textbf{Propósito} & \textbf{Argumentos principales} \\
 \hline
@@ -704,136 +566,116 @@ de objetivo y sus argumentos principales.
 \texttt{go}
 & Desplazarse hacia una ubicación
 & ubicación \\
+\hline
 
 \texttt{find}
 & Localizar una persona u objeto
 & objetivo, \texttt{kind}, gesto, pose, vestimenta o propiedad \\
+\hline
 
 \texttt{take}
 & Tomar un objeto
 & objeto \\
+\hline
 
 \texttt{deliver}
 & Entregar un objeto
 & objeto, destinatario \\
+\hline
 
 \texttt{place}
 & Colocar un objeto en un destino
 & objeto, destino y relación espacial \\
-
-\texttt{drop}
-& Depositar un objeto
-& objeto, destino y relación espacial \\
+\hline
 
 \texttt{guide}
 & Guiar a una persona
 & persona, destino \\
+\hline
 
 \texttt{follow}
 & Seguir a una persona
 & persona, destino opcional \\
+\hline
 
 \texttt{count}
 & Contar personas u objetos
 & objetivo, \texttt{kind} y atributos opcionales \\
+\hline
 
 \texttt{tell}
 & Comunicar información
 & información o propiedad \\
-
-\texttt{talk}
-& Producir información verbal
-& contenido \\
+\hline
 
 \texttt{save}
 & Conservar información obtenida durante una interacción
 & nombre, pose o gesto \\
+\hline
 
 \texttt{answer\_question}
 & Atender una pregunta
 & --- \\
+\hline
 
 \texttt{greet}
 & Saludar a una persona
 & persona \\
-
 \hline
+
 \end{tabular}
 \end{table}
 
 Los objetivos \texttt{find} y \texttt{count} requieren distinguir
-explícitamente si operan sobre personas u objetos. Para ello se utiliza el
-argumento \texttt{kind}:
+explícitamente si la entidad considerada corresponde a una persona o a un
+objeto. Para ello se utiliza el argumento \texttt{kind}. Por ejemplo:
 
 \begin{verbatim}
 find(Robin, kind=person)
 find(apple, kind=object)
-
 count(person, kind=person)
 count(drinks, kind=object)
 \end{verbatim}
 
-Otros objetivos poseen un dominio semántico implícito. Por ejemplo,
-\texttt{take}, \texttt{deliver}, \texttt{place} y \texttt{drop} operan sobre
-objetos, mientras que \texttt{guide}, \texttt{follow} y \texttt{greet}
-operan sobre personas.
+Otros objetivos tienen un tipo de entidad implícito. Por ejemplo,
+\texttt{take}, \texttt{deliver} y \texttt{place} operan sobre
+objetos, mientras que \texttt{guide}, \texttt{follow} y \texttt{greet} operan
+sobre personas.
 
-Los objetivos también pueden conservar calificadores relevantes presentes en
-la instrucción. Entre ellos se encuentran propiedades relacionadas con gestos,
-poses, vestimenta, características de objetos y relaciones de destino.
-
-Por ejemplo:
+Los objetivos pueden incluir además calificadores relevantes presentes en la
+instrucción. Entre ellos se encuentran gestos, poses, vestimenta,
+características de objetos y relaciones espaciales. Por ejemplo:
 
 \begin{verbatim}
 find(person, kind=person, gesture='waving person')
-
 find(person, kind=person, pose='sitting person')
-
 find(person, kind=person, wearing='red shirt')
-
 find(drink, kind=object, property=largest)
-
 guide(Robin, to=kitchen)
-
 place(apple, on=table)
 \end{verbatim}
 
-La secuencia completa se serializa posteriormente mediante una estructura
-JSON. Por ejemplo:
+La representación canónica busca conservar la información necesaria para
+describir la intención de la orden, eliminando al mismo tiempo las diferencias
+lingüísticas que no modifican su significado dentro del dominio.
 
-\begin{verbatim}
-{
-  "goals": [
-    "go(living room)",
-    "find(Robin, kind=person)",
-    "follow(Robin, to=kitchen)"
-  ]
-}
-\end{verbatim}
-
-El formato de serialización no modifica la naturaleza conceptual de la
-representación. El elemento relevante para la formalización es la secuencia
-$G$, mientras que JSON constituye el mecanismo utilizado para intercambiar
-dicha información entre componentes.
+La forma concreta utilizada para serializar y transmitir esta secuencia entre
+componentes pertenece a la implementación y se describe posteriormente.
 
 
 \subsubsection{Fidelidad de la representación semántica}
 \label{subsubsec:fidelidad_semantica}
 
-Una secuencia compuesta únicamente por objetivos válidos no constituye
-necesariamente una interpretación correcta de una instrucción.
+Una secuencia formada únicamente por objetivos admitidos no constituye
+necesariamente una interpretación correcta.
 
-La representación canónica debe conservar las intenciones relevantes de la
-orden y eliminar únicamente la variabilidad superficial que no modifica su
-significado dentro del dominio.
-
-Considérese la instrucción:
+Considérese nuevamente:
 
 \begin{quote}
 \textit{``Go to the kitchen and find Robin.''}
 \end{quote}
 
-La secuencia esperada es:
+La representación esperada es:
 
 \begin{verbatim}
 go(kitchen)
@@ -846,10 +688,9 @@ Una salida como:
 find(Robin, kind=person)
 \end{verbatim}
 
-utiliza un objetivo válido, pero omite una subtarea solicitada explícitamente
-por la orden.
+utiliza un objetivo válido, pero omite la navegación solicitada.
 
-De manera similar:
+Por otra parte:
 
 \begin{verbatim}
 go(kitchen)
@@ -857,39 +698,35 @@ find(Robin, kind=person)
 greet(Robin)
 \end{verbatim}
 
-incorpora una intención adicional que no forma parte de la instrucción
-original.
+incorpora una intención que no forma parte de la orden original.
 
-Por tanto, una interpretación correcta debe satisfacer, conceptualmente, las
-siguientes propiedades:
+Por tanto, una interpretación correcta debe:
 
 \begin{itemize}
 
-    \item preservar las subtareas solicitadas;
+    \item conservar las subtareas solicitadas;
 
-    \item no introducir objetivos ajenos a la instrucción;
+    \item evitar objetivos que no se deriven de la instrucción;
 
-    \item conservar las entidades relevantes;
+    \item conservar las entidades y sus tipos;
 
-    \item conservar las relaciones entre dichas entidades;
+    \item mantener las relaciones relevantes entre las entidades;
 
-    \item mantener las restricciones de orden necesarias para completar la
-    tarea.
+    \item preservar el orden lógico necesario entre las subtareas.
 
 \end{itemize}
 
-Si se dispone de una secuencia de referencia $G_{\mathrm{ref}}$, una condición
-ideal de interpretación puede expresarse como:
+Cuando se dispone de una representación de referencia
+$G_{\mathrm{ref}}$, el caso ideal corresponde a que la representación
+producida, $G_{\mathrm{pred}}$, coincida con ella:
 
-\begin{equation}
-G_{\mathrm{pred}} = G_{\mathrm{ref}},
-\end{equation}
+\[
+G_{\mathrm{pred}}=G_{\mathrm{ref}}.
+\]
 
-donde $G_{\mathrm{pred}}$ representa la interpretación producida por el modelo.
-
-Esta igualdad constituye una condición estricta y posteriormente puede
-descomponerse en métricas más específicas para analizar qué componentes de la
-interpretación fueron correctos o incorrectos.
+Esta condición es estricta y puede descomponerse posteriormente en criterios
+más específicos para determinar qué elementos de una interpretación fueron
+correctos o incorrectos.
 
 
 % ------------------------------------------------------------
@@ -897,78 +734,47 @@ interpretación fueron correctos o incorrectos.
 \label{subsec:objetivos_acciones}
 
 Los objetivos canónicos describen \textbf{qué} debe conseguir el robot, pero no
-necesariamente especifican directamente todas las operaciones requeridas para
-conseguirlo.
+necesariamente especifican todas las operaciones concretas requeridas para
+hacerlo.
 
-Sea $\mathcal{G}$ el vocabulario de objetivos semánticos definido
-anteriormente y sea:
+Se denota mediante $\mathcal{A}$ el repertorio de acciones disponibles para el
+sistema de ejecución. Entre ellas se encuentran acciones de navegación,
+interacción, búsqueda, percepción y manipulación, como \texttt{go\_to},
+\texttt{say}, \texttt{listen}, \texttt{find\_person},
+\texttt{find\_object}, \texttt{approach}, \texttt{take},
+\texttt{find\_space}, \texttt{drop} y \texttt{give}.
 
-\begin{equation}
-\mathcal{A}
-\end{equation}
-
-el repertorio de acciones disponibles para el sistema de ejecución.
-
-En esta investigación:
+El vocabulario de objetivos y el repertorio de acciones representan niveles
+diferentes:
 
 \begin{equation}
 \boxed{
-\mathcal{G}\neq\mathcal{A}.
+\mathcal{G}\neq\mathcal{A}
 }
 \label{eq:goals_acciones_distintas}
 \end{equation}
 
-Entre las acciones utilizadas por el ejecutor se encuentran, por ejemplo:
-
-\begin{equation}
-\begin{split}
-\mathcal{A}\supseteq\{&
-\texttt{go\_to},
-\texttt{say},
-\texttt{listen},
-\texttt{find\_person},
-\texttt{find\_pose},\\
-&
-\texttt{approach},
-\texttt{focus},
-\texttt{find\_object},
-\texttt{analyze\_objects},\\
-&
-\texttt{analyze\_person},
-\texttt{take},
-\texttt{find\_space},
-\texttt{drop},
-\texttt{give}
-\}.
-\end{split}
-\end{equation}
-
-Algunos elementos pueden poseer nombres similares en ambos vocabularios, como
-\texttt{take}, pero esto no implica que ambas representaciones sean
-equivalentes en general.
-
-Por ejemplo, el objetivo semántico:
+Por ejemplo, el objetivo:
 
 \begin{verbatim}
 deliver(apple, to=Robin)
 \end{verbatim}
 
-representa una intención de alto nivel. Su realización puede requerir varias
-operaciones, como localizar al destinatario, aproximarse y ejecutar la entrega
-mediante la acción correspondiente.
+representa una intención de alto nivel. Para realizarla pueden ser necesarias
+acciones concretas destinadas a localizar al destinatario, aproximarse a él y
+entregar el objeto.
 
 Conceptualmente:
 
-\begin{equation}
-\texttt{deliver}(o,p)
+\[
+\texttt{deliver}
 \rightarrow
-(
-\texttt{find\_person},
-\texttt{approach},
-\texttt{give},
-\ldots
-).
-\end{equation}
+\texttt{find\_person}
+\rightarrow
+\texttt{approach}
+\rightarrow
+\texttt{give}.
+\]
 
 De manera similar:
 
@@ -976,88 +782,47 @@ De manera similar:
 place(apple, on=table)
 \end{verbatim}
 
-puede requerir identificar un espacio adecuado antes de ejecutar la acción de
-liberar el objeto:
+puede requerir identificar primero un espacio adecuado y posteriormente liberar
+el objeto mediante las acciones correspondientes.
 
-\begin{equation}
-\texttt{place}(o,l)
-\rightarrow
-(
-\texttt{find\_space},
-\texttt{drop},
-\ldots
-).
-\end{equation}
+El plan resultante se representa mediante una secuencia:
 
-La secuencia completa de acciones se define como:
-
-\begin{equation}
+\[
 P=(a_1,a_2,\ldots,a_m),
-\end{equation}
+\]
 
-donde:
+donde cada $a_i$ corresponde a una acción perteneciente al repertorio
+$\mathcal{A}$.
 
-\begin{equation}
-a_i\in\mathcal{A}.
-\end{equation}
+Un objetivo puede producir una o varias acciones. Por ello, la planificación
+puede entenderse simplemente como la transformación de la secuencia de
+objetivos $G$ en un plan $P$ compatible con las capacidades disponibles:
 
-Cada objetivo puede producir una subsecuencia de acciones:
+\[
+G\rightarrow P.
+\]
 
-\begin{equation}
-g_i
-\rightarrow
-(a_j,a_{j+1},\ldots,a_k).
-\end{equation}
-
-Por tanto, el problema de planificación considerado puede expresarse de manera
-general como una transformación:
-
-\begin{equation}
-R:
-\mathcal{G}^{*}
-\rightarrow
-\mathcal{A}^{*},
-\end{equation}
-
-de forma que:
-
-\begin{equation}
-R(G)=P.
-\end{equation}
-
-Esta distinción es fundamental para las arquitecturas comparadas en esta
-investigación. La etapa de interpretación produce elementos pertenecientes a
-$\mathcal{G}$, mientras que el resultado final de planificación debe estar
-compuesto por elementos pertenecientes a $\mathcal{A}$.
+Esta distinción permite evaluar por separado si una orden fue interpretada
+correctamente y si los objetivos obtenidos fueron transformados posteriormente
+en un plan adecuado.
 
 
 % ------------------------------------------------------------
 \subsection{Dependencias y contexto entre objetivos}
 \label{subsec:dependencias_objetivos}
 
-La secuencia $G$ no puede tratarse únicamente como un conjunto independiente de
-objetivos. Algunas subtareas presentan relaciones de precedencia, referencias
-compartidas o condiciones que dependen del resultado de objetivos anteriores.
+La secuencia $G$ no puede tratarse como una colección de objetivos
+independientes. Algunas subtareas dependen de otras, reutilizan entidades
+identificadas previamente o establecen condiciones necesarias para objetivos
+posteriores.
 
-Por este motivo:
-
-\begin{equation}
-G=(g_1,g_2,\ldots,g_n)
-\end{equation}
-
-se considera una \textbf{secuencia ordenada de objetivos} y no simplemente un
-conjunto:
-
-\begin{equation}
-G\neq\{g_1,g_2,\ldots,g_n\}.
-\end{equation}
+Por esta razón, $G$ se considera una \textbf{secuencia ordenada}.
 
 
 \subsubsection{Dependencias de precedencia}
 \label{subsubsec:dependencia_precedencia}
 
-Algunos objetivos requieren que otra subtarea haya sido realizada
-previamente.
+Algunos objetivos requieren que una subtarea anterior haya sido realizada.
 
 Por ejemplo:
 
@@ -1066,29 +831,21 @@ take(apple)
 deliver(apple, to=Robin)
 \end{verbatim}
 
-requiere que el objeto haya sido adquirido antes de intentar entregarlo.
-
-Esta relación puede representarse como:
+requiere adquirir el objeto antes de intentar entregarlo. Esta relación se
+representa mediante:
 
 \begin{equation}
 \texttt{take}(o)
 \prec
 \texttt{deliver}(o,p),
+\label{eq:precedencia_take_deliver}
 \end{equation}
 
-donde $\prec$ representa una relación de precedencia.
+donde $\prec$ indica que el objetivo situado a la izquierda debe preceder al
+situado a la derecha.
 
-De manera equivalente:
-
-\begin{equation}
-\texttt{take}(o)
-\prec
-\texttt{place}(o,l).
-\end{equation}
-
-Una secuencia que invirtiera estas relaciones podría contener objetivos
-individualmente válidos, pero no representaría una composición coherente de la
-tarea.
+Una secuencia que invirtiera esta relación podría contener objetivos
+individualmente válidos, pero no representaría una tarea coherente.
 
 
 \subsubsection{Dependencias referenciales}
@@ -1104,30 +861,20 @@ find(person, kind=person, gesture='waving person')
 guide(person, to=kitchen)
 \end{verbatim}
 
-El argumento \texttt{person} utilizado en el segundo objetivo no representa una
-persona arbitraria, sino la entidad identificada como resultado del objetivo
-anterior.
+La persona utilizada en el segundo objetivo no representa una persona
+arbitraria. Se refiere a la entidad identificada por la búsqueda anterior.
 
-Conceptualmente, esta relación puede expresarse como:
-
-\begin{equation}
-ref(g_j)=result(g_i),
-\qquad i<j,
-\end{equation}
-
-donde $result(g_i)$ representa la entidad obtenida como resultado de una
-subtarea anterior.
-
-Estas relaciones permiten representar expresiones lingüísticas que utilizan
-pronombres, referencias genéricas o descripciones cuyo referente se determina
-durante la ejecución de la tarea.
+Este tipo de relación permite representar instrucciones que contienen
+pronombres, referencias genéricas o descripciones cuyo referente se obtiene
+durante el desarrollo de la tarea.
 
 
-\subsubsection{Dependencias espaciales}
+\subsubsection{Dependencias espaciales y de estado}
 \label{subsubsec:dependencia_espacial}
+\label{subsubsec:dependencia_estado}
 
-La interpretación de una subtarea también puede depender del contexto espacial
-establecido por objetivos anteriores.
+Algunos objetivos establecen un contexto que debe ser considerado por las
+subtareas posteriores.
 
 Por ejemplo:
 
@@ -1136,73 +883,31 @@ go(kitchen)
 find(apple, kind=object)
 \end{verbatim}
 
-establece que la búsqueda del objeto debe realizarse después de desplazarse
-hacia la cocina.
+indica que la búsqueda del objeto debe realizarse después de desplazarse hacia
+la cocina. El objetivo de navegación establece así el contexto espacial
+esperado para la búsqueda posterior.
 
-En este caso, el primer objetivo establece el contexto espacial esperado para
-la ejecución del segundo.
-
-De manera conceptual, puede considerarse que determinados objetivos producen
-una actualización del estado esperado:
-
-\begin{equation}
-S_{i+1}=T(S_i,g_i),
-\label{eq:estado_semantico}
-\end{equation}
-
-donde $S_i$ representa un estado abstracto antes de procesar el objetivo
-$g_i$ y $T$ una función conceptual de transición.
-
-Así, un objetivo:
-
-\begin{equation}
-\texttt{go}(l)
-\end{equation}
-
-puede producir conceptualmente:
-
-\begin{equation}
-location(S_{i+1})=l.
-\end{equation}
-
-Esta representación no implica que el movimiento físico haya sido ejecutado
-con éxito; únicamente representa el estado esperado utilizado durante la
-composición del plan.
-
-
-\subsubsection{Dependencias de estado}
-\label{subsubsec:dependencia_estado}
-
-Algunas subtareas modifican condiciones que son necesarias para objetivos
-posteriores.
-
-Por ejemplo:
+De manera similar:
 
 \begin{verbatim}
 take(apple)
 deliver(apple, to=Robin)
 \end{verbatim}
 
-establece conceptualmente un estado intermedio en el que el robot posee el
-objeto:
+establece una condición intermedia: después de tomar la manzana, el plan puede
+considerar que el robot dispone del objeto para realizar la entrega.
 
-\begin{equation}
-holding(S_{i+1})=apple.
-\end{equation}
-
-El objetivo posterior de entrega presupone esta condición.
-
-De esta forma, las relaciones entre objetivos no dependen exclusivamente de su
-posición dentro de la secuencia, sino también del estado esperado producido por
-las subtareas anteriores.
+Estas condiciones representan el \textbf{estado esperado durante la
+planificación}. No constituyen una confirmación de que las acciones hayan sido
+ejecutadas correctamente en el mundo físico. Esta diferencia se retoma
+posteriormente al distinguir entre planificación y ejecución.
 
 
 \subsubsection{Orden lingüístico y orden semántico}
 \label{subsubsec:orden_semantico}
 
-Finalmente, debe distinguirse entre el orden superficial en que aparecen los
-elementos dentro de una oración y el orden lógico requerido para realizar la
-tarea.
+Finalmente, debe distinguirse el orden en el que las palabras aparecen dentro
+de una oración del orden lógico requerido para realizar la tarea.
 
 Por ejemplo:
 
@@ -1210,8 +915,8 @@ Por ejemplo:
 \textit{``Bring me the apple from the kitchen.''}
 \end{quote}
 
-expresa directamente la intención de entrega, pero para realizarla es
-necesario construir una secuencia semántica como:
+expresa directamente una intención de entrega, pero para realizarla puede ser
+necesario construir la siguiente secuencia:
 
 \begin{verbatim}
 go(kitchen)
@@ -1220,12 +925,9 @@ take(apple)
 deliver(apple, to=me)
 \end{verbatim}
 
-Por tanto, la interpretación no consiste en copiar el orden de aparición de las
-palabras, sino en recuperar las relaciones necesarias entre las subtareas.
+El orden lógico puede resumirse como:
 
-Para este ejemplo:
-
-\begin{equation}
+\[
 \texttt{go}
 \prec
 \texttt{find}
@@ -1233,402 +935,214 @@ Para este ejemplo:
 \texttt{take}
 \prec
 \texttt{deliver}.
-\end{equation}
+\]
 
-Esta propiedad resulta especialmente importante en instrucciones compactas,
-donde algunas operaciones necesarias para cumplir la intención pueden no
+La interpretación no consiste, por tanto, en reproducir el orden superficial
+de las palabras, sino en recuperar las relaciones necesarias entre las
+subtareas.
+
+Esta propiedad resulta especialmente relevante en instrucciones compactas, en
+las que algunas operaciones requeridas para cumplir la intención pueden no
 aparecer expresadas como verbos independientes.
 
-En consecuencia, la representación semántica $G$ debe conservar tanto la
-intención de la orden como las relaciones necesarias para que sus objetivos
-puedan ser posteriormente transformados en un plan coherente.
+En conjunto, la representación $G$ debe conservar tanto la intención de la
+orden como las entidades, relaciones y dependencias necesarias para
+transformarla posteriormente en un plan coherente. De esta manera, la
+formalización de la presente sección mantiene como eje principal la relación:
 
-La formalización desarrollada en esta sección permite resumir el problema
-considerado mediante:
-
-\begin{equation}
+\[
 \boxed{
-x
-\xrightarrow{I}
-G
-\xrightarrow{R}
-P
+x\rightarrow G\rightarrow P.
 }
-\end{equation}
+\]
 
-con:
-
-\begin{equation}
-x\in\mathcal{X},
-\qquad
-G\in\mathcal{G}^{*},
-\qquad
-P\in\mathcal{A}^{*}.
-\end{equation}
-
-La transformación $I$ abstrae la variabilidad del lenguaje natural y conserva
-la intención mediante una representación canónica, mientras que $R$ transforma
-dicha representación en una secuencia de acciones pertenecientes al repertorio
-del robot. Las dos arquitecturas estudiadas en esta tesis se diferencian
-principalmente en la manera en que implementan estas transformaciones, como se
-describe en la sección siguiente.
 
 
 % ============================================================
 \section{Arquitecturas conceptuales evaluadas}
 \label{sec:arquitecturas_conceptuales}
 
-A partir de la formalización presentada en la Sección~\ref{sec:formalizacion_ordenes},
-el problema estudiado puede expresarse mediante dos transformaciones principales:
+A partir de la formalización anteriormente presentada en la
+Sección~\ref{sec:formalizacion_ordenes}, el problema estudiado puede resumirse
+mediante dos etapas principales:
 
-\begin{equation}
-x \rightarrow G
-\end{equation}
+\[
+x\rightarrow G\] \[G\rightarrow P,
+\]
 
-y:
+donde una instrucción en lenguaje natural $x$ se transforma primero en una
+secuencia de objetivos semánticos $G$ y posteriormente en un plan de acciones
+$P$.
 
-\begin{equation}
-G \rightarrow P,
-\end{equation}
+Las dos arquitecturas consideradas en esta investigación resuelven este mismo
+problema, pero distribuyen de manera diferente las responsabilidades de
+interpretación y planificación.
 
-donde $x$ representa una instrucción en lenguaje natural, $G$ una secuencia
-ordenada de objetivos semánticos y $P$ una secuencia de acciones pertenecientes
-al repertorio ejecutable del robot.
+En la arquitectura Qwen--CLIPS, ambas funciones se encuentran separadas:
+Qwen realiza la interpretación semántica y CLIPS transforma posteriormente los
+objetivos obtenidos en acciones ejecutables.
 
-Las dos arquitecturas consideradas en esta investigación resuelven el mismo
-problema general y utilizan un dominio conceptual común, pero distribuyen de
-manera diferente la responsabilidad de realizar estas transformaciones. En la
-arquitectura Qwen--CLIPS, la interpretación lingüística y la expansión del plan
-se encuentran separadas entre un componente neuronal y uno simbólico. En la
-arquitectura GPT directo, ambas funciones se concentran en un mismo modelo de
-lenguaje.
+En la arquitectura GPT directo, un mismo modelo realiza tanto la interpretación
+de la orden como la generación del plan.
 
-Esta diferencia constituye el eje principal de la comparación experimental. El
+Esta diferencia constituye el eje principal de la comparación. Por tanto, el
 objetivo no consiste únicamente en comparar dos modelos de lenguaje, sino en
-analizar dos estrategias distintas para relacionar lenguaje natural, objetivos
-semánticos y acciones ejecutables.
+contrastar dos formas distintas de organizar el proceso que relaciona lenguaje
+natural, objetivos semánticos y acciones ejecutables.
 
 
 % ------------------------------------------------------------
 \subsection{Base común de las arquitecturas evaluadas}
 \label{subsec:base_comun_arquitecturas}
 
-Para que la comparación sea significativa, ambas arquitecturas se consideran
-sobre una misma definición del problema. En particular, comparten el dominio
-de conocimiento $K$, el vocabulario de objetivos semánticos $\mathcal{G}$ y el
-repertorio de acciones ejecutables $\mathcal{A}$ definidos previamente.
+Para que la comparación sea significativa, ambas arquitecturas operan sobre una
+misma definición del problema y comparten los elementos conceptuales
+establecidos en la sección anterior.
 
-De manera general:
+En particular, ambas utilizan:
 
-\begin{equation}
-K=
-\{
-K_P,
-K_O,
-K_C,
-K_L,
-K_R
-\},
-\end{equation}
+\begin{itemize}
 
-mientras que:
+    \item el mismo conocimiento del dominio $K$;
 
-\begin{equation}
-G\in\mathcal{G}^{*}
-\end{equation}
+    \item el mismo vocabulario de objetivos semánticos $\mathcal{G}$;
 
-y:
+    \item el mismo repertorio de acciones ejecutables $\mathcal{A}$;
 
-\begin{equation}
-P\in\mathcal{A}^{*}.
-\end{equation}
+    \item las mismas familias de tareas consideradas para la evaluación;
 
-En consecuencia, las dos arquitecturas deben interpretar instrucciones dentro
-del mismo dominio semántico y producir planes compatibles con las mismas
-capacidades del robot.
+    \item una representación común de referencia para determinar qué objetivos
+    corresponden a cada instrucción.
 
-La comparación utiliza además un mismo conjunto de órdenes de evaluación y una
-misma representación de referencia para los objetivos. Esto permite contrastar
-los resultados sin modificar la definición de las tareas entre una arquitectura
-y otra.
+\end{itemize}
 
-Sin embargo, compartir el mismo problema no implica que todos los componentes
-reciban exactamente la misma información ni que el conocimiento necesario para
-resolverlo se encuentre ubicado en el mismo lugar.
+En consecuencia, ambas arquitecturas deben interpretar órdenes pertenecientes
+al mismo dominio y producir planes compatibles con las mismas capacidades del
+robot.
 
-En la arquitectura Qwen--CLIPS, Qwen únicamente debe resolver la transformación:
+Sin embargo, utilizar el mismo dominio no significa que el conocimiento
+necesario para resolver la tarea se encuentre distribuido de la misma manera.
 
-\begin{equation}
-x\rightarrow G.
-\end{equation}
+En Qwen--CLIPS, Qwen debe determinar únicamente qué solicita el usuario. El
+conocimiento necesario para convertir posteriormente esos objetivos en acciones
+se encuentra representado mediante reglas dentro de CLIPS.
 
-El conocimiento necesario para transformar posteriormente esos objetivos en
-acciones se encuentra representado de forma explícita en el componente
-simbólico.
+En cambio, GPT directo debe disponer durante una misma inferencia tanto del
+conocimiento necesario para interpretar la orden como de las restricciones
+necesarias para generar el plan.
 
-Por el contrario, el planificador GPT directo debe producir tanto la
-interpretación como el plan:
-
-\begin{equation}
-x\rightarrow(G,P).
-\end{equation}
-
-Por ello, además del conocimiento necesario para interpretar las entidades y
-objetivos, esta arquitectura debe disponer de información suficiente acerca de
-las acciones disponibles y de las relaciones necesarias para componer un plan.
-
-Esta diferencia puede resumirse mediante:
-
-\begin{equation}
-\boxed{
-\text{mismo dominio y problema}
-\not\Rightarrow
-\text{misma distribución del conocimiento}
-}
-\end{equation}
-
-La comparación se establece, por tanto, sobre el resultado funcional esperado:
-interpretar correctamente la orden y producir un plan compatible con las
-capacidades definidas para el robot.
+Por tanto, la comparación se realiza sobre un mismo problema y un mismo
+resultado esperado, aunque cada arquitectura distribuya de manera diferente el
+conocimiento utilizado para alcanzarlo.
 
 
 % ------------------------------------------------------------
 \subsection{Arquitectura Qwen--CLIPS}
 \label{subsec:qwen_clips}
 
-La primera arquitectura divide explícitamente el proceso en dos etapas. Qwen
-se utiliza como intérprete semántico, mientras que CLIPS se encarga de expandir
-los objetivos obtenidos mediante reglas de producción.
+La primera arquitectura adopta una separación explícita entre interpretación
+semántica y planificación.
 
-Sea:
-
-\begin{equation}
-I_Q:
-\mathcal{X}
-\rightarrow
-\mathcal{G}^{*}
-\end{equation}
-
-la función de interpretación implementada mediante Qwen. Para una instrucción
-$x$, el modelo produce una secuencia:
-
-\begin{equation}
-G_{\mathrm{pred}}=I_Q(x).
-\end{equation}
-
-El modelo no genera directamente el plan final ni selecciona acciones
-primitivas del robot. Su responsabilidad termina en la identificación de los
-objetivos semánticos contenidos en la instrucción.
-
-Antes de que la secuencia pueda ser procesada por el componente simbólico, se
-aplican comprobaciones deterministas destinadas a verificar que la
-representación producida pertenece al lenguaje canónico definido para el
-sistema.
-
-De manera conceptual, esta etapa puede representarse mediante:
-
-\begin{equation}
-V_G:
-(G,K)
-\rightarrow
-\{
-\text{válido},
-\text{inválido}
-\}.
-\end{equation}
-
-Cuando la representación es aceptada, una función de adaptación:
-
-\begin{equation}
-C:
-\mathcal{G}^{*}
-\rightarrow
-\mathcal{F}
-\end{equation}
-
-convierte la secuencia de objetivos en una representación simbólica $F$
-adecuada para el motor de reglas.
-
-El tipo concreto de hechos utilizado para implementar $F$ se describe en el
-capítulo de implementación; para la formalización actual basta considerar que
-esta representación conserva la información contenida en $G$ de una forma que
-puede ser procesada por CLIPS.
-
-El componente simbólico implementa posteriormente una función:
-
-\begin{equation}
-R_C:
-\mathcal{F}
-\rightarrow
-\mathcal{A}^{*},
-\end{equation}
-
-de manera que:
-
-\begin{equation}
-P=R_C(C(G)).
-\end{equation}
-
-La arquitectura completa puede representarse entonces como:
+Su funcionamiento general puede resumirse mediante:
 
 \begin{equation}
 \boxed{
 x
 \xrightarrow{\text{Qwen}}
-G_{\mathrm{pred}}
-\xrightarrow{\text{validación}}
-G'
-\xrightarrow{C}
-F
+G
 \xrightarrow{\text{CLIPS}}
 P
 }
 \label{eq:arquitectura_qwen_clips}
 \end{equation}
 
-La Figura~\ref{fig:arquitectura_QC} resume el flujo conceptual de la
-arquitectura Qwen--CLIPS, desde la recepción de la orden en lenguaje natural
-hasta la generación del plan ejecutable. En ella se observa la separación
-explícita entre la etapa de interpretación semántica, la validación de los
-objetivos y su posterior expansión mediante CLIPS.
+Qwen actúa como intérprete semántico. Su responsabilidad consiste en recibir la
+instrucción en lenguaje natural y producir una secuencia ordenada de objetivos
+pertenecientes al vocabulario definido en $\mathcal{G}$.
 
-\begin{figure}[H]
+Por ejemplo, una instrucción como:
+
+\begin{quote}
+\textit{``Bring me an apple from the kitchen.''}
+\end{quote}
+
+puede ser interpretada como:
+
+\begin{verbatim}
+go(kitchen)
+find(apple, kind=object)
+take(apple)
+deliver(apple, to=me)
+\end{verbatim}
+
+Qwen no determina directamente todas las acciones que deberá ejecutar el
+robot. Su función termina en la construcción de esta representación semántica.
+
+Antes de ser procesados por CLIPS, los objetivos obtenidos son sometidos a
+comprobaciones deterministas destinadas a verificar que utilizan la estructura,
+los tipos de objetivos y las entidades admitidas por el dominio. Los detalles
+de estas comprobaciones y de la representación utilizada para intercambiar la
+información entre componentes se presentan posteriormente en el capítulo de
+implementación.
+
+La Figura~\ref{fig:arquitectura_QC} resume el flujo conceptual de esta
+arquitectura.
+
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{Figures/arquitectura_qwen_clips.png}
     \caption{Arquitectura conceptual Qwen--CLIPS.}
     \label{fig:arquitectura_QC}
 \end{figure}
 
-En esta arquitectura, CLIPS funciona como un expansor determinista de objetivos
-basado en reglas. Su función no consiste en interpretar nuevamente la
-instrucción original ni en realizar una búsqueda libre entre planes posibles.
-En cambio, cada objetivo aceptado activa conocimiento explícito que determina
-las acciones necesarias para atenderlo.
+Una vez aceptada la representación semántica, CLIPS se encarga de transformar
+los objetivos en acciones pertenecientes al repertorio $\mathcal{A}$.
 
-Conceptualmente, un objetivo:
+En esta arquitectura, CLIPS funciona como un expansor de objetivos basado en
+reglas de producción. Su función no consiste en interpretar nuevamente la
+orden original ni en realizar una búsqueda libre entre planes posibles. En
+cambio, cada objetivo activa conocimiento explícito que determina las acciones
+necesarias para atenderlo, siguiendo la distinción entre objetivos semánticos
+y acciones ejecutables presentada en la
+Sección~\ref{subsec:objetivos_acciones}.
 
-\begin{equation}
-g_i\in\mathcal{G}
-\end{equation}
-
-puede expandirse en una subsecuencia:
-
-\begin{equation}
-g_i
-\rightarrow
-(a_j,a_{j+1},\ldots,a_k),
-\qquad
-a_j,\ldots,a_k\in\mathcal{A}.
-\end{equation}
-
-Por ejemplo, un objetivo de alto nivel asociado con la entrega de un objeto
-puede requerir localizar al destinatario, aproximarse y ejecutar posteriormente
-la acción de entrega. De forma similar, un objetivo de colocación puede
-requerir identificar primero una superficie o espacio adecuado.
-
-La expansión de los objetivos conserva el orden de la secuencia semántica
-obtenida durante la interpretación. Esto permite mantener las relaciones de
-precedencia y contexto descritas en la Sección~\ref{subsec:dependencias_objetivos}.
+La expansión conserva el orden y las relaciones presentes en $G$, de manera
+que las dependencias descritas en la
+Sección~\ref{subsec:dependencias_objetivos} puedan ser consideradas durante la
+generación del plan.
 
 
-\subsubsection{Estado predictivo durante la expansión}
+\subsubsection{Estado esperado durante la planificación}
 \label{subsubsec:estado_predictivo_clips}
 
-La expansión de cada objetivo no se realiza necesariamente de forma aislada.
-Algunas decisiones dependen del resultado esperado de objetivos anteriores.
+Durante la expansión de los objetivos, CLIPS utiliza el estado esperado
+descrito en la Sección~\ref{subsubsec:dependencia_espacial} para conservar la
+coherencia entre subtareas consecutivas. De esta manera, las decisiones
+asociadas con un objetivo pueden considerar los resultados esperados de
+objetivos procesados previamente.
 
-Para representar esta información se considera un estado predictivo:
-
-\begin{equation}
-S_i^{p},
-\end{equation}
-
-donde el superíndice $p$ indica que se trata de un estado utilizado durante la
-planificación y no de una observación confirmada del mundo físico.
-
-El procesamiento de un objetivo puede representarse conceptualmente como:
-
-\begin{equation}
-(g_i,S_i^{p})
-\xrightarrow{R_C}
-(P_i,S_{i+1}^{p}),
-\label{eq:estado_predictivo_clips}
-\end{equation}
-
-donde $P_i$ representa la subsecuencia de acciones producida para atender
-$g_i$.
-
-Por ejemplo, después de procesar un objetivo de navegación hacia una ubicación
-$l$, el estado predictivo puede asumir:
-
-\begin{equation}
-location(S_{i+1}^{p})=l.
-\end{equation}
-
-De manera semejante, después de procesar un objetivo de adquisición de un
-objeto $o$, puede mantenerse conceptualmente:
-
-\begin{equation}
-holding(S_{i+1}^{p})=o.
-\end{equation}
-
-Estas actualizaciones permiten evitar determinadas inconsistencias durante la
-expansión de objetivos posteriores. Sin embargo, no deben interpretarse como
-evidencia de que la acción física haya sido completada.
-
-En consecuencia:
-
-\begin{equation}
-\boxed{
-S_i^{p}
-\neq
-S_i^{\mathrm{fisico}}
-}
-\end{equation}
-
-en general, ya que la confirmación del estado real corresponde a los
-componentes encargados de ejecutar y observar las acciones del robot.
+En esta arquitectura, dicha información forma parte del proceso simbólico de
+expansión y no representa una confirmación del estado físico del robot. Su
+función se limita a mantener consistencia durante la construcción del plan.
 
 
-\subsubsection{Propagación y localización de errores}
+\subsubsection{Separación de errores}
 \label{subsubsec:errores_qwen_clips}
 
-La separación entre interpretación y expansión permite identificar con mayor
-claridad el origen de ciertos errores.
+La separación entre Qwen y CLIPS permite identificar dos fuentes principales
+de error. La primera corresponde a la interpretación semántica, cuando los
+objetivos producidos no representan correctamente la orden. La segunda
+corresponde a la planificación simbólica, cuando una representación correcta
+no puede transformarse adecuadamente en acciones ejecutables.
 
-Si Qwen produce:
+Además, una interpretación incorrecta puede producir posteriormente un plan
+internamente coherente con objetivos equivocados. Por ello, la evaluación de
+esta arquitectura debe considerar de forma independiente la corrección de $G$
+y la corrección de $P$.
 
-\begin{equation}
-G_{\mathrm{pred}}\neq G_{\mathrm{ref}},
-\end{equation}
-
-pero $G_{\mathrm{pred}}$ es estructuralmente válida, CLIPS puede generar un plan
-internamente coherente con dicha interpretación aunque ésta no corresponda con
-la intención original del usuario.
-
-En ese caso puede ocurrir:
-
-\begin{equation}
-x
-\rightarrow
-G_{\mathrm{incorrecto}}
-\rightarrow
-P_{\mathrm{coherente\ con}\ G_{\mathrm{incorrecto}}}.
-\end{equation}
-
-Por tanto:
-
-\begin{equation}
-\boxed{
-\text{plan internamente coherente}
-\not\Rightarrow
-\text{interpretación correcta}
-}
-\end{equation}
-
-Esta propiedad motiva la evaluación independiente de $G$ y $P$, así como la
-utilización posterior de una condición de control en la que los objetivos de
-referencia se proporcionan directamente al componente CLIPS.
+Esta separación se utiliza posteriormente para definir la condición
+experimental de control presentada en la
+Sección~\ref{subsec:control_clips}.
 
 
 % ------------------------------------------------------------
@@ -1638,312 +1152,183 @@ referencia se proporcionan directamente al componente CLIPS.
 La segunda arquitectura concentra en un mismo modelo las funciones de
 interpretación semántica y generación del plan.
 
-A diferencia de Qwen--CLIPS, el modelo no produce una representación que deba
-ser enviada posteriormente a un componente simbólico para obtener las acciones.
-Para una instrucción considerada ejecutable, GPT produce simultáneamente una
-secuencia de objetivos $G$ y un plan $P$.
-
-De forma general, se define:
-
-\begin{equation}
-D_{\mathrm{GPT}}:
-(\mathcal{X},K,\mathcal{G},\mathcal{A})
-\rightarrow
-\mathcal{Y},
-\end{equation}
-
-donde $\mathcal{Y}$ representa el espacio de respuestas admitidas por la
-arquitectura.
-
-La salida no se limita al caso en el que siempre sea posible generar un plan.
-En esta investigación se consideran tres clases conceptuales de respuesta:
-
-\begin{equation}
-\boxed{
-Y=
-\operatorname{Executable}(G,P)
-\mid
-\operatorname{Clarification}(q)
-\mid
-\operatorname{Rejected}(r)
-}
-\label{eq:salidas_gpt}
-\end{equation}
-
-La primera corresponde a una orden que puede interpretarse y convertirse en un
-plan dentro del dominio:
-
-\begin{equation}
-Y=\operatorname{Executable}(G,P).
-\end{equation}
-
-La segunda representa una situación en la que falta información necesaria o
-existe una ambigüedad que puede resolverse mediante una respuesta breve del
-usuario:
-
-\begin{equation}
-Y=\operatorname{Clarification}(q),
-\end{equation}
-
-donde $q$ representa la pregunta necesaria para completar la interpretación.
-
-Finalmente:
-
-\begin{equation}
-Y=\operatorname{Rejected}(r)
-\end{equation}
-
-representa una instrucción que no puede convertirse de manera válida en un
-plan dentro del dominio o las capacidades declaradas, y $r$ contiene la razón
-correspondiente.
-
-Cuando el resultado es ejecutable, el proceso conceptual puede representarse
-como:
+Su comportamiento principal puede resumirse mediante:
 
 \begin{equation}
 \boxed{
 x
 \xrightarrow{\text{GPT}}
-(G_{\mathrm{pred}},P_{\mathrm{pred}})
-\xrightarrow{\text{validación}}
-(G',P')
+(G,P)
 }
 \label{eq:arquitectura_gpt}
 \end{equation}
 
-La Figura~\ref{fig:arquitectura_gpt} muestra la distribución conceptual
-de responsabilidades en la arquitectura GPT directo. A diferencia de
-Qwen--CLIPS, la interpretación de la orden y la generación del plan se
-concentran en un mismo modelo, aunque los objetivos y las acciones se conservan
-como representaciones diferenciadas.
+Para una instrucción ejecutable, GPT produce en una misma respuesta tanto la
+secuencia de objetivos semánticos $G$ como el plan de acciones $P$.
+
+La conservación explícita de ambos elementos resulta importante. Aunque hayan
+sido generados por el mismo modelo, $G$ representa la interpretación realizada
+sobre la orden, mientras que $P$ representa la secuencia de acciones propuesta
+para atenderla.
+
+De esta manera, ambos resultados pueden ser analizados posteriormente de forma
+independiente.
+
+La Figura~\ref{fig:arquitectura_gpt} presenta el flujo conceptual de esta
+arquitectura.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=\textwidth]{Figures/Arquitectura GPT directo.png}
-    \caption{Arquitectura GPT directo.}
+    \includegraphics[width=\textwidth]{Figures/arquitectura_gpt_directo.png}
+    \caption{Arquitectura conceptual del planificador GPT directo.}
     \label{fig:arquitectura_gpt}
 \end{figure}
 
-Los objetivos generados por GPT se conservan como una representación explícita
-de la interpretación realizada por el modelo:
-
-\begin{equation}
-G_{\mathrm{GPT}}\in\mathcal{G}^{*},
-\end{equation}
-
-mientras que el plan debe estar compuesto por acciones pertenecientes al
-repertorio ejecutable:
-
-\begin{equation}
-P_{\mathrm{GPT}}\in\mathcal{A}^{*}.
-\end{equation}
-
-Aunque ambos artefactos se producen durante una misma inferencia, representan
-niveles de abstracción diferentes y pueden ser evaluados de manera
-independiente.
-
 Una diferencia fundamental respecto a Qwen--CLIPS es que los objetivos
-producidos por GPT no son utilizados como entrada para CLIPS:
+producidos por GPT no se envían posteriormente a CLIPS. El mismo modelo que
+interpreta la instrucción determina también las acciones que forman el plan.
 
-\begin{equation}
-G_{\mathrm{GPT}}
-\not\xrightarrow{\mathrm{CLIPS}}
-P_{\mathrm{GPT}}.
-\end{equation}
+Por tanto, el flujo no corresponde a:
 
-En cambio, el propio modelo realiza la composición del plan.
+\[
+G_{\mathrm{GPT}}\rightarrow\text{CLIPS}\rightarrow P,
+\]
+
+sino que tanto $G$ como $P$ constituyen productos de la misma inferencia.
+
+
+\subsubsection{Tipos de respuesta}
+\label{subsubsec:tipos_respuesta_gpt}
+
+La arquitectura no obliga al modelo a producir un plan para cualquier
+instrucción recibida. Dependiendo de la información disponible y de la
+compatibilidad de la orden con el dominio, se contemplan tres tipos de
+respuesta:
+
+\begin{itemize}
+
+    \item \textbf{\texttt{executable}:} la instrucción contiene información
+    suficiente y puede representarse mediante objetivos y acciones soportadas.
+    En este caso se generan $G$ y $P$.
+
+    \item \textbf{\texttt{clarification}:} existe información faltante o una
+    ambigüedad que puede resolverse mediante una pregunta breve al usuario. En
+    este caso no se genera un plan hasta resolver dicha ambigüedad.
+
+    \item \textbf{\texttt{rejected}:} la instrucción se encuentra fuera del
+    dominio, requiere una capacidad no disponible o contradice las restricciones
+    establecidas. En este caso tampoco se genera un plan.
+
+\end{itemize}
+
+Esta clasificación permite evitar que el modelo genere arbitrariamente una
+secuencia de acciones cuando no dispone de información suficiente para
+interpretar la orden.
 
 
 \subsubsection{Planificación directa bajo restricciones}
 \label{subsubsec:gpt_restringido}
 
-El término \textit{planificación directa} se utiliza en esta tesis para indicar
-que el modelo produce las acciones del plan sin delegar la expansión de los
-objetivos a CLIPS. Esto no implica que la generación se realice sin
-restricciones.
+El término \textit{planificación directa} indica que GPT produce las acciones
+del plan sin delegar posteriormente la expansión de los objetivos a CLIPS.
 
-El modelo opera dentro de un contexto que especifica, entre otros elementos,
-el conocimiento del dominio $K$, el vocabulario permitido de objetivos
-$\mathcal{G}$, el repertorio de acciones $\mathcal{A}$ y las relaciones
-necesarias para construir planes compatibles con las tareas consideradas.
+Esto no significa que el modelo pueda generar cualquier comportamiento.
 
-Por tanto, la generación puede expresarse como:
+La generación se encuentra restringida mediante información sobre:
 
-\begin{equation}
-(G,P)
-=
-D_{\mathrm{GPT}}
-(
-x,
-K,
-\mathcal{G},
-\mathcal{A},
-\mathcal{R}
-),
-\end{equation}
+\begin{itemize}
 
-donde $\mathcal{R}$ representa el conjunto de restricciones y relaciones de
-composición proporcionadas al modelo.
+    \item las entidades admitidas en el dominio;
 
-Estas restricciones permiten, por ejemplo, impedir que una intención de alto
-nivel como \texttt{guide} o \texttt{deliver} aparezca directamente como una
-acción ejecutable cuando no pertenece al repertorio $\mathcal{A}$.
+    \item los tipos de objetivos pertenecientes a $\mathcal{G}$;
 
-De esta forma, GPT debe conservar la distinción previamente establecida entre:
+    \item las acciones disponibles en $\mathcal{A}$;
 
-\begin{equation}
-\mathcal{G}
-\qquad\text{y}\qquad
-\mathcal{A}.
-\end{equation}
+    \item las relaciones y dependencias necesarias entre subtareas;
 
-El conocimiento que en Qwen--CLIPS se encuentra representado explícitamente
-mediante reglas de producción debe estar disponible para GPT a través del
-contexto y las restricciones utilizadas durante la generación.
+    \item las restricciones que determinan qué combinaciones pueden constituir
+    un plan válido.
+
+\end{itemize}
+
+Así, una intención semántica como \texttt{deliver} no debe utilizarse
+directamente como una acción ejecutable si no pertenece al repertorio
+$\mathcal{A}$. El modelo debe generar las acciones concretas necesarias para
+realizar dicha intención.
+
+El conocimiento que en Qwen--CLIPS se encuentra expresado mediante reglas de
+producción debe encontrarse disponible para GPT mediante las instrucciones y
+restricciones proporcionadas durante la generación.
+
+Esta diferencia no modifica el dominio de la comparación, sino la forma en que
+cada arquitectura representa y utiliza el conocimiento necesario para
+construir el plan.
 
 
-\subsubsection{Estado predictivo durante la generación}
+\subsubsection{Estado esperado durante la generación}
 \label{subsubsec:estado_predictivo_gpt}
 
-La generación directa del plan también requiere conservar coherencia entre las
-acciones producidas.
+GPT también debe mantener coherencia con el estado esperado descrito en la
+Sección~\ref{subsubsec:dependencia_espacial} al generar las acciones del plan.
 
-Sea:
+La diferencia respecto a Qwen--CLIPS se encuentra en el mecanismo utilizado.
+En la arquitectura simbólica, las relaciones necesarias para mantener esta
+coherencia se representan mediante conocimiento y reglas explícitas. En GPT
+directo, el modelo debe conservarlas durante la generación condicionada por
+el contexto y las restricciones proporcionadas.
 
-\begin{equation}
-S_0^{p}
-\end{equation}
-
-el estado predictivo inicial utilizado para razonar sobre la tarea. Después de
-una acción $a_i$, el estado esperado puede representarse como:
-
-\begin{equation}
-S_{i+1}^{p}
-=
-T(S_i^{p},a_i).
-\end{equation}
-
-Por ejemplo, después de generar una acción destinada a tomar un objeto $o$,
-las acciones posteriores pueden considerar conceptualmente:
-
-\begin{equation}
-holding(S_{i+1}^{p})=o.
-\end{equation}
-
-Esto permite conservar dependencias como:
-
-\begin{equation}
-\texttt{take}(o)
-\prec
-\texttt{give}(o,p).
-\end{equation}
-
-Al igual que en la arquitectura Qwen--CLIPS, este estado es predictivo y no
-representa retroalimentación física proveniente del robot.
-
-Por tanto:
-
-\begin{equation}
-\boxed{
-\text{estado utilizado para generar el plan}
-\neq
-\text{confirmación del estado físico}
-}
-\end{equation}
-
-La diferencia se encuentra en el mecanismo que mantiene dicha coherencia:
-Qwen--CLIPS utiliza representaciones y reglas simbólicas explícitas, mientras
-que GPT debe conservarla durante la generación condicionada por el contexto
-proporcionado.
+En ambos casos, el estado considerado durante la planificación es predictivo y
+no constituye una observación confirmada del entorno físico.
 
 
 \subsubsection{Separación posterior de interpretación y planificación}
 \label{subsubsec:errores_gpt}
 
-Aunque GPT realice ambas funciones dentro de una misma inferencia, la
-preservación explícita de $G$ y $P$ permite separar posteriormente los errores
-observados.
+Aunque GPT realice interpretación y planificación durante una misma inferencia,
+la conservación de $G$ y $P$ permite analizar posteriormente ambas funciones
+por separado.
 
-Si:
+Si los objetivos producidos no corresponden con los objetivos de referencia,
+el error puede atribuirse principalmente a la interpretación de la orden.
 
-\begin{equation}
-G_{\mathrm{GPT}}\neq G_{\mathrm{ref}},
-\end{equation}
+En cambio, si $G$ representa correctamente la instrucción pero $P$ omite
+acciones necesarias, utiliza acciones no soportadas o viola dependencias de la
+tarea, puede identificarse un error de planificación.
 
-el error puede asociarse principalmente con la interpretación de la orden.
-
-En cambio, si:
-
-\begin{equation}
-G_{\mathrm{GPT}}=G_{\mathrm{ref}}
-\end{equation}
-
-pero:
-
-\begin{equation}
-P_{\mathrm{GPT}}
-\end{equation}
-
-viola las restricciones de la tarea o no constituye una expansión adecuada de
-los objetivos, puede identificarse un error de planificación.
-
-Esta separación no corresponde a dos módulos internos independientes, como en
-Qwen--CLIPS, sino a un análisis posterior basado en los dos artefactos
-producidos por el modelo.
+A diferencia de Qwen--CLIPS, esta separación no corresponde a dos componentes
+independientes del sistema. Se obtiene mediante el análisis de los dos
+artefactos generados por el mismo modelo.
 
 
 % ------------------------------------------------------------
 \subsection{Comparación conceptual de las arquitecturas}
 \label{subsec:comparacion_conceptual}
 
-Las dos arquitecturas pueden resumirse mediante:
+La diferencia esencial entre las arquitecturas puede resumirse mediante:
 
 \begin{equation}
 \boxed{
 \begin{array}{ll}
-\text{Qwen--CLIPS:}
-&
-x
-\xrightarrow{\text{Qwen}}
-G
-\xrightarrow{\text{CLIPS}}
-P
-\\[0.5cm]
-\text{GPT directo:}
-&
-x
-\xrightarrow{\text{GPT}}
-(G,P)
+\text{Qwen--CLIPS:} &
+x\rightarrow G\rightarrow P
+\\[0.3cm]
+\text{GPT directo:} &
+x\rightarrow(G,P)
 \end{array}
 }
 \label{eq:comparacion_arquitecturas}
 \end{equation}
 
-La diferencia principal no consiste solamente en el modelo de lenguaje
-utilizado. En Qwen--CLIPS, el conocimiento necesario para interpretar el
-lenguaje y el conocimiento necesario para expandir las tareas se encuentran
-separados entre dos componentes:
+En Qwen--CLIPS, la interpretación y la planificación corresponden a etapas
+explícitamente separadas: Qwen produce la representación semántica y CLIPS
+transforma posteriormente dicha representación en acciones. En GPT directo,
+ambas funciones se realizan durante una misma inferencia, aunque $G$ y $P$ se
+conservan como resultados diferenciados para permitir su análisis posterior.
 
-\begin{equation}
-\boxed{
-\underbrace{x\rightarrow G}_{\text{interpretación mediante Qwen}}
-+
-\underbrace{G\rightarrow P}_{\text{expansión mediante CLIPS}}
-}
-\end{equation}
+La Tabla~\ref{tab:comparacion_arquitecturas} resume las principales
+características de ambas estrategias.
 
-En GPT directo, ambas transformaciones se concentran en un mismo modelo:
-
-\begin{equation}
-\boxed{
-\underbrace{x\rightarrow(G,P)}_{\text{interpretación y planificación mediante GPT}}
-}
-\end{equation}
-
-La Tabla~\ref{tab:comparacion_arquitecturas} resume las principales diferencias
-conceptuales.
-
-\begin{table}[ht]
+\begin{table}[htbp]
 \centering
 \caption{Comparación conceptual entre las arquitecturas evaluadas.}
 \label{tab:comparacion_arquitecturas}
@@ -1982,12 +1367,12 @@ Generación de $P$
 &
 Reglas de producción
 &
-Generación condicionada del LLM
+Generación condicionada del modelo
 \\
 
-Conocimiento de expansión
+Conocimiento para expandir los objetivos
 &
-Representado explícitamente en CLIPS
+Representado explícitamente mediante reglas
 &
 Proporcionado mediante contexto y restricciones
 \\
@@ -1999,7 +1384,7 @@ Explícita entre componentes
 Integrada en una misma inferencia
 \\
 
-Estado durante planificación
+Estado durante la planificación
 &
 Predictivo y simbólico
 &
@@ -2013,7 +1398,7 @@ No
 Sí
 \\
 
-Análisis de errores
+Identificación de errores
 &
 Separación directa entre etapas
 &
@@ -2022,7 +1407,7 @@ Separación posterior mediante $G$ y $P$
 
 Variabilidad del resultado
 &
-Determinada por los objetivos, reglas, hechos iniciales y estrategia de resolución
+Depende de los objetivos, reglas y condiciones iniciales
 &
 Puede presentar variación entre inferencias
 \\
@@ -2031,689 +1416,356 @@ Puede presentar variación entre inferencias
 \end{tabular}
 \end{table}
 
-La Figura~\ref{fig:arquitecturas_comparacion} presenta gráficamente esta
-distribución de responsabilidades.
+El carácter basado en reglas de CLIPS no implica que cualquier plan producido
+sea necesariamente correcto ni garantiza el éxito de su ejecución física. De
+manera similar, restringir la estructura de la respuesta de GPT no garantiza
+que la interpretación o el plan generado sean semánticamente correctos.
 
-\begin{figure}[ht]
-    \centering
-    \includegraphics[width=\textwidth]{Figures/arquitecturas_comparacion.png}
-    \caption{Distribución conceptual de las funciones de interpretación y
-    planificación en las arquitecturas Qwen--CLIPS y GPT directo.}
-    \label{fig:arquitecturas_comparacion}
-\end{figure}
-
-Debe señalarse que el carácter basado en reglas de CLIPS no implica por sí
-mismo que cualquier plan producido sea correcto desde el punto de vista físico.
-La reproducibilidad de su expansión depende de mantener constantes los hechos
-iniciales, las reglas y la estrategia de resolución de conflictos. De manera
-similar, restringir la respuesta de GPT a un vocabulario y una estructura
-determinados no garantiza que la interpretación o el plan sean semánticamente
-correctos.
-
-En ambos casos es necesario evaluar por separado la representación de objetivos
-y el plan resultante.
-
-En consecuencia, la comparación propuesta en esta investigación puede
-interpretarse como el contraste entre dos estrategias:
-
-\begin{equation}
-\boxed{
-\begin{array}{c}
-\text{separación explícita entre interpretación y planificación}
-\\
-\text{Qwen--CLIPS}
-\end{array}
-}
-\end{equation}
-
-frente a:
-
-\begin{equation}
-\boxed{
-\begin{array}{c}
-\text{integración de interpretación y planificación}
-\\
-\text{GPT directo}
-\end{array}
-}
-\end{equation}
-
-Esta diferencia proporciona la base para analizar posteriormente no sólo qué
-arquitectura obtiene una mayor proporción de resultados correctos, sino también
-en qué etapa se originan los errores, qué grado de consistencia presenta cada
-estrategia y qué recursos requiere para transformar una instrucción en un plan
-compatible con el robot.
+Por ello, en ambas arquitecturas resulta necesario evaluar por separado la
+representación semántica $G$ y el plan $P$. Esta separación permite analizar no
+sólo qué arquitectura produce una mayor proporción de resultados correctos,
+sino también en qué etapa se originan los errores, qué grado de consistencia
+presenta cada estrategia y qué recursos requiere para transformar una
+instrucción en un plan compatible con las capacidades del robot.
 
 
 % ============================================================
 \section{Criterios conceptuales de validez}
 \label{sec:criterios_validez}
 
-La generación de una salida estructurada no implica, por sí misma, que la
-interpretación de una orden o el plan correspondiente sean correctos. En esta
-investigación se distinguen varios niveles de validez con el propósito de
-separar los errores asociados con la representación lingüística, la semántica,
-la planificación y la ejecución física.
+La generación de una salida correctamente estructurada no implica, por sí
+misma, que la interpretación de una orden o el plan correspondiente sean
+correctos.
 
-De manera general, el proceso completo puede representarse como:
+Por esta razón, en esta investigación se distinguen diferentes niveles de
+validez. El propósito de esta separación es identificar si un error se origina
+durante la interpretación de la instrucción, durante la generación del plan o
+posteriormente durante su ejecución física.
+
+De manera general, el proceso puede representarse como:
 
 \begin{equation}
 \boxed{
 x
-\xrightarrow[\ V_I\ ]{}
+\xrightarrow{\text{interpretación}}
 G
-\xrightarrow[\ V_P\ ]{}
+\xrightarrow{\text{planificación}}
 P
-\xrightarrow[\ V_E\ ]{}
+\xrightarrow{\text{ejecución}}
 E
 }
 \label{eq:niveles_validez}
 \end{equation}
 
 donde $x$ representa la instrucción en lenguaje natural, $G$ la secuencia de
-objetivos semánticos, $P$ el plan de acciones y $E$ el resultado observado
-durante la ejecución física.
+objetivos semánticos, $P$ el plan generado y $E$ el resultado observado durante
+la ejecución.
 
-Las funciones $V_I$, $V_P$ y $V_E$ representan, respectivamente, la validez de
-la interpretación, la validez del plan y el resultado de ejecución. Estas
-dimensiones se analizan de forma diferenciada, ya que el cumplimiento de una
-de ellas no implica necesariamente el cumplimiento de las siguientes.
+Cada una de estas etapas debe evaluarse de manera independiente.
 
 
 % ------------------------------------------------------------
 \subsection{Niveles de validez}
 \label{subsec:niveles_validez}
 
-Para evaluar las salidas producidas por las arquitecturas consideradas, resulta
-útil distinguir varios niveles conceptuales de validez.
+Para analizar las salidas producidas por las arquitecturas evaluadas se
+consideran los siguientes niveles:
 
 \begin{enumerate}
 
-    \item \textbf{Validez sintáctica:} la salida puede ser interpretada por el
-    software y respeta la sintaxis esperada.
+    \item \textbf{Validez sintáctica:} la salida puede ser procesada por el
+    sistema y respeta la sintaxis esperada.
 
-    \item \textbf{Validez estructural:} la salida utiliza los tipos de datos,
-    campos, objetivos, argumentos y acciones admitidos por el contrato del
-    sistema.
+    \item \textbf{Validez estructural:} los objetivos, acciones, argumentos y
+    tipos utilizados pertenecen a las estructuras admitidas por el sistema.
 
-    \item \textbf{Validez semántica:} la representación obtenida conserva la
-    intención expresada en la instrucción original y utiliza correctamente las
-    entidades y relaciones del dominio.
+    \item \textbf{Validez semántica:} la representación $G$ conserva la
+    intención expresada en la instrucción original.
 
-    \item \textbf{Validez del plan:} la secuencia de acciones constituye una
-    expansión coherente de los objetivos y respeta las dependencias necesarias
-    para realizar la tarea.
+    \item \textbf{Validez del plan:} la secuencia $P$ constituye una
+    realización coherente de los objetivos representados en $G$.
 
-    \item \textbf{Validez de ejecución:} las acciones planificadas pueden ser
-    realizadas satisfactoriamente por el robot en el entorno físico.
+    \item \textbf{Éxito de ejecución:} el robot consigue realizar físicamente
+    las acciones planificadas y alcanzar el resultado esperado.
 
 \end{enumerate}
 
-Estos niveles forman una jerarquía conceptual, pero no deben interpretarse como
-implicaciones automáticas.
+Estos niveles no deben considerarse equivalentes.
 
-Por ejemplo:
+Una salida puede ser sintáctica y estructuralmente válida y, aun así,
+representar incorrectamente la intención del usuario. De manera similar, un
+plan puede ser conceptualmente correcto pero fallar durante la ejecución debido
+a condiciones externas al proceso de planificación.
 
-\begin{equation}
-\boxed{
-V_{\text{sintáctico}}=1
-\not\Rightarrow
-V_{\text{semántico}}=1
-}
-\end{equation}
-
-Una salida puede encontrarse correctamente estructurada y, aun así, contener
-una entidad incorrecta o representar una intención diferente de la solicitada.
-
-De forma similar:
-
-\begin{equation}
-\boxed{
-V_P=1
-\not\Rightarrow
-V_E=1
-}
-\end{equation}
-
-debido a que un plan conceptualmente correcto puede fallar posteriormente
-durante su ejecución física.
-
-Esta separación permite evitar que diferentes tipos de error sean agrupados
-bajo una única noción de ``plan incorrecto''.
+Esta separación permite evitar que todos los fallos observados sean agrupados
+bajo una única categoría de ``plan incorrecto''.
 
 
 % ------------------------------------------------------------
 \subsection{Validez de la interpretación semántica}
 \label{subsec:validez_interpretacion}
 
-Sea:
+La interpretación se considera válida cuando la secuencia de objetivos $G$
+representa fielmente la tarea expresada en la instrucción $x$ dentro del
+dominio considerado.
 
-\begin{equation}
-V_I(x,G,K)
-\end{equation}
+Los requisitos de fidelidad fueron introducidos en la
+Sección~\ref{subsubsec:fidelidad_semantica}. Para la evaluación conceptual se
+consideran principalmente los siguientes criterios:
 
-una función conceptual que determina si la secuencia de objetivos $G$
-representa adecuadamente la instrucción $x$ dentro del conocimiento de dominio
-$K$.
+\begin{enumerate}
 
-De manera simplificada:
+    \item \textbf{Cobertura de las subtareas:} deben conservarse todos los
+    objetivos necesarios para representar la tarea, incluyendo aquellas
+    operaciones implícitas que resulten necesarias dentro del dominio.
 
-\begin{equation}
-V_I(x,G,K)
-\in
-\{0,1\}.
-\end{equation}
+    \item \textbf{Ausencia de intenciones no solicitadas:} la representación no
+    debe introducir objetivos adicionales que modifiquen la intención original
+    de la orden.
 
-Una interpretación semánticamente válida debe conservar la información
-relevante de la orden sin introducir intenciones que no hayan sido solicitadas.
+    \item \textbf{Exactitud de entidades y tipos:} las personas, objetos,
+    categorías y ubicaciones utilizadas deben corresponder con las referencias
+    presentes en la instrucción y ser compatibles con el conocimiento $K$.
 
-Para ello se consideran las siguientes propiedades.
+    \item \textbf{Conservación de relaciones y dependencias:} deben mantenerse
+    las relaciones de precedencia, referencia y contexto necesarias entre los
+    objetivos.
 
+\end{enumerate}
 
-\subsubsection{Cobertura de las subtareas}
-\label{subsubsec:cobertura_subtareas}
+Cuando se dispone de una representación de referencia
+$G_{\mathrm{ref}}$, el caso ideal corresponde a que la representación producida
+$G_{\mathrm{pred}}$ coincida con ella:
 
-La secuencia $G$ debe contener los objetivos necesarios para representar la
-tarea expresada por el usuario.
+\[
+G_{\mathrm{pred}}=G_{\mathrm{ref}}.
+\]
 
-Considérese:
-
-\begin{quote}
-\textit{``Go to the kitchen and find Robin.''}
-\end{quote}
-
-La representación:
-
-\begin{verbatim}
-find(Robin, kind=person)
-\end{verbatim}
-
-contiene un objetivo válido, pero omite la navegación solicitada.
-
-Por tanto, una interpretación puede ser estructuralmente correcta y, aun así,
-ser semánticamente incompleta.
-
-
-\subsubsection{Ausencia de intenciones no solicitadas}
-\label{subsubsec:no_objetivos_adicionales}
-
-La interpretación tampoco debe agregar objetivos que no formen parte de la
-orden.
-
-Para la misma instrucción:
-
-\begin{verbatim}
-go(kitchen)
-find(Robin, kind=person)
-greet(Robin)
-\end{verbatim}
-
-introduce una tarea de saludo que no fue solicitada.
-
-En consecuencia, la representación canónica debe conservar la intención
-original y no utilizar la normalización como mecanismo para añadir
-comportamientos adicionales.
-
-
-\subsubsection{Exactitud de entidades y tipos}
-\label{subsubsec:exactitud_entidades}
-
-Las entidades utilizadas en los objetivos deben corresponder con las presentes
-en la instrucción y ser compatibles con el conocimiento del dominio.
-
-Si:
-
-\begin{equation}
-Robin\in K_P,
-\end{equation}
-
-entonces una representación compatible sería:
-
-\begin{verbatim}
-find(Robin, kind=person)
-\end{verbatim}
-
-y no una clasificación de Robin como objeto.
-
-De forma análoga, las ubicaciones, objetos y categorías utilizadas deben
-mantener correspondencia con las referencias expresadas en la orden.
-
-
-\subsubsection{Conservación de relaciones y dependencias}
-\label{subsubsec:validez_relaciones}
-
-Una interpretación válida debe conservar no sólo las entidades individuales,
-sino también las relaciones existentes entre ellas.
-
-Por ejemplo:
-
-\begin{verbatim}
-find(person, kind=person, gesture='waving person')
-guide(person, to=kitchen)
-\end{verbatim}
-
-requiere que la persona utilizada en el segundo objetivo corresponda con la
-persona identificada por el primero.
-
-Las dependencias de precedencia descritas anteriormente también forman parte de
-la interpretación. Una tarea de entrega de un objeto debe conservar la
-relación entre adquisición y entrega, aun cuando algunas de estas operaciones
-se encuentren implícitas en la formulación lingüística original.
-
+Esta condición representa una correspondencia estricta entre la interpretación
+obtenida y la esperada. Durante la evaluación puede complementarse con
+criterios más específicos para identificar omisiones, adiciones, errores de
+entidad, relaciones incorrectas u otros tipos de discrepancia.
 
 \subsubsection{Consistencia ante reformulaciones}
 \label{subsubsec:consistencia_reformulaciones}
 
-La posibilidad de expresar una misma tarea mediante diferentes formulaciones
-introduce un criterio adicional de validez.
+La variabilidad lingüística introduce un criterio adicional de validez.
 
-Como se definió en la Sección~\ref{subsec:equivalencia_semantica}, si:
+Como se definió en la Sección~\ref{subsec:equivalencia_semantica}, dos
+formulaciones diferentes pueden representar una misma tarea. En ese caso,
+idealmente ambas deben producir la misma representación semántica:
 
-\begin{equation}
-x_1\sim x_2,
-\end{equation}
-
-entonces ambas instrucciones representan la misma intención semántica.
-
-Idealmente, el intérprete debe satisfacer:
-
-\begin{equation}
-\boxed{
+\[
 x_1\sim x_2
-\Rightarrow
-I(x_1)=I(x_2)
-}
-\label{eq:consistencia_reformulaciones}
-\end{equation}
+\quad\Rightarrow\quad
+G_1=G_2.
+\]
 
-Esta propiedad resulta especialmente relevante para el dominio GPSR, donde una
-misma tarea puede ser reformulada mediante una expresión lingüística más
-simple sin modificar los objetivos originales.
+Esta propiedad resulta especialmente relevante en GPSR, donde una misma
+instrucción puede ser reformulada sin modificar sus objetivos.
 
-Por tanto, la validez de la interpretación no se limita a evaluar una única
-frase de manera aislada, sino también la capacidad de conservar una
-representación semántica estable ante formulaciones equivalentes.
+Por tanto, la capacidad de interpretar correctamente una orden no se evalúa
+únicamente mediante una formulación aislada, sino también mediante la
+consistencia del sistema ante diferentes expresiones de una misma intención.
 
 
 % ------------------------------------------------------------
 \subsection{Validez y consistencia del plan}
 \label{subsec:validez_plan}
 
-Una vez obtenida una secuencia de objetivos $G$, debe determinarse si el plan
+Una vez obtenida la representación semántica $G$, debe determinarse si el plan
 $P$ constituye una realización coherente de dichos objetivos.
 
-Sea:
+Un plan se considera conceptualmente válido cuando cumple los siguientes
+criterios:
 
-\begin{equation}
-V_P(G,P,K,\mathcal{A})
-\end{equation}
+\begin{enumerate}
 
-una función conceptual de validación del plan.
+    \item \textbf{Acciones soportadas:} todas las acciones utilizadas pertenecen
+    al repertorio $\mathcal{A}$ disponible para el sistema de ejecución.
 
-De manera simplificada:
+    \item \textbf{Parámetros válidos:} cada acción utiliza argumentos compatibles
+    con su función y con las entidades del dominio.
 
-\begin{equation}
-V_P(G,P,K,\mathcal{A})
-\in
-\{0,1\}.
-\end{equation}
+    \item \textbf{Respeto de dependencias:} la secuencia conserva el orden y las
+    relaciones necesarias para realizar la tarea.
 
-La validez del plan depende de varias propiedades.
+    \item \textbf{Cobertura de los objetivos:} las acciones generadas permiten
+    atender los objetivos contenidos en $G$ sin omitir partes necesarias de la
+    tarea.
 
+    \item \textbf{Coherencia con el estado esperado:} las acciones posteriores
+    son compatibles con los resultados esperados de las acciones previamente
+    incluidas en el plan.
 
-\subsubsection{Pertenencia al repertorio de acciones}
-\label{subsubsec:acciones_validas}
+\end{enumerate}
 
-Toda acción incluida en el plan debe pertenecer al conjunto de acciones
-disponibles para el robot:
+Por ejemplo, una acción de entrega de un objeto debe aparecer después de las
+acciones necesarias para obtener dicho objeto y localizar al destinatario.
 
-\begin{equation}
-\forall a_i\in P,
-\qquad
-a_i\in\mathcal{A}.
-\end{equation}
+De manera similar, una acción de aproximación a una persona requiere que dicha
+persona haya sido identificada previamente.
 
-La aparición de una acción inexistente o no soportada constituye un error de
-planificación incluso si la intención general del plan es correcta.
-
-
-\subsubsection{Validez de parámetros}
-\label{subsubsec:parametros_plan}
-
-Las acciones también deben utilizar argumentos compatibles con su función.
-
-Por ejemplo, una acción de navegación debe especificar una ubicación válida,
-mientras que una operación de entrega debe mantener correspondencia con el
-objeto y el destinatario implicados en la tarea.
-
-Por tanto, la pertenencia de una acción a $\mathcal{A}$ es una condición
-necesaria, pero no suficiente para determinar su validez.
-
-
-\subsubsection{Conservación de dependencias}
-\label{subsubsec:dependencias_plan}
-
-Las acciones deben respetar las relaciones necesarias para realizar los
-objetivos.
-
-Por ejemplo:
-
-\begin{equation}
-\texttt{take}(o)
-\prec
-\texttt{give}(o,p)
-\end{equation}
-
-representa una dependencia relacionada con la posesión del objeto.
-
-De manera similar:
-
-\begin{equation}
-\texttt{find\_person}(p)
-\prec
-\texttt{approach}(p)
-\end{equation}
-
-representa una relación necesaria para aproximarse a una persona que primero
-debe ser identificada.
-
-Estas restricciones pueden depender tanto del orden de las acciones como del
-estado predictivo utilizado durante la planificación.
-
-
-\subsubsection{Satisfacción de los objetivos}
-\label{subsubsec:satisfaccion_objetivos}
-
-Además de utilizar acciones válidas, el plan debe proporcionar una realización
-de los objetivos presentes en $G$.
-
-Esta relación puede representarse conceptualmente mediante:
-
-\begin{equation}
-P\models G,
-\end{equation}
-
-donde el símbolo $\models$ indica que la secuencia de acciones de $P$ satisface
-los objetivos representados en $G$.
-
-Esta notación se utiliza en esta tesis de manera conceptual y no implica la
-utilización de un mecanismo de demostración lógica formal.
-
-Un plan puede estar compuesto únicamente por acciones válidas y, aun así, no
-satisfacer la tarea si omite acciones necesarias para alguno de los objetivos.
-
-
-\subsubsection{Coherencia con el estado predictivo}
-\label{subsubsec:coherencia_estado_plan}
-
-Las acciones generadas deben ser compatibles con el estado esperado producido
-por las acciones anteriores.
-
-Sea $S_i^p$ el estado predictivo antes de ejecutar conceptualmente la acción
-$a_i$. Una transición se representa como:
-
-\begin{equation}
-S_{i+1}^{p}
-=
-T(S_i^{p},a_i).
-\end{equation}
-
-Por ejemplo, una operación de entrega de un objeto requiere que el estado
-predictivo contemple previamente que el robot posee dicho objeto.
-
-Una secuencia que contradiga estas condiciones puede contener acciones
-individualmente válidas, pero no constituir un plan coherente.
+Por tanto, una secuencia puede estar formada únicamente por acciones válidas y,
+aun así, constituir un plan incorrecto si las acciones aparecen en un orden
+inadecuado, utilizan parámetros incompatibles o no cubren completamente los
+objetivos solicitados.
 
 
 % ------------------------------------------------------------
 \subsection{Validez de la respuesta del sistema}
 \label{subsec:validez_respuesta}
 
-No todas las instrucciones recibidas deben producir necesariamente un plan.
+Además de evaluar la corrección de $G$ y $P$, en la arquitectura GPT directo
+debe considerarse si el modelo selecciona adecuadamente el tipo de respuesta
+descrito en la Sección~\ref{subsubsec:tipos_respuesta_gpt}.
 
-Esta consideración es particularmente relevante en la arquitectura GPT
-directo, donde el espacio de respuestas se definió como:
+Una respuesta \texttt{executable} es apropiada cuando la instrucción contiene
+información suficiente y puede resolverse mediante las capacidades disponibles.
+Una respuesta \texttt{clarification} es apropiada cuando existe una ambigüedad
+que puede resolverse solicitando información adicional, mientras que
+\texttt{rejected} corresponde a instrucciones fuera del dominio o de las
+capacidades admitidas.
 
-\begin{equation}
-Y=
-\operatorname{Executable}(G,P)
-\mid
-\operatorname{Clarification}(q)
-\mid
-\operatorname{Rejected}(r).
-\end{equation}
-
-Por tanto, también resulta necesario evaluar si el sistema selecciona
-correctamente el tipo de respuesta correspondiente a una instrucción.
-
-Sea:
-
-\begin{equation}
-V_Y(x,Y)
-\end{equation}
-
-una función conceptual de validez de la respuesta.
-
-Una respuesta:
-
-\begin{equation}
-Y=\operatorname{Executable}(G,P)
-\end{equation}
-
-es apropiada cuando la instrucción contiene información suficiente, pertenece
-al dominio soportado y puede representarse mediante las capacidades
-disponibles.
-
-Una respuesta:
-
-\begin{equation}
-Y=\operatorname{Clarification}(q)
-\end{equation}
-
-es apropiada cuando existe información faltante o una ambigüedad que puede
-resolverse mediante una respuesta breve del usuario.
-
-Por ejemplo, una instrucción como:
+Por ejemplo:
 
 \begin{quote}
 \textit{``Bring it to her.''}
 \end{quote}
 
-puede requerir aclaración si los referentes de \textit{it} y \textit{her} no
-pueden determinarse a partir del contexto disponible.
+puede requerir una aclaración si no existe suficiente contexto para determinar
+qué representan \textit{it} y \textit{her}.
 
-Finalmente:
-
-\begin{equation}
-Y=\operatorname{Rejected}(r)
-\end{equation}
-
-es apropiada cuando la instrucción solicita una tarea que se encuentra fuera
-del dominio considerado, contradice las restricciones establecidas o requiere
-una capacidad no disponible.
-
-Esta distinción permite establecer que:
-
-\begin{equation}
-\boxed{
-\text{producir un plan}
-\neq
-\text{responder correctamente en todos los casos}
-}
-\end{equation}
-
-Forzar una secuencia de acciones ante una instrucción ambigua o no soportada
-puede constituir un error, aun cuando dicha secuencia sea estructuralmente
-válida.
+Por tanto, generar un plan no constituye siempre la respuesta correcta. Ante
+una orden ambigua o no soportada, solicitar una aclaración o rechazar la
+solicitud puede representar el comportamiento esperado del sistema.
 
 
 % ------------------------------------------------------------
 \subsection{Condición de control para la etapa simbólica}
 \label{subsec:control_clips}
 
-La separación entre interpretación y planificación de la arquitectura
-Qwen--CLIPS permite introducir una condición experimental destinada a aislar
-el comportamiento de la etapa simbólica.
+La separación explícita entre interpretación y planificación de la arquitectura
+Qwen--CLIPS permite introducir una condición experimental de control destinada
+a aislar el comportamiento del componente simbólico.
 
-En esta condición, la secuencia de objetivos de referencia se proporciona
-directamente a CLIPS:
+En esta condición, los objetivos de referencia se proporcionan directamente a
+CLIPS:
 
 \begin{equation}
 \boxed{
 G_{\mathrm{ref}}
 \xrightarrow{\text{CLIPS}}
-P_{\mathrm{CLIPS}}.
+P_{\mathrm{CLIPS}}
 }
 \label{eq:control_clips}
 \end{equation}
 
 Esta condición no constituye una tercera arquitectura de planificación. Su
-propósito es evaluar la transformación:
+propósito es evaluar únicamente la transformación:
 
-\begin{equation}
-G\rightarrow P
-\end{equation}
+\[
+G\rightarrow P,
+\]
 
-sin introducir previamente los errores que puedan originarse durante:
+eliminando temporalmente los posibles errores producidos durante:
 
-\begin{equation}
+\[
 x\rightarrow G.
-\end{equation}
+\]
 
-Si CLIPS produce un plan válido cuando recibe:
+Si CLIPS genera un plan correcto cuando recibe $G_{\mathrm{ref}}$, pero el flujo
+completo Qwen--CLIPS falla para la misma instrucción, el error puede encontrarse
+en la interpretación producida por Qwen.
 
-\begin{equation}
-G_{\mathrm{ref}},
-\end{equation}
+En cambio, si el plan generado a partir de $G_{\mathrm{ref}}$ también es
+incorrecto, el problema corresponde a la expansión simbólica, la cobertura de
+las reglas o la generación del plan.
 
-pero el flujo completo Qwen--CLIPS falla para la misma orden, el análisis puede
-dirigirse hacia la interpretación producida por Qwen.
+Esta condición permite distinguir experimentalmente entre dos tipos principales
+de error:
 
-En cambio, si:
+\begin{itemize}
 
-\begin{equation}
-V_P(G_{\mathrm{ref}},P_{\mathrm{CLIPS}},K,\mathcal{A})=0,
-\end{equation}
+    \item \textbf{error de interpretación:} la secuencia $G$ no representa
+    correctamente la instrucción;
 
-el problema corresponde a la cobertura o expansión de la etapa simbólica y no
-a la interpretación lingüística.
+    \item \textbf{error de planificación:} la representación $G$ es correcta,
+    pero el plan $P$ no constituye una expansión adecuada.
 
-De esta manera, la condición de control proporciona un mecanismo para
-distinguir experimentalmente entre:
+\end{itemize}
 
-\begin{equation}
-E_I:
-x\rightarrow G_{\mathrm{incorrecto}}
-\end{equation}
-
-y:
-
-\begin{equation}
-E_P:
-G_{\mathrm{correcto}}\rightarrow P_{\mathrm{incorrecto}}.
-\end{equation}
-
-Esta separación constituye uno de los criterios utilizados posteriormente para
-clasificar los errores observados durante la evaluación.
+Esta separación será utilizada posteriormente para clasificar los resultados
+obtenidos durante la evaluación.
 
 
 % ------------------------------------------------------------
 \subsection{Planificación y ejecución física}
 \label{subsec:planificacion_ejecucion}
 
-El último nivel considerado corresponde a la diferencia entre producir un plan
-conceptualmente válido y completar satisfactoriamente su ejecución sobre el
-robot.
+El último nivel de análisis corresponde a la diferencia entre generar un plan
+correcto y completar satisfactoriamente su ejecución sobre el robot.
 
-Sea:
-
-\begin{equation}
-E
-\end{equation}
-
-el resultado observado al intentar ejecutar un plan $P$.
-
-Puede definirse conceptualmente:
-
-\begin{equation}
-V_E(P,E)
-\end{equation}
-
-como el criterio que determina si la ejecución física de dicho plan alcanzó el
-resultado esperado.
-
-Sin embargo:
+La relación fundamental puede expresarse de manera sencilla como:
 
 \begin{equation}
 \boxed{
-V_I=1
-\land
-V_P=1
+\text{plan correcto}
 \not\Rightarrow
-V_E=1.
+\text{ejecución exitosa}
 }
 \label{eq:plan_no_garantiza_ejecucion}
 \end{equation}
 
-Un plan puede interpretar correctamente una instrucción y contener una
-secuencia coherente de acciones, pero su ejecución puede fallar debido a
+Un plan puede representar correctamente la intención de la instrucción y
+contener una secuencia coherente de acciones, pero su ejecución puede fallar por
 factores externos al proceso de planificación.
 
-Entre ellos pueden encontrarse fallos de percepción, obstáculos durante la
-navegación, dificultades de manipulación, cambios en la posición de personas u
-objetos o problemas durante la interacción con el usuario.
+Entre ellos se encuentran, por ejemplo:
 
-Por ejemplo, un plan puede contener correctamente una acción destinada a tomar
-un objeto, pero la ejecución puede fallar si dicho objeto no es detectado o si
-el manipulador no consigue sujetarlo.
+\begin{itemize}
 
-De manera similar, una acción de navegación puede ser semántica y
-estructuralmente correcta, pero no completarse debido a una modificación del
-entorno físico.
+    \item fallos durante la percepción de personas u objetos;
 
-Por tanto, el estado predictivo utilizado durante la planificación:
+    \item obstáculos o cambios en el entorno durante la navegación;
 
-\begin{equation}
-S_i^{p}
-\end{equation}
+    \item dificultades durante la manipulación de objetos;
 
-no debe confundirse con el estado efectivamente observado durante la ejecución.
+    \item cambios en la posición de personas u objetos;
 
-Esta distinción permite interpretar los resultados experimentales sin atribuir
-automáticamente a la planificación errores que se originan en otros componentes
+    \item problemas durante la interacción humano--robot.
+
+\end{itemize}
+
+Por ejemplo, el plan puede indicar correctamente que el robot debe tomar una
+manzana, pero la ejecución puede fallar si el objeto no es detectado o si el
+manipulador no consigue sujetarlo.
+
+De manera similar, una acción de navegación puede estar correctamente
+planificada y, aun así, no completarse debido a obstáculos o modificaciones del
+entorno.
+
+Por esta razón, el estado esperado utilizado durante la planificación no debe
+confundirse con el estado real observado durante la ejecución.
+
+La evaluación de las arquitecturas debe distinguir, por tanto, entre:
+
+\begin{enumerate}
+
+    \item la correcta interpretación de la instrucción;
+
+    \item la generación de un plan coherente con dicha interpretación;
+
+    \item el resultado obtenido al intentar ejecutar físicamente ese plan.
+
+\end{enumerate}
+
+Esta separación permite analizar los resultados sin atribuir automáticamente a
+la interpretación o a la planificación fallos originados en otros componentes
 del robot.
 
-En consecuencia, la evaluación general del sistema se organiza conceptualmente
-en tres niveles principales:
-
-\begin{equation}
-\boxed{
-\begin{array}{ccc}
-x
-&
-\xrightarrow{\text{interpretación}}
-&
-G
-\\[0.2cm]
-&&
-\downarrow
-\\[-0.1cm]
-&&
-P
-\\[-0.1cm]
-&&
-\downarrow
-\\[-0.1cm]
-&&
-E
-\end{array}
-}
-\end{equation}
-
-correspondientes a la interpretación semántica, la generación del plan y la
-ejecución física.
-
-Los criterios presentados en esta sección establecen únicamente la definición
-conceptual de validez utilizada en la investigación. Las métricas, umbrales,
-procedimientos de evaluación y condiciones experimentales concretas se
-desarrollan posteriormente en el capítulo de validación y experimentación.
+Los criterios establecidos en esta sección definen conceptualmente qué se
+considera una interpretación correcta, un plan válido y una ejecución exitosa.
+Las métricas concretas, procedimientos experimentales y criterios utilizados
+para medir estas propiedades se presentan posteriormente en el capítulo de
+validación y experimentación.
