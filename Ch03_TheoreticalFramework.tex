@@ -52,7 +52,7 @@ conocimiento, planificación y ejecución.
 
 El sistema desarrollado en esta tesis se ubica entre la recepción de una
 instrucción expresada en lenguaje natural y los componentes encargados de
-ejecutar las acciones correspondientes. Por tanto, no pretende sustituir los
+ejecutar las acciones correspondientes. Por lo tanto, no pretende sustituir los
 módulos de navegación, percepción o manipulación del robot, sino proporcionar
 una representación ordenada de las acciones que dichos módulos deben realizar.
 
@@ -70,15 +70,11 @@ De manera simplificada, el flujo general puede expresarse como:
 }
 \end{equation}
 
-La contribución estudiada se concentra principalmente en las transformaciones
-anteriores a la ejecución física. Los módulos existentes de Justina son los
-responsables de intentar realizar las acciones especificadas en el plan.
-
-
-\subsection{Alcance del problema abordado}
-\label{subsec:alcance_problema}
-
-El trabajo se concentra en la transformación de instrucciones en lenguaje natural en planes de acciones compatibles con las capacidades del robot. Una instrucción puede contener varias subtareas relacionadas que deben ser identificadas antes de generar las acciones correspondientes compatibles con sus capacidades. Los módulos de percepción, navegación y manipulación se consideran externos al problema de planificación estudiado y se utilizan posteriormente para realizar las acciones producidas.
+La contribución estudiada se concentra en las etapas de interpretación y planificación anteriores a la ejecución física. Una instrucción puede contener varias subtareas relacionadas que deben ser identificadas y transformadas en acciones compatibles con las capacidades del robot. Los módulos de percepción, navegación, manipulación e interacción encargados de realizar dichas acciones se consideran externos al problema de planificación estudiado.
+En consecuencia, la tesis evalúa principalmente la transformación de
+instrucciones en representaciones semánticas y planes de acción, mientras que
+la ejecución física se considera una etapa posterior que permite analizar, de
+forma separada, el comportamiento del plan sobre el robot.
 
 
 % ============================================================
@@ -126,7 +122,7 @@ directamente al robot cómo resolverla.
 Este mecanismo es particularmente relevante para la presente investigación,
 pues permite distinguir entre la tarea que debe realizarse y la forma
 lingüística utilizada para comunicarla. Dos instrucciones con estructuras
-sintácticas diferentes pueden representar los mismos objetivos y, por tanto,
+sintácticas diferentes pueden representar los mismos objetivos y, por lo tanto,
 deberían conducir a una interpretación semántica equivalente.
 
 Durante la ejecución no se contempla que una persona intervenga para
@@ -196,16 +192,9 @@ de personas y los objetos disponibles
 permite mantener las estructuras generales de las tareas mientras se modifican
 las entidades concretas presentes en una edición o escenario determinado.
 
-Conceptualmente, puede representarse el dominio de referencia como:
-
-\begin{equation}
-D_{\mathrm{GPSR}}=(T,K),
-\end{equation}
-
-donde $T$ representa las familias de tareas contempladas por el generador y $K$
-el conocimiento específico utilizado para instanciarlas. La estructura
-detallada de $K$ y su utilización en esta investigación se formalizan en la
-Sección~\ref{subsec:entidades_dominio}.
+Conceptualmente, el dominio de referencia combina las familias de tareas contempladas 
+por el generador con el conocimiento específico utilizado para instanciarlas. 
+Este último se representa mediante \(K\) y se formaliza en la Sección~\ref{subsec:entidades_dominio}.
 
 
 \subsection{Dominio de referencia y alcance lingüístico}
@@ -217,8 +206,8 @@ el generador oficial. Esta distinción resulta especialmente importante debido
 a que una misma intención puede expresarse mediante diferentes construcciones
 lingüísticas.
 
-El propio procedimiento de GPSR 2026 introduce variación sobre las órdenes
-generadas. Una vez producido un comando mediante el generador oficial, el
+De manera adicional, el reglamento de GPSR 2026 incorpora un mecanismo de variación 
+sobre las órdenes generadas. Una vez producido un comando mediante el generador oficial, el
 reglamento establece que éste se proporciona a un modelo de lenguaje para
 obtener una formulación similar. Además, una instrucción puede ser reformulada
 hasta tres veces, utilizando expresiones progresivamente más simples cuando sea
@@ -248,8 +237,7 @@ intérprete no consiste, por tanto, en memorizar las plantillas del generador,
 sino en establecer una correspondencia entre distintas realizaciones
 lingüísticas y una representación semántica común.
 
-Usando los ejemplos anteriores, ambos deben corresponder a la misma secuencia
-de objetivos:
+Ambas formulaciones deben corresponder a la misma secuencia de objetivos:
 
 \begin{verbatim}
 go(kitchen)
@@ -365,7 +353,7 @@ take(apple)
 deliver(apple, to=me)
 \end{verbatim}
 
-La interpretación no consiste, por tanto, únicamente en identificar palabras
+La interpretación no consiste únicamente en identificar palabras
 clave. También debe reconocer las subtareas explícitas o implícitas, las
 entidades involucradas y las relaciones necesarias entre ellas.
 
@@ -541,7 +529,7 @@ G=(g_1,g_2,\ldots,g_n).
 \]
 
 Cada objetivo $g_i$ contiene un tipo de intención y los argumentos necesarios
-para describirla. Por ejemplo:
+para describirla. Algunos ejemplos de objetivos individuales son:
 
 \begin{verbatim}
 go(kitchen)
@@ -962,21 +950,8 @@ x\rightarrow G\rightarrow P.
 \section{Arquitecturas conceptuales evaluadas}
 \label{sec:arquitecturas_conceptuales}
 
-A partir de la formalización anteriormente presentada en la
-Sección~\ref{sec:formalizacion_ordenes}, el problema estudiado puede resumirse
-mediante dos etapas principales:
-
-\[
-x\rightarrow G\] \[G\rightarrow P,
-\]
-
-donde una instrucción en lenguaje natural $x$ se transforma primero en una
-secuencia de objetivos semánticos $G$ y posteriormente en un plan de acciones
-$P$.
-
-Las dos arquitecturas consideradas en esta investigación resuelven este mismo
-problema, pero distribuyen de manera diferente las responsabilidades de
-interpretación y planificación.
+A partir de la formalización presentada en la Sección~\ref{sec:formalizacion_ordenes}, 
+las dos arquitecturas consideradas en esta investigación resuelven el mismo problema, pero distribuyen de manera diferente las responsabilidades de interpretación y planificación.
 
 En la arquitectura Qwen--CLIPS, ambas funciones se encuentran separadas:
 Qwen realiza la interpretación semántica y CLIPS transforma posteriormente los
@@ -1056,27 +1031,29 @@ P
 \label{eq:arquitectura_qwen_clips}
 \end{equation}
 
-Qwen actúa como intérprete semántico. Su responsabilidad consiste en recibir la
-instrucción en lenguaje natural y producir una secuencia ordenada de objetivos
-pertenecientes al vocabulario definido en $\mathcal{G}$.
+% Qwen actúa como intérprete semántico. Su responsabilidad consiste en recibir la
+% instrucción en lenguaje natural y producir una secuencia ordenada de objetivos
+% pertenecientes al vocabulario definido en $\mathcal{G}$.
 
-Por ejemplo, una instrucción como:
+% Por ejemplo, una instrucción como:
 
-\begin{quote}
-\textit{``Bring me an apple from the kitchen.''}
-\end{quote}
+% \begin{quote}
+% \textit{``Bring me an apple from the kitchen.''}
+% \end{quote}
 
-puede ser interpretada como:
+% puede ser interpretada como:
 
-\begin{verbatim}
-go(kitchen)
-find(apple, kind=object)
-take(apple)
-deliver(apple, to=me)
-\end{verbatim}
+% \begin{verbatim}
+% go(kitchen)
+% find(apple, kind=object)
+% take(apple)
+% deliver(apple, to=me)
+% \end{verbatim}
 
-Qwen no determina directamente todas las acciones que deberá ejecutar el
-robot. Su función termina en la construcción de esta representación semántica.
+% Qwen no determina directamente todas las acciones que deberá ejecutar el
+% robot. Su función termina en la construcción de esta representación semántica.
+
+Qwen actúa como intérprete semántico. Su responsabilidad consiste en recibir la instrucción en lenguaje natural y producir una secuencia ordenada de objetivos pertenecientes al vocabulario definido en \(\mathcal G\). No determina directamente las acciones ejecutables; su responsabilidad termina en la construcción de la representación semántica definida en la Sección~\ref{subsec:objetivos_canonicos}.
 
 Antes de ser procesados por CLIPS, los objetivos obtenidos son sometidos a
 comprobaciones deterministas destinadas a verificar que utilizan la estructura,
@@ -1086,7 +1063,8 @@ información entre componentes se presentan posteriormente en el capítulo de
 implementación.
 
 La Figura~\ref{fig:arquitectura_QC} resume el flujo conceptual de esta
-arquitectura.
+arquitectura. Una vez aceptada la representación semántica, CLIPS se encarga de transformar
+los objetivos en acciones pertenecientes al repertorio $\mathcal{A}$.
 
 \begin{figure}[htbp]
     \centering
@@ -1095,8 +1073,6 @@ arquitectura.
     \label{fig:arquitectura_QC}
 \end{figure}
 
-Una vez aceptada la representación semántica, CLIPS se encarga de transformar
-los objetivos en acciones pertenecientes al repertorio $\mathcal{A}$.
 
 En esta arquitectura, CLIPS funciona como un expansor de objetivos basado en
 reglas de producción. Su función no consiste en interpretar nuevamente la
@@ -1177,24 +1153,14 @@ independiente.
 La Figura~\ref{fig:arquitectura_gpt} presenta el flujo conceptual de esta
 arquitectura.
 
-\begin{figure}[H]
+\begin{figure}[htbp]
     \centering
     \includegraphics[width=\textwidth]{Figures/arquitectura_gpt_directo.png}
     \caption{Arquitectura conceptual del planificador GPT directo.}
     \label{fig:arquitectura_gpt}
 \end{figure}
 
-Una diferencia fundamental respecto a Qwen--CLIPS es que los objetivos
-producidos por GPT no se envían posteriormente a CLIPS. El mismo modelo que
-interpreta la instrucción determina también las acciones que forman el plan.
-
-Por tanto, el flujo no corresponde a:
-
-\[
-G_{\mathrm{GPT}}\rightarrow\text{CLIPS}\rightarrow P,
-\]
-
-sino que tanto $G$ como $P$ constituyen productos de la misma inferencia.
+Una diferencia fundamental respecto a Qwen--CLIPS es que los objetivos producidos por GPT no se utilizan como entrada para CLIPS. Tanto $G$ como $P$ son generados durante una misma inferencia y se conservan como resultados diferenciados para su posterior evaluación.
 
 
 \subsubsection{Tipos de respuesta}
@@ -1332,7 +1298,7 @@ características de ambas estrategias.
 \centering
 \caption{Comparación conceptual entre las arquitecturas evaluadas.}
 \label{tab:comparacion_arquitecturas}
-\begin{tabular}{p{0.29\textwidth} p{0.29\textwidth} p{0.29\textwidth}}
+\begin{tabular}{|p{0.34\textwidth} |p{0.29\textwidth} |p{0.29\textwidth}|}
 \hline
 \textbf{Característica}
 &
@@ -1348,63 +1314,63 @@ Qwen
 &
 GPT
 \\
-
+\hline
 Generación del plan
 &
 CLIPS
 &
 GPT
 \\
-
+\hline
 Representación explícita de $G$
 &
 Sí
 &
 Sí
 \\
-
+\hline
 Generación de $P$
 &
 Reglas de producción
 &
 Generación condicionada del modelo
 \\
-
+\hline
 Conocimiento para expandir los objetivos
 &
 Representado explícitamente mediante reglas
 &
 Proporcionado mediante contexto y restricciones
 \\
-
+\hline
 Separación entre interpretación y planificación
 &
 Explícita entre componentes
 &
 Integrada en una misma inferencia
 \\
-
+\hline
 Estado durante la planificación
 &
 Predictivo y simbólico
 &
 Predictivo durante la generación
 \\
-
+\hline
 Dependencia de un servicio externo de terceros
 &
 No
 &
 Sí
 \\
-
+\hline
 Identificación de errores
 &
 Separación directa entre etapas
 &
 Separación posterior mediante $G$ y $P$
 \\
-
+\hline
 Variabilidad del resultado
 &
 Depende de los objetivos, reglas y condiciones iniciales
@@ -1491,14 +1457,13 @@ consideran los siguientes niveles:
 \end{enumerate}
 
 Estos niveles no deben considerarse equivalentes.
-
 Una salida puede ser sintáctica y estructuralmente válida y, aun así,
 representar incorrectamente la intención del usuario. De manera similar, un
 plan puede ser conceptualmente correcto pero fallar durante la ejecución debido
 a condiciones externas al proceso de planificación.
 
 Esta separación permite evitar que todos los fallos observados sean agrupados
-bajo una única categoría de ``plan incorrecto''.
+bajo una única categoría de \textit{plan incorrecto}.
 
 
 % ------------------------------------------------------------
@@ -1662,17 +1627,8 @@ P_{\mathrm{CLIPS}}
 \end{equation}
 
 Esta condición no constituye una tercera arquitectura de planificación. Su
-propósito es evaluar únicamente la transformación:
-
-\[
-G\rightarrow P,
-\]
-
-eliminando temporalmente los posibles errores producidos durante:
-
-\[
-x\rightarrow G.
-\]
+propósito es evaluar únicamente la transformación $G\rightarrow P$,
+eliminando temporalmente los posibles errores producidos durante $x\rightarrow G$.
 
 Si CLIPS genera un plan correcto cuando recibe $G_{\mathrm{ref}}$, pero el flujo
 completo Qwen--CLIPS falla para la misma instrucción, el error puede encontrarse
