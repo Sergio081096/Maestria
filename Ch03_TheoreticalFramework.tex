@@ -237,14 +237,9 @@ intérprete no consiste, por tanto, en memorizar las plantillas del generador,
 sino en establecer una correspondencia entre distintas realizaciones
 lingüísticas y una representación semántica común.
 
-Ambas formulaciones deben corresponder a la misma secuencia de objetivos:
-
-\begin{verbatim}
-go(kitchen)
-find(coke, kind=object)
-take(coke)
-deliver(coke, to=me)
-\end{verbatim}
+Ambas formulaciones deben corresponder a la misma secuencia de objetivos. 
+Esta propiedad se formaliza posteriormente mediante la noción de equivalencia 
+semántica presentada en la Sección~\ref{subsec:equivalencia_semantica}.
 
 Por tanto, en esta tesis GPSR se utiliza como una fuente controlada para definir
 las tareas, entidades y relaciones que forman parte del dominio experimental,
@@ -357,15 +352,9 @@ La interpretación no consiste únicamente en identificar palabras
 clave. También debe reconocer las subtareas explícitas o implícitas, las
 entidades involucradas y las relaciones necesarias entre ellas.
 
-El resultado de este proceso se representa mediante una secuencia:
-
-\[
-G=(g_1,g_2,\ldots,g_n),
-\]
-
-donde cada $g_i$ corresponde a un objetivo semántico. El número de objetivos
-depende de la tarea representada por la instrucción y no necesariamente de su
-longitud lingüística.
+El resultado de este proceso es una representación semántica intermedia,
+denotada mediante $G$, cuya estructura se describe en la
+Sección~\ref{subsec:objetivos_canonicos}.
 
 
 % ------------------------------------------------------------
@@ -688,33 +677,12 @@ greet(Robin)
 
 incorpora una intención que no forma parte de la orden original.
 
-Por tanto, una interpretación correcta debe:
+En consecuencia, la fidelidad de la representación depende de que ésta
+conserve las subtareas, entidades, relaciones y dependencias expresadas o
+implicadas por la orden, sin introducir intenciones ajenas a ella.
 
-\begin{itemize}
-
-    \item conservar las subtareas solicitadas;
-
-    \item evitar objetivos que no se deriven de la instrucción;
-
-    \item conservar las entidades y sus tipos;
-
-    \item mantener las relaciones relevantes entre las entidades;
-
-    \item preservar el orden lógico necesario entre las subtareas.
-
-\end{itemize}
-
-Cuando se dispone de una representación de referencia
-$G_{\mathrm{ref}}$, el caso ideal corresponde a que la representación
-producida, $G_{\mathrm{pred}}$, coincida con ella:
-
-\[
-G_{\mathrm{pred}}=G_{\mathrm{ref}}.
-\]
-
-Esta condición es estricta y puede descomponerse posteriormente en criterios
-más específicos para determinar qué elementos de una interpretación fueron
-correctos o incorrectos.
+Estos requisitos se formalizan posteriormente como criterios de validez en la
+Sección~\ref{subsec:validez_interpretacion}.
 
 
 % ------------------------------------------------------------
@@ -879,11 +847,11 @@ De manera similar:
 
 \begin{verbatim}
 take(apple)
-deliver(apple, to=Robin)
+place(apple, on=table)
 \end{verbatim}
 
 establece una condición intermedia: después de tomar la manzana, el plan puede
-considerar que el robot dispone del objeto para realizar la entrega.
+considerar que el robot dispone del objeto para realizar su colocación.
 
 Estas condiciones representan el \textbf{estado esperado durante la
 planificación}. No constituyen una confirmación de que las acciones hayan sido
@@ -935,14 +903,7 @@ aparecer expresadas como verbos independientes.
 
 En conjunto, la representación $G$ debe conservar tanto la intención de la
 orden como las entidades, relaciones y dependencias necesarias para
-transformarla posteriormente en un plan coherente. De esta manera, la
-formalización de la presente sección mantiene como eje principal la relación:
-
-\[
-\boxed{
-x\rightarrow G\rightarrow P.
-}
-\]
+transformarla posteriormente en un plan coherente.
 
 
 
@@ -1031,28 +992,6 @@ P
 \label{eq:arquitectura_qwen_clips}
 \end{equation}
 
-% Qwen actúa como intérprete semántico. Su responsabilidad consiste en recibir la
-% instrucción en lenguaje natural y producir una secuencia ordenada de objetivos
-% pertenecientes al vocabulario definido en $\mathcal{G}$.
-
-% Por ejemplo, una instrucción como:
-
-% \begin{quote}
-% \textit{``Bring me an apple from the kitchen.''}
-% \end{quote}
-
-% puede ser interpretada como:
-
-% \begin{verbatim}
-% go(kitchen)
-% find(apple, kind=object)
-% take(apple)
-% deliver(apple, to=me)
-% \end{verbatim}
-
-% Qwen no determina directamente todas las acciones que deberá ejecutar el
-% robot. Su función termina en la construcción de esta representación semántica.
-
 Qwen actúa como intérprete semántico. Su responsabilidad consiste en recibir la instrucción en lenguaje natural y producir una secuencia ordenada de objetivos pertenecientes al vocabulario definido en \(\mathcal G\). No determina directamente las acciones ejecutables; su responsabilidad termina en la construcción de la representación semántica definida en la Sección~\ref{subsec:objetivos_canonicos}.
 
 Antes de ser procesados por CLIPS, los objetivos obtenidos son sometidos a
@@ -1063,8 +1002,7 @@ información entre componentes se presentan posteriormente en el capítulo de
 implementación.
 
 La Figura~\ref{fig:arquitectura_QC} resume el flujo conceptual de esta
-arquitectura. Una vez aceptada la representación semántica, CLIPS se encarga de transformar
-los objetivos en acciones pertenecientes al repertorio $\mathcal{A}$.
+arquitectura. 
 
 \begin{figure}[htbp]
     \centering
@@ -1073,6 +1011,8 @@ los objetivos en acciones pertenecientes al repertorio $\mathcal{A}$.
     \label{fig:arquitectura_QC}
 \end{figure}
 
+Una vez aceptada la representación semántica, CLIPS se encarga de transformar
+los objetivos en acciones pertenecientes al repertorio $\mathcal{A}$.
 
 En esta arquitectura, CLIPS funciona como un expansor de objetivos basado en
 reglas de producción. Su función no consiste en interpretar nuevamente la
@@ -1098,7 +1038,7 @@ asociadas con un objetivo pueden considerar los resultados esperados de
 objetivos procesados previamente.
 
 En esta arquitectura, dicha información forma parte del proceso simbólico de
-expansión y no representa una confirmación del estado físico del robot. Su
+expansión. Su
 función se limita a mantener consistencia durante la construcción del plan.
 
 
@@ -1242,9 +1182,6 @@ En la arquitectura simbólica, las relaciones necesarias para mantener esta
 coherencia se representan mediante conocimiento y reglas explícitas. En GPT
 directo, el modelo debe conservarlas durante la generación condicionada por
 el contexto y las restricciones proporcionadas.
-
-En ambos casos, el estado considerado durante la planificación es predictivo y
-no constituye una observación confirmada del entorno físico.
 
 
 \subsubsection{Separación posterior de interpretación y planificación}
@@ -1498,9 +1435,9 @@ consideran principalmente los siguientes criterios:
 
 \end{enumerate}
 
-Cuando se dispone de una representación de referencia
-$G_{\mathrm{ref}}$, el caso ideal corresponde a que la representación producida
-$G_{\mathrm{pred}}$ coincida con ella:
+Cuando se dispone de una representación de referencia $G_{\mathrm{ref}}$, 
+la interpretación producida por el sistema puede compararse con ella. 
+El caso ideal corresponde a:
 
 \[
 G_{\mathrm{pred}}=G_{\mathrm{ref}}.
@@ -1515,24 +1452,16 @@ entidad, relaciones incorrectas u otros tipos de discrepancia.
 \label{subsubsec:consistencia_reformulaciones}
 
 La variabilidad lingüística introduce un criterio adicional de validez.
-
-Como se definió en la Sección~\ref{subsec:equivalencia_semantica}, dos
-formulaciones diferentes pueden representar una misma tarea. En ese caso,
-idealmente ambas deben producir la misma representación semántica:
-
-\[
-x_1\sim x_2
-\quad\Rightarrow\quad
-G_1=G_2.
-\]
+Como se definió en la Sección~\ref{subsec:equivalencia_semantica},
+formulaciones semánticamente equivalentes deben conducir idealmente a la
+misma representación canónica.
 
 Esta propiedad resulta especialmente relevante en GPSR, donde una misma
 instrucción puede ser reformulada sin modificar sus objetivos.
 
-Por tanto, la capacidad de interpretar correctamente una orden no se evalúa
-únicamente mediante una formulación aislada, sino también mediante la
-consistencia del sistema ante diferentes expresiones de una misma intención.
-
+Por tanto, la evaluación debe considerar no sólo la interpretación de una
+formulación aislada, sino también la consistencia del sistema ante diferentes
+expresiones de una misma intención.
 
 % ------------------------------------------------------------
 \subsection{Validez y consistencia del plan}
@@ -1565,16 +1494,10 @@ criterios:
 
 \end{enumerate}
 
-Por ejemplo, una acción de entrega de un objeto debe aparecer después de las
-acciones necesarias para obtener dicho objeto y localizar al destinatario.
-
-De manera similar, una acción de aproximación a una persona requiere que dicha
-persona haya sido identificada previamente.
-
-Por tanto, una secuencia puede estar formada únicamente por acciones válidas y,
-aun así, constituir un plan incorrecto si las acciones aparecen en un orden
-inadecuado, utilizan parámetros incompatibles o no cubren completamente los
-objetivos solicitados.
+Por lo tanto, una secuencia puede estar formada únicamente por acciones válidas
+y, aun así, constituir un plan incorrecto si presenta un orden inadecuado,
+utiliza parámetros incompatibles o no cubre completamente los objetivos
+solicitados.
 
 
 % ------------------------------------------------------------

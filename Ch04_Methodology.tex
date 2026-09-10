@@ -1,681 +1,870 @@
-% Borrador actualizado con las aclaraciones del autor; revisar las notas del Markdown.
-% Insertar después del capítulo 3. No contiene preámbulo ni bibliografía.
-\chapter{Metodología y diseño de las arquitecturas
-evaluadas}
+% Borrador revisado a partir de la versión del autor.
+% Los comentarios TODO son notas de trabajo y no aparecen en el documento compilado.
+% Mantener las referencias al capítulo 3 al integrar este archivo en la tesis.
 
-Este capítulo presenta la metodología para estudiar la transformación de
-instrucciones en lenguaje natural en planes de acciones para el robot de
-servicio Justina. A partir de la formalización del capítulo anterior, se
-describe la construcción del dominio experimental, la generación de
-pares de instrucciones y objetivos canónicos, y el diseño de las dos
-arquitecturas consideradas: Qwen--CLIPS y planificación directa con GPT.
-Asimismo, se establecen las condiciones necesarias para comparar sus
-salidas y distinguir las dificultades de interpretación de las de
-planificación.
+\chapter{Metodología y diseño de las arquitecturas evaluadas}
+\label{ch:metodologia}
 
-La metodología combina la construcción de un conjunto de datos
-supervisado con una comparación de sistemas que distribuyen de manera
-diferente las responsabilidades de interpretación y generación de
-acciones. En Qwen--CLIPS, el modelo de lenguaje obtiene una secuencia de
-objetivos y el componente simbólico la expande mediante reglas. En GPT
-directo, una misma inferencia produce tanto los objetivos como el plan.
-La condición adicional que entrega objetivos de referencia a CLIPS se
-utiliza exclusivamente para examinar la etapa simbólica.
+En esta investigación se desarrolló una arquitectura para transformar
+instrucciones en lenguaje natural en planes de acciones para el robot
+Justina, mediante la especialización de Qwen2.5-7B como intérprete semántico
+y la expansión de objetivos mediante reglas CLIPS. Para estudiar esta
+estrategia se diseñó una arquitectura de comparación en la que un modelo
+GPT genera los objetivos y el plan durante una misma inferencia.
 
-El capítulo expone las decisiones de diseño y el procedimiento
-documentado de construcción de datos. Los detalles de programación,
-despliegue y configuración se reservan para el capítulo 5; el protocolo
-concreto de experimentación y las métricas se desarrollan en el capítulo
-6. Los controles que requieren confirmación experimental se identifican
-en las notas editoriales que acompañan este borrador.
+El desarrollo requirió adaptar el generador de comandos GPSR, construir un
+conjunto de datos con etiquetas semánticas, establecer una interfaz entre
+la interpretación y la planificación, y expresar el conocimiento operativo
+en las dos arquitecturas. Estas decisiones se apoyan en las
+representaciones y los criterios definidos en el
+Capítulo~\ref{ch:formalizacion}.
 
-\section{Diseño metodológico de la
-investigación}
+Este capítulo explica cómo se construyó el dominio de trabajo, qué
+modificaciones se realizaron para obtener el conjunto de datos y cómo se
+diseñó la comparación entre las arquitecturas. Los detalles de código,
+entrenamiento y despliegue se presentan en el capítulo 5. El protocolo de
+evaluación, las métricas y las condiciones concretas de los experimentos
+se desarrollan en el capítulo 6.
+
+% TODO: Contrastar la formulación de 4.1 con la hipótesis y los objetivos
+% definitivos del capítulo 1 antes de cerrar la versión final.
+
+\section{Diseño metodológico de la investigación}
+\label{sec:diseno_metodologico}
 
 \subsection{Problema experimental}
 
-El problema experimental consiste en determinar cómo las dos
-arquitecturas transforman órdenes pertenecientes a un dominio común en
-planes compatibles con las capacidades de Justina. La comparación
-considera la fidelidad con la que se recuperan las subtareas
-solicitadas, la conservación de entidades y dependencias, y la
-consistencia de las acciones generadas. No se presupone que una
-arquitectura produzca mejores resultados que la otra.
+La investigación estudia la fidelidad y la consistencia con las que dos
+arquitecturas transforman instrucciones de un dominio común en planes
+compatibles con las capacidades de Justina. La comparación considera
+tanto la recuperación de las subtareas solicitadas como su realización
+mediante acciones, con especial atención a las entidades y dependencias
+que intervienen en órdenes compuestas.
 
-Para una instrucción \(x\), se considera una secuencia de objetivos de
-referencia \(G_{\mathrm{ref}}\). La arquitectura Qwen--CLIPS genera una
-predicción \(G_{\mathrm{Q}}\) y, si esta supera las comprobaciones de
-entrada, obtiene un plan \(P_{\mathrm{Q}}\) mediante expansión
-simbólica. Por su parte, GPT produce una respuesta que contiene
-\(G_{\mathrm{GPT}}\) y \(P_{\mathrm{GPT}}\). Esta representación permite
-contrastar la interpretación de ambos modelos contra una referencia
-común y examinar después si sus planes satisfacen la tarea.
+La unidad básica de análisis es una instrucción \(x\), asociada con una
+secuencia de objetivos de referencia \(G_{\mathrm{ref}}\). Se conserva
+la notación \(G_{\mathrm{pred}}\) del capítulo anterior para representar
+una secuencia de objetivos predicha. Cuando sea necesario distinguir
+su procedencia, se utilizarán \(G_{\mathrm{pred}}^{\mathrm{Qwen}}\) y
+\(G_{\mathrm{pred}}^{\mathrm{GPT}}\). Los superíndices identifican el
+modelo que produce la representación.
 
-La unidad básica de comparación es la misma instrucción presentada a
-cada arquitectura bajo una configuración del dominio previamente fijada.
-Cuando se utilizan reformulaciones, estas se relacionan con su intención
-de referencia para estudiar la estabilidad de la interpretación frente a
-cambios lingüísticos.
+En Qwen--CLIPS, la predicción \(G_{\mathrm{pred}}^{\mathrm{Qwen}}\)
+se somete a validación y conversión antes de su expansión mediante
+CLIPS, que produce el plan \(P^{\text{Qwen--CLIPS}}\). En la arquitectura
+directa, GPT produce \(G_{\mathrm{pred}}^{\mathrm{GPT}}\) y
+\(P^{\mathrm{GPT}}\) durante una misma inferencia. Estos productos
+permiten examinar la interpretación frente a una referencia común y
+analizar después la correspondencia entre los objetivos y las acciones.
 
-\subsection{Variables y condiciones de
-comparación}
+La evaluación se orienta a determinar en qué tareas aparecen diferencias
+de comportamiento y qué tipo de errores explica esas diferencias. Cuando
+se utilizan varias formulaciones de una misma intención, se considera
+también la estabilidad de la representación obtenida ante los cambios
+lingüísticos.
 
-El factor principal de comparación es la arquitectura completa. En una
-condición se combinan un modelo Qwen especializado y reglas CLIPS; en la
-otra se utiliza un modelo GPT condicionado por instrucciones, catálogos
-y restricciones de planificación. Por tanto, las diferencias observadas
-no podrán atribuirse únicamente al uso de reglas: también intervienen el
-modelo de lenguaje, su adaptación y la forma de suministrar
-conocimiento.
+\subsection{Variables y condiciones de comparación}
 
-Las respuestas de interés comprenden la corrección de los objetivos, la
-validez y consistencia del plan y el rendimiento computacional. La
-familia de tarea, el número de objetivos, las dependencias referenciales
-y la variante lingüística constituyen dimensiones para analizar el
-comportamiento, sin confundirlas con resultados independientes cuando
-proceden de una misma intención.
+El factor principal de comparación es la arquitectura completa. En
+Qwen--CLIPS, la interpretación se obtiene mediante un modelo especializado
+y la expansión se realiza con reglas explícitas. En GPT directo, ambas
+funciones se asignan a un modelo condicionado por una especificación del
+dominio y del comportamiento operativo esperado.
 
-Como condiciones comunes se fijan el idioma principal de entrada, los
-catálogos de entidades, el vocabulario semántico, el repertorio de
-acciones y las convenciones de inicio y finalización. También debe
-conservarse la misma configuración funcional del robot, incluida la
-disponibilidad de manipulación. La comparación principal se plantea para
-instrucciones en inglés y capacidades efectivamente representadas por
-ambos sistemas.
+Las variables de respuesta comprenden la corrección de los objetivos, la
+validez y consistencia del plan y el rendimiento computacional. La familia
+de tarea, la longitud de la secuencia de objetivos, los tipos de entidades
+y las dependencias referenciales se utilizan para organizar el análisis.
+Las variantes que expresan una misma intención se mantienen identificadas
+como tales para interpretar adecuadamente los resultados por caso y por
+grupo de reformulaciones.
 
-\subsection{Estrategia general de
-evaluación}
+La comparación se delimita a instrucciones en inglés, un vocabulario
+semántico común y un repertorio compartido de acciones. El diseño exige
+igualdad de catálogos, configuración de manipulación y convenciones de
+inicio y finalización. Estas condiciones permiten plantear la misma tarea
+a ambos sistemas, aunque cada uno utilice mecanismos distintos para
+representar y aplicar el conocimiento.
 
-La estrategia distingue tres niveles de observación. El primero examina
-la transformación de la orden en objetivos. El segundo analiza la
-correspondencia entre objetivos y acciones, así como la satisfacción de
-la instrucción original. El tercero, cuando se realizan pruebas con
-Justina, estudia la ejecución física del plan. Un fallo de percepción o
-manipulación no implica por sí mismo un error de interpretación, del
-mismo modo que la generación de una secuencia de acciones no demuestra
-su éxito físico.
+Dado que entre las arquitecturas cambian también el modelo de lenguaje y
+su adaptación, las diferencias observadas no pueden atribuirse
+exclusivamente a la presencia de reglas. Las conclusiones se referirán al
+comportamiento de las configuraciones evaluadas dentro del dominio
+establecido.
 
-La condición de control introduce directamente \(G_{\mathrm{ref}}\) en
-el componente simbólico. Si esta condición produce un plan correcto y la
-cadena completa falla, se revisan la predicción de Qwen, su validación y
-su conversión a hechos. Si el control también falla, se examinan la
-cobertura de reglas, el estado inicial y las interfaces. La condición
-ayuda a localizar errores, pero no sustituye la inspección de los
-artefactos intermedios.
+\subsection{Estrategia general de evaluación}
 
-Las pruebas utilizadas para desarrollar o seleccionar el modelo se
-distinguen de la evaluación final. Un conjunto consultado repetidamente
-durante el desarrollo permite detectar regresiones, pero no aporta por
-sí solo una estimación independiente de generalización.
+La evaluación se organiza a partir de los niveles de validez definidos en
+la Sección~\ref{sec:criterios_validez}. Se examina primero la interpretación
+de la orden y después la generación del plan. Las pruebas físicas con
+Justina se consideran una etapa adicional, de manera que los fallos de
+ejecución puedan analizarse por separado de los errores anteriores.
 
-\section{Construcción del dominio
-experimental}
+Para estudiar la etapa simbólica se incorpora la condición de control de
+la Sección~\ref{subsec:control_clips}, en la que se proporcionan los
+objetivos de referencia a CLIPS. Esta condición permite contrastar el
+resultado de la expansión con el obtenido a partir de la interpretación
+de Qwen. La inspección de los objetivos y de su conversión a hechos ayuda
+a distinguir errores de interpretación, integración y expansión.
 
-\subsection{Fuentes de conocimiento
-GPSR}
+Se separan asimismo las comprobaciones realizadas durante el desarrollo
+de la evaluación comparativa. Las primeras permiten verificar el
+funcionamiento del sistema y corregir problemas de implementación. La
+segunda requiere instrucciones y referencias cuyo uso no haya intervenido
+en el ajuste de los componentes que se comparan.
 
-El dominio se construye a partir de las familias de comandos de General
-Purpose Service Robot y del conocimiento contenido en
-CompetitionTemplate. El CommandGenerator se utiliza como punto de
-partida para generar estructuras de instrucciones, mientras que
-CompetitionTemplate proporciona las entidades con las que se instancian.
-Esta separación permite conservar una estructura de tarea y modificar
-las personas, objetos o ubicaciones que participan en ella.
+\section{Construcción del dominio experimental}
+\label{sec:construccion_dominio}
 
-La adaptación documentada del generador incorpora la producción de
-objetivos canónicos, el mantenimiento del contexto entre subtareas,
-nuevas familias de órdenes simples, variantes superficiales y mecanismos
-de validación y balance. El propósito metodológico es obtener pares de
-entrada y etiqueta cuya relación pueda rastrearse hasta la familia y las
-entidades que originaron cada muestra.
+\subsection{Fuentes de conocimiento GPSR}
 
-GPSR delimita el conocimiento y las tareas de referencia, pero no se
-considera una sintaxis exclusiva de entrada. Las reformulaciones pueden
-variar siempre que expresen intenciones representables dentro del
-dominio y de las capacidades disponibles.
+Se tomó como punto de partida el CommandGenerator oficial de RoboCup@Home
+y la organización del conocimiento de CompetitionTemplate, descritos en
+la Sección~\ref{subsec:gpsr_generador}. El primero aporta estructuras de
+comandos y familias de tareas; el segundo proporciona las entidades con
+las que se construyen las instrucciones.
 
-\subsection{Catálogos de personas, objetos y
-ubicaciones}
+Sobre esta base se desarrolló una adaptación destinada a producir pares
+de órdenes y objetivos canónicos. Se incorporaron mecanismos para
+conservar el contexto entre subtareas, generar las etiquetas semánticas,
+introducir variantes lingüísticas y controlar la distribución y calidad
+de las muestras. De esta forma, la herramienta de generación se integró
+en un procedimiento de construcción de datos para la especialización del
+intérprete.
 
-Los catálogos comprenden nombres de personas, objetos concretos,
-categorías de objetos, habitaciones y ubicaciones. Las categorías se
-consideran en sus formas singular y plural cuando corresponde. Además de
-las entidades nominales, el dominio contempla personas genéricas y
-descripciones mediante gesto, postura o vestimenta, así como propiedades
-admitidas para la selección de objetos.
+La separación entre estructuras de tareas y catálogos se conservó en la
+adaptación. Esto permite modificar las entidades de una instancia sin
+alterar necesariamente la composición de sus objetivos. El alcance
+lingüístico se mantiene conforme a la
+Sección~\ref{subsec:dominio_referencia}: las plantillas sirven para
+construir datos controlados, mientras que el sistema busca interpretar
+otras formulaciones que expresen intenciones pertenecientes al mismo
+dominio.
 
-La generación utiliza CompetitionTemplate como fuente principal y
-contrasta los nombres de personas con el catálogo de conocimiento de
-Justina. Se identifican catálogos esenciales vacíos y colisiones entre
-personas y objetos como problemas que impiden continuar. Otras
-diferencias, como duplicados o divergencias de escritura, se reportan
-para revisión. El tipo de una entidad no se deduce exclusivamente de su
-capitalización: un objeto conserva su tipo aunque su nombre comience con
-mayúscula.
+\subsection{Catálogos de personas, objetos y ubicaciones}
 
-Para la comparación se requiere una versión común de estos catálogos.
-Las listas incluidas en el prompt de GPT deben contrastarse con las
-utilizadas por el generador y por el adaptador simbólico. Asimismo, es
-necesario distinguir las ubicaciones de navegación de los soportes
-locales de colocación, pues un mismo término puede intervenir en
-contextos espaciales diferentes.
+El conocimiento \(K\), definido en la
+Sección~\ref{subsec:entidades_dominio}, se concretó mediante catálogos de
+nombres de personas, objetos, categorías, habitaciones y ubicaciones.
+Se incluyeron formas singulares y plurales de categorías, así como las
+descripciones admitidas para búsquedas de personas y selección de objetos.
+
+Se implementó una validación de los catálogos para detectar condiciones
+que comprometen la generación de etiquetas, como un catálogo esencial
+vacío o una entidad clasificada simultáneamente como persona y objeto.
+También se incorporó una comparación de nombres con el banco de
+conocimiento de Justina para identificar diferencias entre la generación
+de datos y el sistema integrado.
+
+La clasificación de entidades se apoya en el tipo y en el contexto
+semántico. Se evitó utilizar la capitalización como criterio único, pues
+un objeto puede tener un nombre escrito con mayúscula inicial. Además,
+se distinguió conceptualmente una ubicación de navegación de un soporte
+de colocación: la primera indica dónde debe desarrollarse una subtarea;
+el segundo especifica una superficie o recipiente relacionado con la
+manipulación.
+
+Para la evaluación comparativa, la versión de los catálogos forma parte
+de la configuración que se mantendrá fija. Este control incluye su uso
+en el generador, en el adaptador simbólico y en las instrucciones
+proporcionadas a GPT.
+
+% TODO: Confirmar la versión común de los catálogos y la resolución de
+% términos que pueden designar tanto destinos como soportes locales.
 
 \subsection{Familias de tareas}
 
-El procedimiento organiza las instrucciones en familias y las agrupa en
-categorías de tareas de personas y objetos. Estas categorías permiten
-distribuir el muestreo, aunque una instrucción de transporte puede
-involucrar tanto un objeto como un destinatario humano. La clasificación
-responde a la familia generadora y no exige que todos los participantes
-de la orden pertenezcan al mismo tipo.
+El generador adaptado contempla 29 familias de comandos, organizadas en
+dos categorías principales: tareas de personas y tareas de objetos.
+Estas categorías sirven para distribuir las muestras según la familia
+generadora. Una tarea de objetos puede incluir un destinatario humano,
+por lo que la clasificación no exige que todas las entidades de la
+instrucción pertenezcan a un mismo tipo.
 
-Las familias incluyen navegación, búsqueda, saludo, seguimiento, guía,
-adquisición y comunicación de información, conteo y transporte de
-objetos. La documentación del generador describe una cobertura de 29
-familias y la incorporación de órdenes simples para buscar personas,
-buscar objetos y saludar a una persona en una habitación. Su inclusión
-evita que estas intenciones solo aparezcan como fragmentos de
-instrucciones compuestas.
+Se incluyeron tareas de navegación, búsqueda, saludo, seguimiento, guía,
+conteo, adquisición y comunicación de información, y transporte de
+objetos. Durante la adaptación se añadieron familias simples para buscar
+una persona, buscar un objeto y saludar a una persona en una habitación.
+Su incorporación permite representar estas intenciones como órdenes
+completas, además de su aparición dentro de instrucciones compuestas.
 
-Dentro de una familia se distinguen firmas de objetivos, entendidas como
-secuencias de nombres de objetivos sin sus entidades concretas. Por
-ejemplo, la firma de una búsqueda simple puede expresarse como
-\([\mathrm{go},\mathrm{find}]\). Esta firma describe la composición de
-la tarea, mientras que los argumentos especifican las entidades de cada
-instancia.
+Para distinguir las composiciones alcanzables dentro de una familia se
+utilizó la firma de objetivos: una secuencia que conserva los nombres de
+los objetivos y omite sus argumentos concretos. Por ejemplo,
+\([\mathrm{go},\mathrm{find}]\) identifica una búsqueda precedida de
+navegación. Las firmas permiten distribuir muestras según la estructura
+de la tarea y analizar diferencias que la clasificación por familia,
+por sí sola, puede ocultar.
 
-\subsection{Representación de los objetivos de
-referencia}
+\subsection{Representación de los objetivos de referencia}
 
-Cada muestra relaciona una instrucción con una secuencia ordenada
-\(G_{\mathrm{ref}}\). Su construcción utiliza el contexto de generación
-que contiene las entidades seleccionadas y las relaciones entre
-subtareas. Así, la etiqueta no se obtiene de la predicción del modelo
-que posteriormente se evalúa, sino de las funciones de generación
-semántica asociadas a la familia.
+La representación de referencia adoptada para la comparación utiliza el
+vocabulario canónico de la Tabla~\ref{tab:vocabulario_goals} y conserva el
+orden de los objetivos. Para construir las etiquetas del conjunto de datos
+se desarrollaron funciones semánticas asociadas con las familias de
+comandos. Estas funciones transforman las entidades y relaciones del
+contexto de generación en una secuencia de objetivos.
 
-El vocabulario definitivo comprende exclusivamente \texttt{go},
-\texttt{find}, \texttt{take}, \texttt{deliver}, \texttt{place},
-\texttt{guide}, \texttt{follow}, \texttt{count}, \texttt{tell},
-\texttt{save}, \texttt{answer\_question} y \texttt{greet}. Las
-intenciones de colocación se representan mediante \texttt{place} y las
-solicitudes de información mediante \texttt{tell}. \texttt{drop} y
-\texttt{talk} quedan excluidos como objetivos semánticos. Esta decisión
-conserva la distinción entre objetivos y acciones: \texttt{drop} puede
-seguir apareciendo como acción ejecutable en la expansión de
-\texttt{place}.
+La construcción es programática: la etiqueta se obtiene del contexto con
+el que se produce la instrucción, sin solicitar una interpretación al
+modelo que será entrenado. En las tareas compuestas, las funciones
+propagan el objeto o la persona de referencia hacia las subtareas
+posteriores. Los objetivos \texttt{find} y \texttt{count} incluyen el
+tipo mediante \texttt{kind}, mientras que los argumentos conservan los
+destinos, destinatarios y atributos relevantes.
 
-Los objetivos \texttt{find} y \texttt{count} incorporan explícitamente
-\texttt{kind=person} o \texttt{kind=object}. Esta decisión reduce la
-ambigüedad de operaciones que comparten un nombre pero requieren
-acciones diferentes. Las dependencias incluyen la adquisición de un
-objeto antes de entregarlo o colocarlo y la conservación de referentes
-entre una búsqueda y una interacción posterior.
+Una misma función semántica puede utilizarse para diferentes
+formulaciones de una tarea. Por ejemplo, la familia de transporte entre
+ubicaciones construye la firma
+\([\mathrm{go},\mathrm{find},\mathrm{take},\mathrm{place}]\) a partir
+del objeto, el origen y el destino seleccionados. Esta organización
+vincula la orden con su etiqueta y reduce la necesidad de definir una
+anotación independiente para cada realización superficial.
 
-Como ejemplo ilustrativo, la instrucción «Bring me the apple from the
-kitchen» se asocia con:
+Por ejemplo, la instrucción:
+
+\begin{quote}
+\textit{``Navigate to the bed then find a chocolate jello and take it and
+give it to me.''}
+\end{quote}
+
+se asocia con la siguiente representación:
 
 \begin{verbatim}
-go(kitchen)
-find(apple, kind=object)
-take(apple)
-deliver(apple, to=me)
+go(bed)
+find(chocolate jello, kind=object)
+take(chocolate jello)
+deliver(chocolate jello, to=me)
 \end{verbatim}
 
-La secuencia expresa las subtareas necesarias para satisfacer la orden
-sin anticipar todos los movimientos e intercambios que corresponderán al
-plan. Las etiquetas producidas automáticamente constituyen referencias
-operativas; su corrección debe examinarse mediante validaciones y
-revisión de casos, puesto que un error en la función generadora puede
-propagarse a múltiples muestras.
+En este caso, las referencias \textit{it} mantienen la identidad del
+objeto introducido en la búsqueda y \textit{me} identifica al operador
+como destinatario. La etiqueta recoge las subtareas de la orden, mientras
+que su expansión determinará las acciones concretas de navegación,
+percepción, manipulación e interacción.
 
-\section{Construcción del conjunto de
-datos}
+Durante el desarrollo se realizó una revisión manual inicial de algunos
+pares de instrucciones y objetivos. Posteriormente se incorporaron
+comprobaciones automatizadas sobre las etiquetas y las propiedades de
+generación. La revisión manual fue parcial y no constituyó una anotación
+exhaustiva ni una evaluación independiente de todos los ejemplos.
 
-\subsection{Adaptación del
-CommandGenerator}
+Las etiquetas se utilizan como referencias de origen programático. Su
+consistencia se examina mediante los controles de la
+Sección~\ref{subsec:validacion_datos}, que incluyen expectativas definidas
+en las pruebas para determinadas estructuras. Estos controles detectan
+errores de contrato y de composición, pero no sustituyen una comparación
+semántica independiente entre cada instrucción y su etiqueta. Un error
+compartido por la función generadora y sus controles puede permanecer en
+el conjunto y propagarse a varias muestras.
 
-La modificación central consiste en conservar un contexto compartido
-para generar la instrucción y su representación semántica. Este contexto
-permite mantener la identidad de personas y objetos al resolver
-continuaciones de una misma orden. La generación superficial y la
-generación de objetivos se separan para que una variación de redacción
-no cambie automáticamente el significado de la etiqueta.
+Las intenciones de comunicación de información se representan mediante
+\texttt{tell} y las de colocación mediante \texttt{place}, conforme al
+vocabulario de la Tabla~\ref{tab:vocabulario_goals}. Se mantiene la
+distinción entre objetivos y acciones ejecutables: la expansión de
+\texttt{place} puede incluir una acción \texttt{drop} del ejecutor.
 
-Entre las correcciones documentadas se encuentra el tratamiento de
-órdenes que solicitan información de una persona. Estas incluyen la
-adquisición de la información mediante \texttt{save} antes de
-comunicarla con \texttt{tell}. También se distingue el transporte entre
-ubicaciones, representado mediante
-\texttt{place(object,\ at=destination)}, de una relación específica de
-colocación sobre una superficie. Finalmente, se corrige la clasificación
-de una familia de adquisición de objetos para que no consuma la cuota de
-tareas de personas.
+% TODO: Identificar en el capítulo 5 la versión del dataset utilizada por
+% cada adaptador y el entrenamiento o checkpoint seleccionado.
 
-Estas modificaciones buscan mejorar la correspondencia entre intención,
-etiqueta y capacidad de expansión. La descripción de las funciones,
-archivos y pruebas que las implementan se reserva para el capítulo de
-implementación.
+\section{Construcción del conjunto de datos}
+\label{sec:construccion_dataset}
+
+\subsection{Adaptación del CommandGenerator}
+
+La adaptación se diseñó para vincular la generación lingüística con la
+generación semántica mediante un contexto compartido. En ese contexto se
+conservan las entidades seleccionadas y las relaciones necesarias para
+resolver las continuaciones de una orden. La decisión evita que la frase
+y su etiqueta se construyan mediante selecciones independientes que
+puedan producir referencias incompatibles.
+
+Se separó la definición de las formas de expresar una tarea de la función
+que determina sus objetivos. Las variantes superficiales controlan la
+redacción, mientras que las funciones semánticas establecen la secuencia
+canónica. Con esta organización, añadir una formulación para una intención
+existente no requiere modificar su representación semántica; incorporar
+una tarea diferente exige definir también su composición de objetivos.
+
+Se introdujeron además ajustes para conservar información necesaria en
+tareas compuestas. Las órdenes que solicitan el nombre, la postura o el
+gesto de una persona incluyen la adquisición de esa información mediante
+\texttt{save} antes de comunicarla con \texttt{tell}. En el transporte
+entre ubicaciones se utilizó \texttt{place} con la relación \texttt{at}
+para indicar el destino sin imponer una relación de apoyo sobre una
+superficie. También se corrigió la clasificación de una familia de
+adquisición de objetos para asignarla a la categoría correspondiente.
+
+Estos cambios forman parte del desarrollo del conjunto de datos y buscan
+preservar la correspondencia entre intención, etiqueta y expansión. La
+estructura de los archivos y las funciones que los implementan se
+presenta en el capítulo 5.
+
+La Tabla~\ref{tab:adaptaciones_generador} sintetiza las decisiones de
+adaptación y su función dentro de la metodología. Se distingue la
+construcción de etiquetas de los mecanismos que controlan su estructura
+y la distribución de las muestras.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Modificaciones incorporadas en la adaptación del generador.}
+\label{tab:adaptaciones_generador}
+\begin{tabular}{|p{0.21\textwidth}|p{0.34\textwidth}|p{0.32\textwidth}|}
+\hline
+\textbf{Aspecto} & \textbf{Modificación} & \textbf{Propósito} \\
+\hline
+Construcción de etiquetas
+& Funciones semánticas asociadas con familias y subtareas.
+& Obtener objetivos a partir del contexto utilizado para construir la orden. \\
+\hline
+Contexto compartido
+& Propagación del objeto o la persona entre subtareas relacionadas.
+& Mantener la identidad de las entidades durante la composición de la tarea. \\
+\hline
+Variación lingüística
+& Separación de las plantillas superficiales y la generación semántica.
+& Variar la formulación conservando la intención y sus argumentos. \\
+\hline
+Cobertura de tareas
+& Incorporación de familias simples de búsqueda y saludo.
+& Representar esas intenciones como órdenes completas, además de subtareas. \\
+\hline
+Composición semántica
+& Captura de información con \texttt{save} y representación del destino
+de transporte mediante \texttt{at}.
+& Conservar operaciones y relaciones necesarias antes de informar o colocar. \\
+\hline
+Distribución y control
+& Balance por categoría, familia y firma; deduplicación y validación.
+& Controlar la cobertura, evitar repeticiones y detectar inconsistencias. \\
+\hline
+\end{tabular}
+\end{table}
 
 \subsection{Generación de órdenes}
 
-Para construir una muestra se seleccionan una categoría, una familia y
-una firma alcanzable de objetivos. Después se resuelven las
-continuaciones de la instrucción, se seleccionan entidades compatibles y
-se sustituyen los marcadores de las plantillas. La muestra conserva el
-contexto requerido para que una referencia posterior corresponda a la
-entidad introducida previamente.
+La construcción de una muestra comienza con la selección de una
+categoría, una familia y una firma de objetivos alcanzable. A
+continuación se determinan las subtareas que componen la orden, se seleccionan las entidades
+compatibles y se sustituyen los elementos variables de la plantilla.
+El contexto se propaga entre las subtareas para conservar sus referencias.
 
-Cada entrada se acompaña de metadatos de auditoría: familia, categoría,
-identificador de variante superficial, firma de objetivos, tipos de
-entidades y campos utilizados. Estos metadatos permiten examinar la
-cobertura y localizar concentraciones de errores. No forman parte de la
-respuesta que Qwen aprende a producir.
+Cada muestra contiene la instrucción, los objetivos y metadatos que
+identifican su procedencia. Se registran la familia, la categoría, la
+variante superficial, la firma de objetivos, los tipos de entidades y los
+campos utilizados. Esta información permite analizar la cobertura del
+conjunto y agrupar los errores por características de la tarea.
 
-La generación utiliza una semilla configurable y un límite de
-reintentos. La reproducibilidad requiere conservar también las versiones
-del generador y de los catálogos, ya que una semilla idéntica no
-reproduce las mismas muestras si cambian las fuentes o las reglas de
-construcción.
+Se incorporaron una semilla de generación y un límite de reintentos para
+controlar el procedimiento. La muestra se acepta después de comprobar
+su etiqueta y su condición de unicidad. Cuando una combinación no cumple
+los criterios, se realiza un nuevo intento dentro de los límites
+establecidos. La reproducción del conjunto depende de conservar, además
+de la semilla, las mismas versiones del generador y de sus catálogos.
 
-\subsection{Generación de objetivos
-canónicos}
+\subsection{Generación de objetivos canónicos}
 
-Las funciones semánticas asociadas a cada familia convierten el contexto
-compartido en la secuencia de objetivos. Esta separación permite que las
-entidades que aparecen en la orden coincidan con las utilizadas en su
-etiqueta y que las relaciones implícitas se representen en el orden
-lógico requerido.
+Las funciones semánticas transforman el contexto de la muestra en una
+secuencia de objetivos. En las instrucciones compuestas, esta
+transformación conserva los objetos y personas compartidos entre acciones
+y establece el orden lógico de las operaciones. Las intenciones de
+colocación se representan mediante \texttt{place} y las de comunicación
+de información mediante \texttt{tell}, de acuerdo con el vocabulario
+común de la investigación.
 
-El contrato comprueba nombres de objetivos, argumentos, tipos y
-relaciones admitidas. También verifica dependencias, como la presencia
-de una adquisición anterior a la entrega o colocación del mismo objeto,
-y descarta ciertas secuencias redundantes. Tales comprobaciones reducen
-inconsistencias detectables, pero no garantizan que toda etiqueta
-preserve la intención de la frase.
+Se desarrolló un validador del contrato semántico que comprueba los
+objetivos permitidos, sus argumentos y las relaciones admitidas. También
+verifica dependencias como la adquisición de un objeto antes de su
+entrega o colocación. Estas comprobaciones permiten rechazar etiquetas
+incompletas o incompatibles antes de incorporarlas al conjunto.
 
-La uniformidad de la representación resulta necesaria para distinguir
-errores del modelo de diferencias de escritura. La política de
-normalización debe conservar tipos, argumentos, relaciones y orden. Una
-comparación que ignore únicamente mayúsculas puede acompañar a la
-comparación estricta cuando los catálogos admitan esa equivalencia, sin
-convertir diferencias semánticas en coincidencias.
+Para comparar representaciones se distingue la escritura de las entidades
+de su contenido semántico. La normalización de mayúsculas puede utilizarse
+cuando preserve la identidad establecida por el catálogo. En todos los
+casos se mantienen el tipo, los valores de los argumentos, las relaciones
+y el orden de los objetivos, de modo que una normalización superficial
+no oculte una diferencia de significado.
 
-\subsection{Variación
-lingüística}
+% TODO: Verificar la alineación del prompt y del esquema utilizados en la
+% evaluación con el vocabulario canónico y el dataset del experimento.
 
-El generador documentado incorpora tres realizaciones superficiales por
-familia y mantiene una única fuente de generación semántica. Al iniciar
-el procedimiento se comprueba que las variantes preserven los mismos
-campos de contenido. Esto permite introducir diversidad de formulación
-sin asignar etiquetas distintas a cambios puramente superficiales.
+\subsection{Variación lingüística}
 
-La coincidencia de campos es una condición necesaria, pero no suficiente
-para asegurar equivalencia: dos expresiones con las mismas entidades
-pueden cambiar el orden, el alcance o la relación entre acciones. Por
-ello, la revisión de variantes debe considerar también estos aspectos y
-no limitarse a comparar sus marcadores.
+Se incorporaron varias realizaciones superficiales por familia para
+introducir distintas formas de expresar una misma estructura de tarea.
+Las variantes utilizan los mismos campos de contenido y comparten la
+función de generación semántica. Esta decisión permite variar la forma
+lingüística sin cambiar la etiqueta cuando se conservan la intención y
+las entidades.
 
-Durante el desarrollo se utilizó una prueba de funcionamiento de 48
-comandos que, según la documentación, incluye paráfrasis, pronombres y
-ruido asociado al reconocimiento de voz. Esta prueba tuvo un propósito
-de comprobación funcional; no constituye el conjunto de evaluación
-experimental ni demuestra generalización lingüística amplia. Para
-estudiar formulaciones fuera de las plantillas de entrenamiento se
-propone una evaluación separada con redacciones elaboradas de manera
-independiente, cuya procedencia y ausencia de uso durante el ajuste
-deberán registrarse.
+Se implementó una comprobación de los campos de las variantes al iniciar
+la generación. Su finalidad es detectar omisiones o incorporaciones de
+información incompatibles con la familia. La conservación de esos campos
+no equivale a una demostración de equivalencia lingüística: el orden, el
+alcance de las expresiones y las relaciones entre subtareas también
+determinan el significado de la instrucción.
+
+La diversidad introducida mediante plantillas se considera variación
+controlada dentro del dominio. Para estudiar formulaciones que no
+procedan de esas plantillas, el diseño de evaluación contempla un grupo
+separado de reformulaciones elaboradas de manera independiente del
+entrenamiento. Esta distinción permitirá analizar por separado la
+interpretación de estructuras conocidas y la respuesta ante nuevas
+formas de expresar las mismas tareas.
+
+% TODO: Concretar en el capítulo 6 el origen, revisión y número de
+% reformulaciones independientes. El párrafo anterior describe el diseño
+% de evaluación; no afirma que este conjunto ya haya sido construido.
+% TODO: Confirmar el número efectivo de variantes en command_constants.py
+% para la versión del dataset. Las pruebas adjuntas admiten de tres a cinco
+% por familia; por sí solas no demuestran que todas tengan exactamente tres.
 
 \subsection{Balance y deduplicación}
 
-El balance se realiza jerárquicamente por categoría, familia y firma de
-objetivos. La configuración documentada solicita 40 000 muestras y
-asigna la mitad a tareas de personas y la mitad a tareas de objetos.
-Dentro de cada categoría, las cuotas buscan mejorar la representación de
-familias y firmas que podrían quedar subrepresentadas mediante una
-selección puramente aleatoria.
+El conjunto de datos se construyó con 40\,000 muestras. Para distribuir
+la generación se asignó la mitad a familias de personas y la mitad a
+familias de objetos. Dentro de cada categoría se establecieron cuotas por
+familia y por firma de objetivos, con el propósito de reducir la
+concentración de ejemplos en las estructuras con mayor probabilidad de
+ser seleccionadas.
 
-La deduplicación utiliza la instrucción convertida a minúsculas y con
-espacios normalizados. Cuando una misma entrada se asocia con objetivos
-diferentes, el procedimiento registra un conflicto de etiqueta y la
-rechaza. Este mecanismo evita duplicados textuales normalizados dentro
-del conjunto generado; no identifica todas las paráfrasis ni asegura
-independencia semántica entre particiones.
+La deduplicación se realizó sobre la instrucción convertida a minúsculas
+y con espacios normalizados. Cuando una misma entrada aparecía asociada
+con objetivos diferentes, el procedimiento la identificaba como un
+conflicto de etiqueta y la rechazaba. Este criterio evita repeticiones
+textuales normalizadas y etiquetas contradictorias para una misma
+entrada, aunque no agrupa todas las expresiones semánticamente
+equivalentes.
 
-Algunas familias disponen de pocas combinaciones únicas y pueden
-saturarse antes de alcanzar su cuota. En ese caso, el déficit se
-redistribuye dentro de la misma categoría, dando prioridad a familias y
-firmas menos representadas. Por consiguiente, el balance de categorías
-puede mantenerse aunque el número final de ejemplos por familia no sea
-exactamente uniforme. La distribución efectivamente obtenida debe
-reportarse junto con el conjunto final.
+Se incorporó una redistribución de cuotas para las familias cuyo número
+de combinaciones únicas resulta limitado. Al alcanzar el límite de
+reintentos, las muestras faltantes se reasignan dentro de la misma
+categoría, dando prioridad a las familias y firmas menos representadas.
+Así se conserva la distribución entre tareas de personas y objetos sin
+introducir duplicados para completar una cuota.
 
-\subsection{División de entrenamiento y
-evaluación}
+El balance resultante debe interpretarse en estos dos niveles: la
+proporción entre categorías se mantiene, mientras que la distribución
+entre familias puede variar debido a la saturación. Las cantidades
+finales por familia y firma se presentan junto con las características
+del conjunto en el capítulo 5.
 
-El README del experimento de 40 000 muestras reporta una división de 36
-000 ejemplos de entrenamiento y 4 000 de validación. Esta última
-partición permite observar el comportamiento durante el ajuste. Si se
-utiliza para seleccionar configuraciones o checkpoints, debe conservar
-su denominación de validación y no presentarse como prueba final
+\subsection{División de entrenamiento y evaluación}
+
+Las 40\,000 muestras se dividieron en 36\,000 ejemplos de entrenamiento
+y 4\,000 de validación. La partición de entrenamiento se utilizó para
+ajustar los adaptadores del modelo y la de validación para observar su
+comportamiento durante el ajuste. Esta última forma parte del desarrollo
+del intérprete y se distingue del conjunto destinado a la comparación
+final de arquitecturas.
+
+La eliminación de duplicados exactos no impide que ambas particiones
+compartan plantillas o contengan formulaciones de una misma intención.
+Por ello, los resultados sobre esta división describen el comportamiento
+del modelo bajo la distribución generada y no bastan para establecer su
+capacidad de generalización a formulaciones independientes.
+
+Para la evaluación comparativa se reserva como criterio de diseño un
+conjunto que no intervenga en el entrenamiento, la selección del modelo
+ni la modificación de las reglas o del prompt. Cuando se estudien grupos
+de reformulaciones de una intención concreta, se mantendrá identificada
+su relación y se controlará su separación respecto de los datos de
+desarrollo. El procedimiento de construcción y las condiciones de
+independencia de esa prueba se especifican en el capítulo 6.
+
+Durante el desarrollo se utilizaron además 48 comandos para comprobar el
+funcionamiento del sistema. Estos casos constituyen una prueba funcional
+y se mantienen separados de la evaluación experimental. Su descripción
+corresponde a la verificación de la implementación.
+
+% TODO: Incorporar en el capítulo 5 el procedimiento real de partición,
+% incluida su semilla, y comprobar el solapamiento entre particiones.
+% La separación por grupos semánticos no se afirma como ya ejecutada.
+
+\subsection{Validación previa del conjunto de datos}
+\label{subsec:validacion_datos}
+
+Después de la revisión manual parcial se desarrollaron comprobaciones
+automatizadas para examinar el contrato de las etiquetas, las propiedades
+del generador y su compatibilidad con CLIPS. El procedimiento distingue
+la validación de los catálogos, los controles sobre las secuencias de
+objetivos y la comprobación de expansión. Cada nivel aporta evidencia
+sobre una propiedad específica del conjunto.
+
+El validador de objetivos comprueba la sintaxis, los nombres y argumentos
+admitidos, la presencia de destinos obligatorios y el tipo explícito en
+\texttt{find} y \texttt{count}. También detecta calificadores incompatibles
+con el tipo declarado y algunos conflictos de tipo entre subtareas.
+En la secuencia se verifica que una entrega o colocación esté precedida
+por la adquisición del objeto y se detectan ciertas navegaciones o
+destinos redundantes. Estos controles operan sobre los objetivos; no
+interpretan de nuevo la instrucción para contrastar su significado.
+
+Se incorporaron además pruebas sobre propiedades de generación, como la
+cardinalidad solicitada, la ausencia de entradas textuales duplicadas,
+la proporción entre categorías y la presencia de metadatos. Algunas
+pruebas contienen expectativas específicas: las familias de búsqueda
+simple deben producir la firma \([\mathrm{go},\mathrm{find}]\), mientras
+que la de saludo simple debe producir
+\([\mathrm{go},\mathrm{find},\mathrm{greet}]\). Otras comprueban la
+presencia de \texttt{save} y del retorno al punto de instrucción en las
+tareas de información, o el uso de \texttt{at} en el transporte entre
+ubicaciones. Estas expectativas están codificadas como propiedades y
+firmas; no constituyen un conjunto completo de pares anotados de manera
 independiente.
 
-La separación de filas y la eliminación de duplicados exactos no
-excluyen que distintas particiones compartan plantillas o
-reformulaciones de una misma intención. La documentación disponible no
-especifica una separación por grupos semánticos. Por ello, la
-independencia de la evaluación no se da por demostrada y requiere
-revisar el procedimiento concreto de partición.
+La comprobación con CLIPS se realizó sobre un subconjunto de secuencias.
+Para cada una, el validador reinicia el entorno, convierte los objetivos
+en hechos y ejecuta las reglas. Se comprueba que no queden objetivos
+pendientes, que no se emita la respuesta correspondiente a un objetivo no
+soportado y que se produzca la señal de finalización
+\texttt{GPSR\_DONE}. La aceptación indica que la secuencia satisface estas
+condiciones de expansión, sin acreditar por sí sola el cumplimiento
+semántico o físico de la tarea.
 
-Para la comparación final se propone reservar un conjunto de prueba no
-utilizado en el entrenamiento, la selección del checkpoint ni la
-revisión del prompt. Cuando varias entradas procedan de una misma
-intención instanciada, sus reformulaciones deben mantenerse en una misma
-partición si se pretende evitar que esa intención se observe durante el
-ajuste. También conviene distinguir una prueba dentro de las familias
-conocidas de una prueba con formas lingüísticas nuevas; ambas responden
-preguntas diferentes y no deben combinarse sin identificar su
-procedencia.
+Se implementaron dos recorridos de comprobación. En la herramienta de
+auditoría, las secuencias válidas se procesan en el orden de lectura hasta
+alcanzar el límite configurado. En las pruebas del generador se selecciona
+el primer ejemplo disponible de cada familia del lote de prueba. Estas
+selecciones ofrecen coberturas diferentes y no equivalen por sí mismas a
+un muestreo aleatorio del conjunto completo. La validación efectuada sobre
+algunas muestras se distingue de una verificación exhaustiva de las
+40\,000 entradas.
 
-\subsection{Validación previa del conjunto de
-datos}
+Los metadatos asociados con cada muestra permiten identificar la familia,
+la categoría, la variante superficial, la firma, los tipos de entidades y
+los campos presentes. Se conservan en el conjunto de datos y se omiten
+del contenido utilizado para entrenar el intérprete. Su función es
+describir la procedencia y estructura de la muestra; no almacenan el
+resultado individual de la comprobación con CLIPS ni acreditan que esa
+muestra haya sido examinada por todos los validadores.
 
-La validación documentada comprende la revisión de catálogos, el
-cumplimiento del esquema semántico, el análisis de cobertura y
-dependencias, y una comprobación de expansión mediante CLIPS. Esta
-última transforma objetivos en hechos, ejecuta las reglas y verifica que
-no queden objetivos pendientes, que no se active el tratamiento de
-objetivos no soportados y que se genere la señal de finalización.
+La herramienta de auditoría calcula por separado los recuentos de
+etiquetas válidas e inválidas, las incidencias, la cobertura y los
+resultados de las secuencias comprobadas con CLIPS, y presenta un reporte
+agregado. Así se distingue la información descriptiva del conjunto de la
+evidencia de una ejecución concreta de validación.
 
-La configuración descrita permite validar con CLIPS una muestra de 200
-secuencias o la totalidad del conjunto. Estas modalidades deben
-diferenciarse al reportar la evidencia: una comprobación sobre una
-muestra no acredita la planificabilidad de las 40 000 entradas. Si el
-motor o las reglas no están disponibles, la omisión debe registrarse
-explícitamente, aunque otras comprobaciones puedan ejecutarse.
+El alcance de estos controles es la consistencia respecto de restricciones
+programadas y la compatibilidad de expansión de las secuencias examinadas.
+La fidelidad de la etiqueta permanece definida por su correspondencia con
+la orden. Para la evaluación final, las referencias y los criterios de
+inclusión se establecerán a partir de la intención y de las capacidades
+declaradas, sin exigir previamente que CLIPS resuelva cada caso. Esta
+separación permite analizar los errores compartidos por generación y
+validación y conservar los casos de falta de cobertura simbólica.
 
-La planificabilidad es una propiedad de compatibilidad con las reglas
-utilizadas. No demuestra por sí sola que la etiqueta describa
-correctamente la orden ni que el plan satisfaga todas sus condiciones.
-Además, condicionar el dominio de prueba a la aceptación de CLIPS puede
-favorecer a esa arquitectura. Por ello, se propone definir las
-referencias de la prueba final a partir del significado de la
-instrucción y de las capacidades declaradas, revisar su corrección de
-manera independiente y conservar los casos que fallen en CLIPS para
-analizar su cobertura.
+% TODO: Identificar el recorrido efectivamente utilizado en la validación
+% final y su cobertura. El límite predeterminado de 200 de la herramienta
+% no demuestra que esa cantidad se haya ejecutado. El lote de 500 de las
+% pruebas tampoco constituye un registro de validación del dataset final.
+% TODO: Recuperar, si existe, el reporte agregado de la ejecución final.
+% Los campos meta aportados no contienen cifras de aceptación o fallos.
+% TODO: Concretar la revisión semántica independiente de las referencias
+% experimentales; la revisión manual inicial fue parcial y no exhaustiva.
 
-\section{Diseño de la arquitectura
-Qwen--CLIPS}
+\section{Diseño de la arquitectura Qwen--CLIPS}
+\label{sec:diseno_qwen_clips}
 
 \subsection{Función asignada a Qwen}
 
-Qwen2.5-7B se utiliza como intérprete semántico: recibe una instrucción
-y produce un objeto estructurado que contiene la secuencia de objetivos.
-Su responsabilidad consiste en identificar subtareas, entidades,
-relaciones y dependencias. No genera directamente la secuencia final de
-acciones del ejecutor.
+Se asignó a Qwen2.5-7B la transformación de la instrucción \(x\) en
+una secuencia \(G_{\mathrm{pred}}^{\mathrm{Qwen}}\), expresada mediante
+la representación canónica definida en la
+Sección~\ref{subsec:objetivos_canonicos}. Esta delimitación permite
+especializar el modelo en la identificación de subtareas, entidades y
+relaciones, y mantener la construcción de acciones en el componente
+simbólico.
 
-La restricción de salida a un vocabulario canónico establece una
-interfaz verificable con el componente simbólico. La aceptación del
-formato no basta para considerar correcta la interpretación: una salida
-puede cumplir el esquema y, aun así, omitir una subtarea o confundir una
-persona con un objeto.
+La respuesta del intérprete se restringió a una estructura que contiene
+la secuencia de objetivos. La decisión facilita su procesamiento
+automático y establece un punto de observación entre el lenguaje natural
+y la planificación. Gracias a esta interfaz, es posible comprobar la
+interpretación antes de examinar el plan y localizar qué información
+recibe efectivamente CLIPS.
 
-\subsection{Especialización para interpretación
-semántica}
+\subsection{Especialización para interpretación semántica}
 
-La especialización utiliza pares supervisados de orden y objetivos. El
-modelo recibe la instrucción como contexto y aprende a producir la
-respuesta estructurada; la documentación describe el cálculo de la
-pérdida sobre la respuesta, excluyendo las posiciones del prompt y del
-relleno. Los metadatos del generador se conservan para análisis y no se
-incorporan como objetivos de aprendizaje.
+La especialización se realizó mediante aprendizaje supervisado con los
+pares de instrucciones y objetivos construidos para el dominio. Cada
+entrada se presentó al modelo como contexto y la secuencia canónica como
+respuesta esperada. Los metadatos de generación se conservaron para el
+análisis del conjunto y no se incluyeron en la respuesta que el modelo
+aprende a producir.
 
-La adaptación se realiza mediante QLoRA con el modelo base cuantizado a
-cuatro bits y adaptadores entrenables. Esta decisión permite ajustar el
-modelo dentro de los recursos de cómputo disponibles. El contexto del
-proyecto identifica una exploración inicial con Qwen2.5-0.5B y la
-elección posterior de 7B; sin registros comparables, esta exploración se
-describe como antecedente de desarrollo y no como un experimento
-concluyente sobre el tamaño del modelo.
+Para concentrar el ajuste en la generación de los objetivos, se calculó
+la pérdida sobre los tokens de la respuesta, excluyendo las posiciones
+del prompt y del relleno. Se utilizó QLoRA con el modelo base cuantizado
+a cuatro bits y adaptadores entrenables, lo que permitió especializarlo
+dentro de los recursos de cómputo disponibles.
 
-Los hiperparámetros y el checkpoint efectivamente utilizado se
-documentarán en el capítulo 5. Debe distinguirse la configuración actual
-del código de la aplicada en el entrenamiento reportado: el README
-señala que ese entrenamiento terminó antes de habilitar la restauración
-automática del mejor checkpoint. No corresponde atribuir
-retroactivamente ese procedimiento al adaptador ya entrenado.
+Durante el desarrollo se exploró inicialmente Qwen2.5-0.5B. Su desempeño
+resultó insuficiente para las órdenes complejas consideradas y se
+continuó con Qwen2.5-7B, cuyo tamaño fue el mayor viable bajo los recursos
+locales disponibles. Esta exploración forma parte de las decisiones de
+desarrollo; la comparación experimental de la tesis se concentra en la
+configuración Qwen--CLIPS seleccionada y en GPT directo.
 
-\subsection{Interfaz entre objetivos y planificación
-simbólica}
+Los hiperparámetros, la configuración de inferencia y la identificación
+del adaptador utilizado se presentan en el capítulo 5, junto con el
+procedimiento de entrenamiento correspondiente.
 
-La interfaz comprueba la salida y transforma cada objetivo aceptado en
-una representación simbólica que conserva su posición, nombre, entidad,
-tipo y relaciones pertinentes. La normalización debe adaptar la
-escritura al ejecutor sin perder el significado de los argumentos. En
-particular, deben preservarse los destinos de transporte y los atributos
-que determinan una búsqueda.
+% TODO: Identificar el checkpoint realmente utilizado. No atribuir al
+% entrenamiento previo una restauración automática que se añadió después.
+% Confirmar también el identificador exacto y la revisión del modelo base.
 
-La documentación del adaptador también describe inferencias de tipo y
-reparaciones de determinadas secuencias. Estas operaciones pueden
-modificar la salida inicial del modelo. Para la evaluación se propone
-conservar tanto la predicción original como los objetivos que finalmente
-ingresan a CLIPS, de manera que una reparación no se contabilice como un
-acierto directo de Qwen.
+\subsection{Interfaz entre objetivos y planificación simbólica}
 
-El objetivo metodológico de la interfaz es establecer un contrato
-explícito. Las diferencias entre validación fuera de línea y conversión
-en ROS deben resolverse o declararse antes de comparar planes, pues una
-pérdida de información en el adaptador constituye un error de
-integración y no necesariamente de interpretación o expansión.
+Se desarrolló un adaptador para convertir la salida estructurada del
+intérprete en hechos que puedan procesarse mediante CLIPS. La interfaz
+se diseñó para conservar el orden, el nombre del objetivo, el tipo de
+entidad y los argumentos que determinan su expansión. La normalización
+de escritura establece la correspondencia entre los nombres de la
+representación semántica y los identificadores utilizados por el
+ejecutor.
 
-\subsection{Función asignada a
-CLIPS}
+El adaptador incorpora inferencias de tipo y reparaciones para
+determinadas secuencias. Estas operaciones forman parte del sistema
+integrado y pueden modificar la predicción original. Por ello, el diseño
+de evaluación distingue la salida directa de Qwen de la representación
+que finalmente se entrega al motor simbólico. Un objetivo corregido por
+el adaptador puede mejorar el resultado del sistema sin constituir un
+acierto del modelo antes de esa intervención.
 
-CLIPS actúa como un expansor de objetivos basado en reglas. Procesa la
-secuencia recibida respetando su orden y produce acciones compatibles
-con Justina. El comportamiento es determinista bajo la misma base de
-reglas, hechos iniciales y configuración; no se plantea como una
-búsqueda libre entre planes alternativos.
+La preservación de argumentos constituye un criterio de validez de la
+interfaz. Una pérdida de destino o de un atributo relevante durante la
+conversión se clasifica como un error de integración. Esta separación
+permite evitar que un problema de representación entre componentes se
+atribuya automáticamente a la interpretación o a las reglas.
 
-Durante la expansión se mantiene un estado esperado que incluye la
-ubicación y el objeto sostenido, además de referencias a personas y
-análisis previos. Este estado permite comprobar dependencias y evitar
-algunas acciones redundantes. Sus actualizaciones representan los
-efectos previstos del plan y no confirmaciones de sensores durante la
-planificación.
+% TODO: Confirmar la preservación de at en place y el tratamiento de
+% múltiples atributos visuales. Describir en el capítulo 5 la versión
+% efectiva del adaptador, sus reparaciones y sus limitaciones.
+% TODO: Confirmar el registro de la predicción original y la transformada.
 
-La construcción del plan incluye políticas operativas, como anuncios,
-control del foco de interacción y retorno al punto de instrucción. Estas
-convenciones pertenecen al funcionamiento del sistema y deben
-distinguirse de las intenciones expresadas por el usuario. La señal de
-finalización indica que terminó la generación, pero no basta para
-demostrar cumplimiento: la implementación documentada puede convertir un
-objetivo no soportado en una explicación hablada y continuar. Ese caso
-debe registrarse como falta de cobertura de la tarea.
+\subsection{Función asignada a CLIPS}
 
-\section{Diseño de la arquitectura GPT
-directo}
+Se desarrollaron reglas de producción para expandir los objetivos en
+acciones compatibles con Justina. La selección de la siguiente meta se
+restringió por su posición en la secuencia, de modo que las reglas
+procesen los objetivos en el orden recibido. Esta organización permite
+expresar explícitamente el conocimiento operativo de cada tipo de tarea.
 
-\subsection{Funciones asignadas al
-modelo}
+Las reglas utilizan el estado esperado descrito en la
+Sección~\ref{subsubsec:estado_predictivo_clips} para considerar los efectos
+previstos de las acciones anteriores. Se mantiene información de
+ubicación y posesión de objetos, además de referencias a personas y
+análisis previos. Con ello se comprueban algunas dependencias y se
+reutiliza el contexto establecido durante la construcción del plan.
 
-La arquitectura directa asigna a un modelo GPT la interpretación de la
-instrucción y la generación del plan en una misma inferencia. La
-respuesta conserva dos productos observables: la secuencia de objetivos
-y las acciones propuestas. Los objetivos no se envían a CLIPS; su
-inclusión facilita la evaluación posterior de la interpretación y de la
-coherencia del plan.
+Se incorporaron también convenciones de interacción y cierre, como los
+anuncios, el control del foco y el regreso al punto de instrucción.
+Estas operaciones complementan la realización de las tareas dentro del
+funcionamiento de Justina y forman parte de la especificación común
+proporcionada a la arquitectura directa.
 
-El planificador directo recibe una especificación operativa detallada
-que describe las convenciones de expansión utilizadas por CLIPS. El
-alcance de la comparación consiste en estudiar cómo ambas arquitecturas
-obtienen planes para el mismo dominio bajo esas convenciones:
-Qwen--CLIPS aplica reglas explícitas a los objetivos interpretados,
-mientras que GPT genera objetivos y acciones condicionado por la
-especificación proporcionada. Las conclusiones se circunscriben a estas
-configuraciones y no se extienden a la capacidad general de
-planificación de GPT. Dado que también cambian el modelo de lenguaje y
-su adaptación, la comparación no aísla por sí sola el efecto causal del
-uso de reglas.
+La expansión es determinista para una misma base de reglas, hechos
+iniciales y configuración. Su finalización indica que concluyó la
+generación de acciones, mientras que el cumplimiento de la orden se
+evalúa mediante los criterios de validez del plan. En particular, una
+respuesta hablada que informe de la imposibilidad de ejecutar un
+objetivo se considera falta de cobertura de esa subtarea.
 
-La presencia de objetivos explícitos no demuestra que estos hayan
-constituido una etapa causal independiente dentro del modelo. Lo
-observable es que la respuesta contiene ambos artefactos; su
-correspondencia se evalúa externamente.
+\section{Diseño de la arquitectura GPT directo}
+\label{sec:diseno_gpt_directo}
 
-\subsection{Conocimiento y restricciones
-proporcionadas}
+\subsection{Funciones asignadas al modelo}
 
-El contexto del modelo incluye catálogos de entidades, formas de
-objetivos, repertorio de acciones y reglas sobre referencias,
-transporte, interacción y finalización. También especifica el
-mantenimiento de un estado esperado durante la generación. La finalidad
-es orientar la respuesta hacia planes compatibles con el ejecutor y con
-la configuración experimental.
+Se diseñó una arquitectura en la que un modelo GPT recibe la
+instrucción \(x\) y produce los objetivos
+\(G_{\mathrm{pred}}^{\mathrm{GPT}}\) y el plan
+\(P^{\mathrm{GPT}}\) durante una misma inferencia. La
+decisión de conservar ambos productos permite aplicar criterios de
+interpretación comparables a los de Qwen y examinar la coherencia entre
+los objetivos declarados y las acciones propuestas.
 
-La especificación metodológica establece el mismo vocabulario canónico
-para ambas arquitecturas, con \texttt{place} para colocación y
-\texttt{tell} para comunicación de información. La versión utilizada en
-el experimento debe respetar este contrato. Asimismo, las listas de
-nombres, los destinos y los tratamientos de entidades genéricas deben
-corresponder a las mismas versiones utilizadas en Qwen--CLIPS.
+La generación se condiciona mediante una especificación operativa
+detallada, elaborada a partir del dominio y de las convenciones de
+expansión utilizadas en CLIPS. Por tanto, la condición directa estudia
+la capacidad del modelo para generar un plan ajustado a esa
+especificación. Su alcance corresponde a las tareas, restricciones y
+configuraciones de esta investigación.
 
-El modelo y la versión del prompt deben fijarse antes de la evaluación
-final. La documentación adjunta deja pendiente la elección del modelo
-GPT concreto; por tanto, este diseño no presupone una versión ni
-atribuye resultados a un servicio todavía no identificado en los
-materiales.
+Los objetivos de GPT se conservan como producto de análisis y no se
+envían a CLIPS. La evaluación distingue los dos artefactos de la
+respuesta, aunque su producción no constituya dos componentes
+independientes como en Qwen--CLIPS.
+
+\subsection{Conocimiento y restricciones proporcionadas}
+
+Para orientar la generación se elaboró un prompt con los catálogos de
+entidades, el vocabulario de objetivos, las acciones disponibles y las
+restricciones de composición. Se incluyeron criterios sobre resolución
+de referencias, dependencias de manipulación, relaciones espaciales e
+interacción con personas.
+
+La especificación también establece cómo conservar coherencia con el
+estado esperado durante la generación. El modelo recibe instrucciones
+para considerar la ubicación, el objeto sostenido y las entidades
+identificadas al determinar las acciones posteriores. Se incorporaron
+las convenciones de identificación, inicio y finalización del plan para
+facilitar su compatibilidad con el ejecutor.
+
+El conocimiento operativo se presenta así mediante instrucciones en la
+arquitectura directa y mediante reglas en el componente CLIPS. Para la
+comparación se fijarán la versión del modelo, el prompt y sus
+configuraciones de generación, evitando modificar estas condiciones a
+partir de los resultados de la prueba final.
+
+% TODO: Incorporar en el capítulo 5 el modelo GPT y su versión exacta,
+% los parámetros de generación y la versión definitiva del prompt.
+% Mantener alineados sus catálogos y su vocabulario con Qwen--CLIPS.
 
 \subsection{Contrato de salida}
 
-La respuesta contempla campos para el estado, un mensaje, los objetivos
-y el plan. En los casos ejecutables se incluyen las señales de inicio y
-finalización y una secuencia ordenada de pasos con la información
-requerida por el ejecutor. El diseño prevé restringir la estructura
-mediante un esquema y comprobar después su contenido mediante validación
-determinista.
+Se definió un contrato de respuesta que contiene el estado de la
+solicitud, un mensaje, los objetivos y el plan. Para los casos
+ejecutables se establece una secuencia ordenada de pasos con los campos
+requeridos por el ejecutor, acompañada por las señales de inicio y
+finalización. La estructura facilita la extracción y el análisis
+automático de los productos del modelo.
 
-La restricción estructural permite exigir campos, tipos y acciones
-admitidas, pero no constituye una prueba de corrección semántica. Un
-plan bien formado puede utilizar el destinatario equivocado, omitir una
-adquisición o no satisfacer una subtarea. Por ello, su evaluación debe
-considerar tanto la consistencia interna como la correspondencia con la
-instrucción.
+El diseño utiliza un esquema de salida para restringir los campos,
+tipos y nombres de acciones admitidos. La validación del contenido se
+considera una comprobación adicional: además de cumplir la estructura,
+la respuesta debe conservar las entidades de la orden, respetar las
+dependencias y cubrir las subtareas solicitadas.
 
-Se propone conservar la respuesta original antes de cualquier
-transformación y registrar por separado los errores de formato, las
-inconsistencias semánticas y los fallos de comunicación. Estos últimos
-no equivalen a una decisión del modelo de rechazar la tarea.
+La evaluación conservará la respuesta original y distinguirá los
+errores de formato, las inconsistencias de contenido y los fallos de
+comunicación con el servicio. Esta clasificación permite analizar los
+resultados del modelo sin confundirlos con problemas de transporte o
+procesamiento de su respuesta.
 
-\subsection{Plan ejecutable, aclaración y
-rechazo}
+% TODO: Integrar el esquema definitivo y precisar en el capítulo 5 las
+% comprobaciones deterministas efectivamente implementadas.
 
-El contrato distingue tres estados. \texttt{executable} corresponde a
-una instrucción para la que se generan objetivos y acciones;
-\texttt{clarification} expresa que falta información o existe una
-ambigüedad resoluble mediante una pregunta; \texttt{rejected} señala que
-la solicitud queda fuera de las capacidades o restricciones
-establecidas. Los dos últimos estados no deben incluir un plan
-operativo.
+\subsection{Plan ejecutable, aclaración y rechazo}
 
-Esta distinción permite evitar que toda entrada se convierta
-forzosamente en acciones. Sin embargo, la documentación de Qwen--CLIPS
-no acredita un mecanismo conversacional equivalente. En consecuencia, se
-propone que la comparación principal utilice instrucciones resolubles
-dentro del dominio común y que las aclaraciones y rechazos se analicen
-en un bloque adicional con criterios explícitos para cada arquitectura.
+Se adoptaron los estados \texttt{executable}, \texttt{clarification} y
+\texttt{rejected}, definidos en la
+Sección~\ref{subsubsec:tipos_respuesta_gpt}. Esta decisión permite
+representar tanto la producción de un plan como las situaciones en las
+que falta información o la tarea excede las restricciones del dominio.
+Las respuestas de aclaración y rechazo contienen un mensaje y no
+incluyen acciones operativas.
 
-Dentro de la comparación principal, una aclaración innecesaria o un
-rechazo de una orden válida cuentan como ausencia de una respuesta
-ejecutable correcta. No deben eliminarse del total de casos para
-calcular el desempeño únicamente sobre las respuestas aceptadas.
+La comparación principal se delimita a instrucciones resolubles dentro
+del dominio común. En estas condiciones, una aclaración innecesaria o
+el rechazo de una orden válida se consideran ausencia de una respuesta
+ejecutable correcta y se mantienen en el total de casos evaluados.
 
-\section{Diseño de la
-comparación}
+El comportamiento ante órdenes ambiguas o fuera del dominio se
+considera un análisis adicional. Su inclusión requiere criterios
+específicos para las respuestas disponibles en cada arquitectura, sin
+suponer que el rechazo de una salida inválida en Qwen--CLIPS equivale a
+un mecanismo conversacional de aclaración.
 
-\subsection{Igualdad del dominio de
-evaluación}
+\section{Diseño de la comparación}
+\label{sec:diseno_comparacion}
 
-Ambas arquitecturas deben recibir las mismas instrucciones y operar con
-el mismo conocimiento de entidades y capacidades. La igualdad se refiere
-al problema planteado, no a que tengan entrenamiento o mecanismos
-internos idénticos. Qwen incorpora conocimiento mediante especialización
-y CLIPS mediante reglas; GPT recibe una especificación en su contexto de
-entrada.
+\subsection{Igualdad del dominio de evaluación}
 
-Se propone fijar el conjunto final de instrucciones y referencias antes
-de ejecutar la comparación, identificar cada caso y registrar su familia
-y procedencia. Los ejemplos utilizados para modificar el dataset, las
-reglas o el prompt se consideran parte del desarrollo. Los 48 comandos
-utilizados previamente corresponden exclusivamente a una prueba de
-funcionamiento. Se mantienen como antecedente de desarrollo, separados
-de la evaluación comparativa. Sus resultados no se emplean para estimar
-generalización ni para sustentar la comparación entre arquitecturas. El
-conjunto experimental deberá definirse de manera específica en el
-capítulo 6.
+La comparación se plantea sobre el mismo conjunto de instrucciones y
+referencias, con las condiciones comunes establecidas en la
+Sección~\ref{sec:diseno_metodologico}. Cada caso se identificará por su
+familia, estructura de objetivos y procedencia lingüística. La
+conservación de esta información permitirá examinar diferencias por
+tipo de tarea y por formulación.
 
-La normalización de entrada también forma parte de la condición
-experimental. Si Qwen recibe una instrucción transformada y GPT recibe
-el texto original, esa diferencia debe registrarse y considerarse al
-interpretar los resultados. De igual modo, el despliegue remoto de Qwen
-puede introducir comunicación por red: disponer de pesos propios no
-implica necesariamente que la inferencia ocurra a bordo del robot.
+Las referencias se definirán a partir de la intención de la orden y del
+dominio de capacidades. Los ejemplos utilizados para modificar el
+generador, el modelo, las reglas o el prompt permanecerán identificados
+como parte del desarrollo. El procedimiento experimental establecerá
+el conjunto de prueba y lo mantendrá fijo durante la comparación.
 
-\subsection{Igualdad del repertorio de
-acciones}
+Se registrará también la entrada efectiva de cada arquitectura. La
+normalización previa puede modificar aspectos superficiales o resolver
+ciertas variaciones antes de la inferencia, por lo que forma parte de
+la configuración evaluada. La medición de latencia considerará el
+recorrido completo de la solicitud y distinguirá, cuando sea posible,
+el procesamiento del modelo de la comunicación y la expansión.
 
-Los planes se contrastan con un contrato común de acciones y parámetros
-aceptados por Justina. La configuración de manipulación, las
-convenciones de identificación y las políticas de inicio y cierre deben
-coincidir. No basta con que ambas salidas utilicen nombres de acciones
-válidos si representan capacidades o efectos distintos.
+La ubicación del cómputo se tratará como una condición de despliegue.
+El uso de Qwen con pesos bajo control del proyecto permite alojar la
+inferencia en infraestructura propia, incluida una computadora remota.
+Por ello, su comparación temporal con GPT debe considerar las
+condiciones de comunicación utilizadas en cada caso.
 
-La correspondencia con una expansión de referencia puede utilizarse como
-medida complementaria de fidelidad a las convenciones implementadas. En
-GPT directo esta medida refleja, en parte, el seguimiento de la
-especificación de expansión incluida en el prompt. Sin embargo, la
-comparación principal de corrección debe examinar el cumplimiento de
-subtareas, las dependencias y la consistencia del estado esperado. Una
-diferencia en el texto de un anuncio no equivale necesariamente a un
-fallo de planificación; del mismo modo, una coincidencia con CLIPS no
-demuestra corrección si la propia expansión es insuficiente.
+\subsection{Igualdad del repertorio de acciones}
 
-La documentación de \texttt{follow}, por ejemplo, describe aproximación
-e instrucciones habladas sin una acción explícita de seguimiento. Antes
-de considerar esa expansión suficiente, es necesario precisar qué
-componente ejecuta el desplazamiento y qué evidencia confirma el
-cumplimiento. La misma revisión debe aplicarse a atributos visuales o
-propiedades que el contrato permita expresar pero cuya traducción
-operativa sea limitada.
+Los planes se evaluarán respecto de un contrato común de acciones,
+parámetros y efectos esperados. Se mantendrán las mismas capacidades de
+manipulación, convenciones de identificación y políticas de cierre.
+Este control permite comparar la realización de una tarea dentro de las
+posibilidades de Justina.
 
-\subsection{Separación entre interpretación y
-planificación}
+Se distinguen dos aspectos del resultado: la fidelidad a las
+convenciones operativas y el cumplimiento de la instrucción. La
+correspondencia con una expansión de referencia permite estudiar la
+reproducción de esas convenciones. En GPT directo, este aspecto refleja
+también el seguimiento de la especificación incluida en el prompt.
 
-La interpretación se analiza comparando los objetivos declarados con
-\(G_{\mathrm{ref}}\). La planificación se examina mediante dos
-relaciones: la coherencia del plan con los objetivos producidos y su
-correspondencia con la tarea de referencia. Esta separación es necesaria
-porque un plan puede expandir correctamente una interpretación
-equivocada y aun así incumplir la instrucción.
+El cumplimiento se examinará mediante la cobertura de subtareas, el
+orden de las acciones, sus parámetros y su coherencia con el estado
+esperado. Una diferencia en el texto de un anuncio puede conservar el
+significado de la tarea, mientras que una secuencia idéntica a una
+expansión de referencia puede resultar insuficiente si omite una
+operación necesaria. Por ello, la coincidencia con CLIPS no se utiliza
+como criterio único de corrección.
 
-En Qwen--CLIPS se conservan la salida del modelo, las transformaciones
-del adaptador y el plan resultante. La condición de control utiliza
-objetivos de referencia, la misma configuración simbólica y, para
-examinar la cadena efectiva, el mismo adaptador empleado en la ejecución
-normal. Si se utiliza un conversor distinto para validar fuera de línea,
-ambos recorridos deben identificarse, pues podrían introducir
-diferencias propias.
+La correspondencia entre objetivos y capacidades se establece a partir
+de los efectos que las acciones permiten obtener. Las expresiones
+habladas sobre una tarea no sustituyen la operación necesaria para
+realizarla. Este criterio se aplica también a los atributos y
+propiedades solicitados, cuya conservación debe examinarse en la
+traducción hacia las acciones del ejecutor.
 
-En GPT directo se examinan los objetivos y acciones de la misma
-respuesta, sin introducir sus objetivos en CLIPS. Esto permite describir
-discrepancias entre intención y plan, aunque no localizar con certeza
-una etapa interna del modelo que las haya causado.
+% TODO: Precisar en implementación qué componente realiza el seguimiento
+% asociado con follow y cómo se verifica. Aclarar el soporte efectivo
+% de atributos múltiples y de propiedades como peso frente a tamaño.
+% No asumir que un anuncio o una aproximación perceptiva cumplen la tarea.
 
-El registro experimental debe preservar los resultados de todas las
-solicitudes, incluidas salidas inválidas, rechazos, interrupciones y
-fallos de interfaz. Las métricas, repeticiones y límites temporales se
-especificarán en el capítulo 6. Con estas condiciones, la evaluación
-podrá distinguir el desempeño de la interpretación, la cobertura del
-planificador y los efectos de integración antes de analizar la ejecución
-física.
+\subsection{Separación entre interpretación y planificación}
+
+La interpretación se evaluará mediante la correspondencia de
+\(G_{\mathrm{pred}}^{\mathrm{Qwen}}\) y
+\(G_{\mathrm{pred}}^{\mathrm{GPT}}\) con la misma secuencia de
+referencia \(G_{\mathrm{ref}}\). Para la planificación se examinarán
+los planes \(P^{\text{Qwen--CLIPS}}\) y \(P^{\mathrm{GPT}}\),
+considerando tanto su coherencia con los objetivos producidos por
+cada arquitectura como su cumplimiento de la tarea de referencia.
+Esta doble relación permite identificar un plan internamente
+coherente que, sin embargo, resuelve una interpretación equivocada
+de la instrucción.
+
+En Qwen--CLIPS, el análisis distinguirá la predicción del modelo, su
+transformación por el adaptador y el plan generado. La condición de
+control utilizará los objetivos de referencia bajo la misma
+configuración simbólica. Para estudiar la cadena integrada se
+considerará también el recorrido de conversión empleado, de manera que
+las diferencias entre una comprobación fuera de línea y la operación
+en ROS no se atribuyan directamente a las reglas.
+
+En GPT directo se analizarán los objetivos y las acciones de una misma
+respuesta. La clasificación permite describir qué producto incumple
+los criterios de validez, aunque no identifica con certeza una etapa
+causal interna del modelo. En ambas arquitecturas se conservarán los
+casos inválidos y los fallos de interfaz como parte del registro
+experimental.
+
+Con esta organización, el diseño relaciona la construcción de datos,
+la especialización del intérprete y la generación de planes con
+criterios de evaluación diferenciados. El capítulo siguiente presenta
+la implementación de los componentes desarrollados y su integración
+con Justina.
+
+% TODO: Confirmar que el registro experimental conserve las entradas,
+% salidas originales, transformaciones, configuraciones y fallos de todos
+% los casos. Fijar repeticiones, límites de tiempo y métricas en capítulo 6.
