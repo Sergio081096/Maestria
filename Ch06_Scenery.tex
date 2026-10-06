@@ -1,69 +1,620 @@
+% Borrador de protocolo, versión 0.1, 22 de septiembre de 2026.
+% No presenta como ejecutadas las pruebas comparativas pendientes.
+% Requiere amsmath, amssymb y booktabs. Añadir referencias_capitulo6.bib
+% a la bibliografía de la tesis; este archivo no incluye el preámbulo.
 \chapter{Validación y experimentación}
+\label{ch:validacion_experimentacion}
+
+Este capítulo establece el procedimiento para comparar las arquitecturas
+Qwen--CLIPS y GPT directo descritas en los capítulos anteriores. La evaluación
+se centra en la transformación de instrucciones a objetivos
+semánticos y planes de acciones del dominio GPSR. Se examinarán la precisión de
+la interpretación, el cumplimiento de las tareas mediante el plan generado y
+el rendimiento computacional de cada configuración.
+
+El protocolo distingue el desarrollo del instrumento de evaluación de su
+aplicación final. Las pruebas preliminares permitirán corregir los registros,
+precisar las referencias y fijar la configuración experimental. Posteriormente,
+la comparación se realizará sobre un conjunto reservado que no se utilizará
+para ajustar los sistemas. Los resultados de esa comparación se presentarán en
+el capítulo siguiente. 
 
 \section{Diseño experimental}
+\label{sec:diseno_experimental_cap6}
 
-\subsection{Conjunto de prueba}
+El diseño será pareado: cada orden del conjunto final se presentará a ambas
+arquitecturas bajo condiciones iniciales y criterios de evaluación comunes.
+La arquitectura completa será el factor principal de comparación. Cambian
+simultáneamente el modelo, su especialización y el mecanismo de generación del
+plan; por ello, las diferencias no se atribuirán exclusivamente al empleo de
+reglas simbólicas.
+
+La comparación responderá a cuatro preguntas: qué tan fielmente se recupera la
+intención de la orden; qué proporción de planes satisface sus subtareas y
+restricciones; cómo cambia ese comportamiento ante reformulaciones y mayor
+composición; y cuál es el tiempo y consumo observable requerido para producir
+la respuesta. La evaluación por capacidades se apoya en el enfoque de pruebas
+de comportamiento de CheckList, que complementa las medidas agregadas con
+casos dirigidos a comportamientos lingüísticos específicos
+\cite{ribeiro2020checklist}. La distinción entre una respuesta plausible y un
+plan verificable se relaciona con la evaluación de acciones y cambios de
+estado abordada por PlanBench \cite{valmeekam2023planbench}. En esta tesis se
+desarrollará una rúbrica propia para el contrato operativo de Justina.
+
+\subsection{Conjuntos de desarrollo y prueba}
+\label{subsec:conjuntos_cap6}
+
+Se distinguirán tres usos de los datos. El corpus de 40\,000 órdenes empleado
+en la especialización de Qwen, dividido en entrenamiento y validación, conserva
+la función descrita en el capítulo de implementación. El conjunto de
+desarrollo permitirá preparar el experimento. El conjunto de prueba final se
+reservará para la comparación con las configuraciones ya fijadas. Las
+comprobaciones funcionales previas y las predicciones efectuadas sobre la
+partición de validación no sustituirán este último conjunto.
+
+El conjunto de desarrollo preparado contiene 60 órdenes, distribuidas como
+se muestra en la Tabla~\ref{tab:desarrollo_cap6}. Las tres formulaciones de una
+misma intención se mantendrán agrupadas mediante un identificador común.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Organización del conjunto de desarrollo propuesto.}
+\label{tab:desarrollo_cap6}
+\begin{tabular}{|p{0.56\textwidth}|r|r|}
+\toprule
+Bloque & Órdenes & Intenciones \\
+\midrule
+Funcional y lingüístico: formulación canónica, paráfrasis y ruido leve & 48 & 16 \\
+Límites de representación y composición & 6 & 6 \\
+Ambigüedad, contradicción y tareas fuera del repertorio & 6 & 6 \\
+\midrule
+Total & 60 & 28 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Estos 60 casos no constituyen 60 intenciones independientes ni acreditan
+cobertura exhaustiva de las familias del generador. Cincuenta y cuatro fichas
+contienen objetivos propuestos y seis describen conductas de aclaración o
+rechazo. La existencia de objetivos no implica que todos los casos pertenezcan
+al bloque común resoluble: las capacidades cuyo contrato sea incompleto,
+como determinadas formas de seguimiento o identificación, requieren revisión.
+
+Cada ficha incluirá la orden, los objetivos de referencia
+\(G_{\mathrm{ref}}\), las subtareas requeridas, las restricciones, los
+comportamientos inadmisibles y las equivalencias aceptables. Las referencias
+se revisarán a partir de la intención expresada y del contrato de acciones,
+antes de observar las salidas de los modelos.
+
+Se auditarán las coincidencias con el corpus completo mediante igualdad
+literal, limpieza básica y aplicación del normalizador utilizado por Qwen.
+Una coincidencia con las 40\,000 filas no identifica por sí misma
+la partición a la que perteneció la fila. Asimismo, ausencia de coincidencias
+bajo estas transformaciones no demuestra novedad semántica, independencia de
+plantilla ni ausencia en el preentrenamiento de los modelos.
+
+En desarrollo podrán conservarse coincidencias identificadas como casos
+conocidos, porque su función es diagnosticar el procedimiento. No se modificarán
+indefinidamente las órdenes sólo para obtener un contador de coincidencias
+igual a cero. Para la prueba final se excluirán los duplicados detectados y
+las instancias de intención utilizadas durante el desarrollo, junto con sus
+reformulaciones. Se podrán conservar las mismas clases de tarea para evaluar
+generalización dentro del dominio; esto no se describirá como evaluación de
+familias nunca vistas.
+
+El tamaño definitivo del conjunto final se establecerá después del piloto y
+antes de ejecutar la comparación. Como propuesta de cobertura, se consideran
+diez intenciones por familia admisible y tres formulaciones por intención.
+Si \(F\) es el número de familias incluidas, se obtendrían \(10F\) intenciones
+y \(30F\) órdenes. Incluir las 29 familias del generador produciría 290
+intenciones y 870 órdenes, pero esta cifra queda condicionada a la revisión de
+su correspondencia con las capacidades y al presupuesto de ejecución. No
+representa un tamaño calculado mediante potencia estadística.
+
+La admisión al bloque principal dependerá de que la tarea esté suficientemente
+especificada y pueda evaluarse mediante el contrato declarado, no de que ambos
+sistemas consigan resolverla. Una arquitectura que falle en una tarea
+admisible conservará ese fallo. Las tareas cuyo significado o verificación no
+pueda establecerse se identificarán antes de la comparación y se estudiarán
+como diagnósticos. Los casos ambiguos y fuera de dominio formarán un bloque
+separado, con cantidad y distribución fijadas también antes de las ejecuciones.
 
 \subsection{Procedimiento experimental}
+\label{subsec:procedimiento_cap6}
+
+El procedimiento se organizará en preparación, piloto, fijación de la
+configuración y evaluación final. Durante la preparación se revisarán las
+fichas y se construirá un registro común para ambas arquitecturas. Los
+validadores de formato existentes se reutilizarán donde corresponda, pero se
+añadirán verificaciones de contenido basadas en las subtareas y restricciones
+de cada caso. Los registros actuales de consola y planes no constituyen por sí
+solos este instrumento completo.
+
+El evaluador se comprobará con ejemplos correctos y con errores introducidos
+deliberadamente: omitir una adquisición, cambiar el destinatario, eliminar un
+atributo o truncar la secuencia. Esta comprobación permitirá detectar un
+evaluador que acepte cualquier plan bien formado o que rechace alternativas
+válidas por no reproducir una única secuencia textual. Las reglas de
+puntuación se fijarán antes de observar el conjunto final.
+
+El piloto comenzará con diez casos de desarrollo que cubran operaciones
+básicas y referencias; después se completarán los 60 casos. Los primeros diez
+forman parte de esos 60 y no constituyen datos adicionales. El objetivo será
+confirmar trazabilidad, reinicio de estado, límites de salida, tiempos de
+espera y aplicación de la rúbrica. Las repeticiones del piloto servirán para
+estimar variabilidad y coste, sin presentarse como resultados finales.
+
+En cada ejecución se seguirá esta secuencia:
+\begin{enumerate}
+\item Recuperar la orden y su identificador del manifiesto experimental. La
+arquitectura recibirá únicamente el texto de la orden, además de su
+configuración fija; las referencias permanecerán en el evaluador.
+\item Restablecer el contexto del ensayo. Se utilizará una solicitud sin
+historial conversacional y, para CLIPS, un entorno sin hechos de la orden
+anterior. La configuración inicial prevista será ubicación desconocida,
+ningún objeto sostenido, foco desactivado y manipulación habilitada.
+\item Iniciar la medición del recorrido completo y procesar la orden mediante
+la arquitectura correspondiente. Se conservarán las representaciones
+intermedias disponibles, sin sustituir la salida original por una corrección
+manual.
+\item Esperar una respuesta terminada o registrar un fallo o agotamiento del
+tiempo establecido.  
+\item Conservar la respuesta cruda, comprobar el contrato de salida y detener
+la medición de latencia de respuesta. La evaluación semántica posterior y la
+revisión humana se realizarán fuera de ese intervalo.
+\item Evaluar objetivos, plan y dependencias con la misma rúbrica, registrar
+las incidencias y asociar el resultado con la versión de la orden y de la
+configuración.
+\end{enumerate}
+
+Se evitará mezclar respuestas de órdenes diferentes. Como la publicación de
+planes actual no proporciona por sí sola un identificador de solicitud, el
+instrumento deberá incorporar correlación explícita o aislamiento verificable
+por ensayo. Después de un tiempo agotado se cancelará o aislará el trabajo
+pendiente antes de enviar otra orden. Vaciar una variable local sin controlar
+publicaciones tardías no basta para garantizar la correspondencia.
+
+El manifiesto conservará las huellas de las entradas, referencias, adaptador,
+prompt, esquemas, normalizador, catálogos y reglas; las revisiones del código;
+las versiones del entorno; los parámetros de generación; los tiempos de
+espera; y la política de reintentos. Tras el piloto se fijarán estos elementos.
+Si posteriormente se corrige un componente usando errores del conjunto final,
+la nueva configuración se distinguirá como una evaluación posterior y no
+sustituirá silenciosamente la comparación original.
 
 \subsection{Repeticiones y control de variabilidad}
 
+Se propone realizar tres repeticiones independientes por orden y arquitectura
+en la evaluación final. El número se confirmará mediante la estimación de
+coste y duración del piloto, antes de ejecutar el conjunto reservado. No se
+escogerá la mejor respuesta de las repeticiones. Qwen conservará generación
+sin muestreo; ello no elimina la necesidad de registrar variación de latencia
+y posibles diferencias de la infraestructura.
+
+El orden de las condiciones se aleatorizará por bloques con una semilla
+registrada, alternando qué arquitectura procesa primero cada orden. Las
+ejecuciones serán secuenciales para evitar interferencia entre solicitudes y
+atribución ambigua de planes. Los identificadores de repetición vincularán
+los resultados pareados, aunque no impliquen compartir una semilla de
+generación entre proveedores.
+
+Los reintentos no serán correcciones selectivas de respuestas erróneas. Se
+propone conservar la primera tentativa como observación principal y registrar
+cualquier reintento de infraestructura por separado. Un error de servicio o
+tiempo agotado se mantendrá en el denominador de disponibilidad y de éxito de
+extremo a extremo. El análisis condicionado a respuestas recibidas se
+identificará como secundario.
+
+Las variantes y repeticiones de una misma intención están relacionadas. Para
+comparar tasas se promediarán primero los resultados de cada intención y se
+calculará la diferencia pareada entre arquitecturas. Se propone estimar un
+intervalo de confianza del 95\% mediante remuestreo de intenciones completas,
+manteniendo dentro de cada grupo sus variantes, repeticiones y ambos sistemas.
+El remuestreo se estratificará por familia cuando el diseño final lo requiera;
+se registrarán su semilla y número de remuestras. No se tratarán todas las
+variantes como observaciones independientes.
 
 \section{Condiciones experimentales}
+\label{sec:condiciones_cap6}
+
+Ambas arquitecturas recibirán las mismas órdenes originales en inglés y se
+evaluarán con el mismo vocabulario semántico, catálogos, repertorio de acciones
+y convenciones de cierre. El normalizador de Qwen permanecerá como parte de
+su arquitectura; GPT conservará el procesamiento establecido por su prompt.
+La comparación principal medirá esas configuraciones completas. Una eventual
+ablación del normalizador se definirá como análisis adicional, sin mezclar sus
+resultados con la condición principal.
 
 \subsection{Arquitectura Qwen--CLIPS}
 
+La condición Qwen--CLIPS utilizará el adaptador especializado de
+Qwen2.5-7B seleccionado mediante pérdida de validación. El entrenamiento
+registrado seleccionó el checkpoint 5000 y guardó el adaptador restaurado en
+\texttt{nl2cd\_qwen7b}. Para cada campaña se verificará la identidad del
+artefacto cargado por el servidor, de modo que una modificación posterior de
+esa carpeta no altere inadvertidamente la condición.
+
+La cadena experimental será:
+\begin{equation}
+x \longrightarrow G_{\mathrm{pred}}^{\mathrm{Qwen}}
+\longrightarrow \operatorname{Adaptar}
+       (G_{\mathrm{pred}}^{\mathrm{Qwen}})
+\longrightarrow P^{\text{Qwen--CLIPS}}.
+\end{equation}
+Se conservarán el texto normalizado, los objetivos predichos antes de su
+adaptación, las transformaciones realizadas, los hechos insertados y el plan.
+Los objetivos originales se utilizarán para evaluar la interpretación del
+modelo; los hechos permitirán examinar pérdidas o cambios introducidos en la
+integración.
+
+El límite actual de generación y los tiempos de espera se comprobarán con las
+órdenes compuestas del piloto. Si se ajustan, se documentarán los nuevos
+valores antes de la prueba final. No se impondrá igualdad numérica de tokens
+con GPT, porque Qwen produce objetivos y GPT produce además el plan; se
+establecerán límites adecuados a cada contrato y se informará el truncamiento.
+
 \subsection{Arquitectura GPT directo}
 
-\subsection{Condición de control con objetivos de referencia y CLIPS}
+La condición GPT utilizará el programa independiente
+\texttt{planner\_test\_node.py}, el prompt del dominio y el esquema de respuesta
+estructurada. El modelo configurado actualmente es \texttt{gpt-5.6-terra}; se
+registrarán el identificador solicitado, el informado por el servicio y la
+fecha de ejecución. El recorrido será:
+\begin{equation}
+x \longrightarrow
+\bigl(G_{\mathrm{pred}}^{\mathrm{GPT}},P^{\mathrm{GPT}}\bigr).
+\end{equation}
+Los objetivos y el plan se producen en una misma respuesta. No se enviarán
+los objetivos de GPT a CLIPS para construir o corregir su plan.
 
+La independencia del programa es compatible con la comparación, porque el
+producto evaluado es un plan representado bajo el contrato de Justina. No es
+necesario conectar GPT al ejecutor físico para medir ese producto. Sí será
+necesario aplicar las mismas condiciones iniciales declaradas y la misma
+rúbrica de contenido. La latencia incluirá el acceso al servicio externo y
+se interpretará como rendimiento del sistema desplegado.
+
+El prompt comunica convenciones operativas próximas a las utilizadas por
+CLIPS. Por tanto, la comparación corresponde a generación directa guiada por
+esas instrucciones frente a expansión mediante reglas. No se interpretará
+como una prueba de planificación sin conocimiento del dominio ni como un
+experimento que aísla únicamente el efecto de CLIPS.
+
+\subsection{Control con objetivos de referencia y CLIPS}
+
+La condición de control reemplazará la predicción de Qwen por
+\(G_{\mathrm{ref}}\) y conservará el mismo adaptador y las mismas reglas de
+la cadena principal:
+\begin{equation}
+G_{\mathrm{ref}} \longrightarrow
+\operatorname{Adaptar}(G_{\mathrm{ref}})
+\longrightarrow P^{\mathrm{control}}.
+\end{equation}
+Se utilizará el adaptador del recorrido de ejecución, no otro conversor que
+produzca hechos diferentes. Se reiniciará el estado bajo las mismas
+condiciones. Este control no constituye una tercera arquitectura competidora
+y su latencia no se comparará como si incluyera interpretación lingüística.
+
+Si el control satisface una orden y Qwen--CLIPS no, la inspección de los
+objetivos y hechos ayudará a localizar la diferencia. Si el control también
+falla, se revisarán la referencia, la adaptación, las reglas y el contrato de
+acciones. La coincidencia de fallos no prueba por sí sola una causa concreta.
+El plan de control se evaluará con la rúbrica independiente; no se convertirá
+automáticamente en la respuesta correcta contra la cual juzgar a GPT.
 
 \section{Evaluación de la interpretación semántica}
+\label{sec:semantica_cap6}
 
 \subsection{Exactitud de objetivos}
 
+Se distinguirán coincidencia exacta y equivalencia semántica. La primera
+requerirá que la lista de objetivos predicha coincida con la referencia
+canónica, conservando orden y parámetros. Para el conjunto resoluble,
+\begin{equation}
+\mathrm{EM}_{G}^{a}=
+\frac{1}{NR}\sum_{i=1}^{N}\sum_{r=1}^{R}
+\mathbf{1}\!\left[G_{\mathrm{pred},i,r}^{a}=G_{\mathrm{ref},i}\right],
+\end{equation}
+donde \(a\) identifica la arquitectura, \(N\) el número de órdenes y \(R\)
+el número fijado de repeticiones. Una salida ausente o no interpretable no
+constituirá coincidencia. Las órdenes ambiguas o fuera de dominio se
+evaluarán separadamente y no tendrán una lista vacía como referencia correcta.
+
+La equivalencia semántica permitirá variantes previamente justificadas que
+conserven subtareas, entidades y relaciones. Por ejemplo, un sinónimo de una
+propiedad de tamaño puede diferir textualmente sin cambiar la intención. No
+se permitirá eliminar atributos, intercambiar destinatarios ni reordenar
+dependencias para aumentar artificialmente la coincidencia. Las decisiones
+de equivalencia se documentarán con reglas comunes para ambos sistemas.
+
 \subsection{Validez estructural}
 
-\subsection{Exactitud de entidades y parámetros}
+Se verificará que la salida pueda analizarse, que los objetivos utilicen el
+vocabulario final y que sus argumentos cumplan el esquema. Los doce objetivos
+considerados son \texttt{go}, \texttt{find}, \texttt{take}, \texttt{deliver},
+\texttt{place}, \texttt{guide}, \texttt{follow}, \texttt{count}, \texttt{tell},
+\texttt{save}, \texttt{answer\_question} y \texttt{greet}. Un esquema aceptado
+no garantiza correspondencia con la orden. Se conservarán separadas la
+validez de estructura, la corrección semántica y la disponibilidad de respuesta.
+
+\subsection{Entidades y parámetros}
+
+La revisión comprobará objeto, persona, ubicación de origen, destino,
+destinatario, tipo de entidad y atributos exigidos. Se distinguirán omisiones,
+sustituciones y entidades inventadas. La medida agregada de orden completamente
+correcta se acompañará de tasas por campo cuando haya suficientes casos.
+
+Las secuencias de distinta longitud requieren alineación de subtareas: no se
+comparará ciegamente el objetivo de una posición con el de la misma posición
+en una lista desplazada. Las omisiones y adiciones conservarán su penalización
+y la alineación no podrá ocultar cambios de orden relevantes. Las tasas de
+acierto sobre campos evaluables informarán su denominador y se acompañarán
+del resultado sobre todas las órdenes.
 
 \subsection{Dependencias entre objetivos}
 
+Se verificará la conservación de referencias y precedencias: buscar antes de
+adquirir, adquirir antes de entregar, mantener el mismo objeto durante el
+transporte y asociar la interacción con la persona solicitada. Las fichas
+describirán estas relaciones sin exigir que todo orden alternativo sea
+idéntico al de la referencia si respeta las mismas dependencias.
+
+Un ejemplo de desarrollo es \emph{Bring me a mug from the cabinet}. La
+referencia propuesta contiene:
+\begin{verbatim}
+go(cabinet)
+find(mug, kind=object)
+take(mug)
+deliver(mug, to=me)
+\end{verbatim}
+Un resultado que cambie \texttt{cabinet} por otra ubicación tendrá un error de
+interpretación aunque produzca después un plan bien formado. Si los objetivos
+son correctos pero el plan omite la adquisición, el fallo aparecerá en la
+etapa de planificación. Este ejemplo es ilustrativo y no describe una salida
+experimental observada.
 
 \section{Evaluación de la planificación}
+\label{sec:planificacion_cap6}
+
+La evaluación del plan utilizará subtareas y restricciones, no igualdad
+literal con una única lista de acciones. Se admitirán anuncios equivalentes
+y referencias internas consistentes, preservando los efectos exigidos. La
+revisión automatizada se complementará con inspección humana cuando la
+equivalencia no quede resuelta por los verificadores. Se ocultará la etiqueta
+de arquitectura durante esa revisión en la medida en que el formato lo permita.
 
 \subsection{Acciones válidas}
 
+Se comprobarán nombres de acciones, número y tipo de argumentos, entidades
+admisibles, numeración y convenciones de inicio y cierre. La separación entre
+anuncios y operaciones deberá respetar el contrato compartido. Una respuesta
+con JSON válido o con un marcador de finalización no se considerará un plan
+correcto únicamente por esas propiedades.
+
 \subsection{Consistencia del plan}
+
+Se recorrerá la secuencia mediante un estado simbólico mínimo que represente
+ubicación prevista, posesión del objeto, referente de interacción y datos
+adquiridos cuando corresponda. El contrato del ejecutor determinará qué
+acciones modifican esas variables. Este recorrido es un verificador de
+consistencia, no una simulación de percepción o dinámica física.
+
+Los mensajes hablados ordinarios no acreditarán por sí solos adquirir un
+objeto, seguir a una persona o comprobar una identidad. Si una clave de
+protocolo activa una operación en el ejecutor, será necesario documentar ese
+efecto antes de concederle cumplimiento. Cuando no pueda precisarse, el
+resultado se marcará como no verificable con el contrato disponible.
 
 \subsection{Cumplimiento de subtareas}
 
+Para cada orden se comprobará si el plan cubre todas las subtareas y respeta
+las restricciones obligatorias. La variable principal será el cumplimiento
+completo del plan en el bloque principal previamente definido:
+\begin{equation}
+C_{i,r}^{a}=
+\begin{cases}
+1, & \text{si el plan es válido y satisface todas las exigencias;}\\
+0, & \text{si hay incumplimiento o no se obtiene un plan evaluable.}
+\end{cases}
+\end{equation}
+La tasa correspondiente será
+\begin{equation}
+\mathrm{Cumplimiento}^{a}=
+\frac{1}{NR}\sum_{i=1}^{N}\sum_{r=1}^{R}C_{i,r}^{a}.
+\end{equation}
+Se informarán también las fracciones de subtareas cumplidas para localizar
+fallos parciales, sin sustituir la medida de orden completa. Un indicador
+secundario exigirá simultáneamente interpretación correcta y plan correcto,
+de modo que un plan acertado acompañado de objetivos incorrectos no oculte
+una inconsistencia entre productos.
+
+La categoría \emph{no verificable} se conservará separada de \emph{incumple}
+en el diagnóstico. Si surge en un caso del bloque principal después de fijar
+el protocolo, no se eliminará silenciosamente del denominador: se informará
+como éxito no acreditado, se explicará la carencia del evaluador y se
+presentará un análisis de sensibilidad. La proporción de casos verificables
+permitirá valorar el alcance efectivo de la medida.
+
 \subsection{Precondiciones y dependencias}
 
-\subsection{Planificabilidad}
+El verificador comprobará que los efectos requeridos estén disponibles antes
+de cada acción dependiente. Para la orden de la taza, no bastará con enumerar
+una entrega: el plan deberá localizar y adquirir la taza, conservar su
+referencia y dirigir la entrega al operador. Cuando el contrato de entrega
+incluya movimientos de manera implícita, se reconocerán esos efectos
+documentados sin exigir una acción redundante de navegación.
 
+Las condiciones iniciales serán supuestos declarados del ensayo. La
+existencia y detectabilidad física de los objetos o personas no se comprobará
+en este experimento. Tampoco se asumirán efectos simplemente porque CLIPS
+actualice un hecho interno: el estado previsto del plan se contrastará con
+el significado del contrato de acciones.
+
+\subsection{Planificabilidad y terminación}
+
+Se registrará si la cadena produce un plan terminado bajo su contrato y si
+quedan objetivos pendientes o diagnósticos de falta de soporte. En CLIPS se
+examinará la terminación efectiva del procesamiento, no sólo la recepción de
+un mensaje no vacío. Una regla alternativa que consuma un objetivo sin
+satisfacerlo podrá permitir terminar, pero no acreditará cumplimiento.
+
+Se diferenciarán cuatro hechos: respuesta recibida, formato válido,
+terminación del proceso y cumplimiento de la orden. Esta separación permitirá
+explicar planes que concluyen formalmente y omiten tareas, así como fallos de
+infraestructura que impiden observar el resultado del planificador.
 
 \section{Clasificación de errores}
+\label{sec:errores_cap6}
 
 \subsection{Errores de interpretación}
 
-\subsection{Errores de planificación}
+Se clasificarán como errores de interpretación las subtareas omitidas o
+inventadas, las entidades incorrectas, la pérdida de atributos, la resolución
+errónea de pronombres y el cambio de dependencias en los objetivos predichos.
+En Qwen se examinará también si el normalizador altera la orden antes de la
+inferencia. Una modificación errónea del texto se distinguirá del fallo de
+generación del modelo dentro de la cadena completa.
 
-\subsection{Errores combinados}
+\subsection{Errores de adaptación y planificación}
 
+Los errores de adaptación corresponderán a diferencias entre los objetivos
+producidos y los hechos insertados, por ejemplo pérdida de un atributo o
+reasignación de un tipo de entidad. Los errores de planificación incluirán
+acciones inválidas, precondiciones incumplidas, referencias inconsistentes y
+subtareas no materializadas pese a contar con objetivos suficientes.
 
-\section{Evaluación física con Justina}
+También se registrarán separadamente truncamiento, ausencia de respuesta,
+agotamiento del tiempo, fallos de servicio y problemas de asociación entre
+solicitud y plan. No se atribuirá automáticamente a razonamiento un fallo
+cuyo origen sólo sea observable como error técnico.
 
-\subsection{Selección de tareas}
+\subsection{Errores combinados y alcance de la atribución}
 
-\subsection{Procedimiento de ejecución}
+Una ejecución podrá recibir más de una etiqueta. Por ejemplo, una entidad
+incorrecta en los objetivos y una entrega sin adquisición son errores
+distintos. Se registrará el primer punto de divergencia observable y las
+incidencias posteriores, sin asumir que todas comparten una causa.
 
-\subsection{Criterios de éxito y fallo}
+La condición de control permitirá examinar la cadena simbólica con referencias
+revisadas. En GPT, objetivos y plan se generan conjuntamente; su comparación
+permite detectar inconsistencias entre productos, pero no demuestra una
+separación causal interna entre interpretación y planificación. Las tablas de
+errores conservarán esta diferencia de observabilidad entre arquitecturas.
 
+\section{Robustez, límites del dominio y alcance físico}
+\label{sec:robustez_cap6}
+
+\subsection{Variación lingüística y composición}
+
+Las variantes canónica, parafraseada y con ruido leve conservarán una misma
+intención revisada. Se comparará el cumplimiento entre variantes y se
+registrará cuántos grupos mantienen éxito en todas ellas. Obtener tres
+respuestas equivalentes pero incorrectas no se interpretará como robustez
+satisfactoria; la estabilidad se informará junto con la corrección.
+
+Los casos compuestos permitirán evaluar conservación de referentes y
+dependencias al aumentar las subtareas. El análisis se organizará por número
+de objetivos, entidades y cambios de referente. Un resultado peor en órdenes
+largas no se atribuirá únicamente a su longitud cuando también cambien familia
+o dificultad. Se mantendrá una descripción de esas diferencias.
+
+\subsection{Ambigüedad, restricciones y capacidades no verificables}
+
+Se examinarán órdenes con referentes ausentes, destinos no especificados,
+acciones fuera del repertorio y contradicciones. Para GPT se evaluará si la
+respuesta solicita la información necesaria o explica adecuadamente el
+rechazo, sin generar un plan basado en supuestos inventados. Se separará un
+rechazo del dominio de un rechazo de la API o error del servicio.
+
+Qwen no implementa el mismo contrato conversacional de aclaración y rechazo.
+Se registrará su conducta observable ---bloqueo, error, objetivos propuestos o
+plan generado--- sin convertir un error de formato en una aclaración
+correcta. Estos resultados describirán cobertura funcional y límites; no se
+mezclarán con la tasa principal de tareas resolubles.
+
+Los diagnósticos incluirán atributos conjuntos de personas, conteos filtrados,
+seguimiento, identificación por nombre y propiedades que no puedan
+determinarse con los efectos disponibles. Por ejemplo, tamaño y peso no se
+considerarán intercambiables. Un plan que use una aproximación no autorizada
+se distinguirá de uno que satisface la propiedad solicitada. Las referencias
+no se modificarán para aceptar una limitación común de las dos arquitecturas.
+
+\subsection{Delimitación de la evaluación física}
+
+El protocolo principal no requiere accionar al robot. Se detendrá el recorrido
+en la obtención y verificación del plan; los nodos ejecutores físicos no
+participarán en la campaña. Esta delimitación permitirá completar la
+comparación aun cuando la plataforma presente problemas técnicos.
+
+Las conclusiones se referirán a fidelidad semántica, consistencia simbólica y
+rendimiento computacional. No permitirán estimar probabilidad de completar
+una tarea en un entorno real ni certificar ausencia de daños. Si más adelante
+se realizan demostraciones físicas, se describirán como una etapa adicional
+con condiciones, casos y métricas propios. No se exigirá simetría física entre
+una arquitectura integrada con ROS y un programa de evaluación independiente
+para responder las preguntas de este protocolo.
 
 \section{Rendimiento computacional}
+\label{sec:rendimiento_cap6}
 
 \subsection{Latencia}
 
+La medida principal de latencia comenzará antes de enviar la orden original
+y terminará cuando el evaluador reciba una respuesta terminal y complete la
+validación automática del contrato. Para Qwen--CLIPS incluirá comunicación,
+normalización, inferencia, adaptación y expansión; para GPT incluirá la
+solicitud remota, generación, recepción y validación. La calificación semántica
+detallada posterior quedará fuera de este intervalo.
+
+Se mantendrá cargado el modelo local para medir operación habitual. La carga
+inicial, la puesta en marcha de servicios y las solicitudes de calentamiento
+se registrarán por separado y utilizarán casos de desarrollo, no entradas de
+prueba final. Se fijará una única modalidad de despliegue de Qwen para la
+comparación principal; una modalidad remota adicional se identificará como
+otra condición de infraestructura.
+
+Se presentarán mediana y percentil 95, junto con el número de observaciones,
+la tasa de respuestas recibidas y la de planes correctos. Los tiempos hasta
+fallo se informarán aparte; un fallo rápido no se interpretará como una
+ventaja de latencia. Los tiempos agotados se conservarán como observaciones
+censuradas al umbral declarado, sin asignarles un tiempo de éxito inventado.
+Los tiempos internos de Qwen o CLIPS servirán para diagnóstico, pero no se
+compararán directamente con la latencia total del servicio GPT.
+
 \subsection{Uso de recursos}
 
+En la plataforma local se registrarán memoria RAM y memoria GPU observables,
+especificando si la medida corresponde al proceso, a memoria asignada por el
+framework o al dispositivo completo. Se indicarán la frecuencia de muestreo,
+la carga residente y el máximo observado durante la campaña. Un máximo
+acumulado desde el inicio del proceso no se presentará como un máximo exclusivo
+de una solicitud.
+
+Para GPT no se dispone de acceso a los recursos internos del proveedor. La
+memoria del cliente local no representa la memoria necesaria para ejecutar
+el modelo remoto. Por tanto, se presentarán por separado los requisitos
+locales de Qwen--CLIPS y los recursos observables del acceso al servicio GPT,
+sin afirmar una comparación directa de consumo interno o energía.
+
 \subsection{Tokens y coste del modelo GPT}
+
+Se conservará el uso de tokens informado por el servicio para cada solicitud,
+incluyendo el desglose disponible de entrada, salida y caché. Los tokens de
+razonamiento se interpretarán según su pertenencia a los totales reportados,
+sin sumarlos dos veces. El coste se obtendrá con la tarifa o facturación
+aplicable en la fecha de ejecución, cuya fuente y moneda quedarán registradas.
+Si no existe una tarifa verificable para el acceso utilizado, se informarán
+tokens y cargo observado, sin inventar un coste teórico.
+
+El informe distinguirá coste total de la campaña y coste por orden con plan
+correcto. Los reintentos y solicitudes fallidas con consumo facturado se
+conservarán en el total. Para Qwen, ausencia de un cargo por solicitud no
+equivale a coste computacional nulo; no se construirá una comparación monetaria
+integral sin medir y justificar los componentes adicionales.
+
+La fijación de datos, referencias, configuraciones y denominadores permitirá
+relacionar los resultados del capítulo siguiente con un procedimiento
+explícito. El número final de casos, repeticiones y parámetros operativos se
+incorporará cuando concluya el piloto, conservando los registros que
+justifiquen esas decisiones.

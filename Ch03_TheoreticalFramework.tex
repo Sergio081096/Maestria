@@ -22,13 +22,20 @@ fuente controlada de tareas, entidades y escenarios, y no como una restricción
 que obligue al usuario a reproducir literalmente las formulaciones
 lingüísticas utilizadas en la competencia.
 
-Finalmente, se presentan las dos arquitecturas que serán evaluadas. La primera
-utiliza Qwen2.5-7B como intérprete semántico y CLIPS como componente encargado
-de expandir los objetivos obtenidos en acciones ejecutables. La segunda delega
-tanto la interpretación como la generación del plan a un modelo GPT. Ambas
-arquitecturas utilizan el mismo dominio conceptual, pero distribuyen de manera
-diferente la responsabilidad de transformar una orden en un plan.
+Finalmente, se presentan las dos arquitecturas que serán evaluadas.
+La primera utiliza un modelo Qwen como intérprete semántico y CLIPS
+como componente encargado de expandir los objetivos obtenidos en
+acciones compatibles con las capacidades del robot. Esta arquitectura
+se evalúa con dos variantes del intérprete: Qwen2.5-3B y Qwen2.5-7B,
+cuyas denominaciones indican aproximadamente tres y siete mil millones
+de parámetros, respectivamente. La segunda arquitectura delega tanto
+la interpretación como la generación del plan a un modelo GPT.
 
+De este modo, se consideran dos arquitecturas y tres configuraciones
+experimentales: Qwen2.5-3B--CLIPS, Qwen2.5-7B--CLIPS y GPT directo.
+Las tres utilizan el mismo dominio conceptual, aunque las dos
+arquitecturas distribuyen de manera diferente la responsabilidad
+de transformar una orden en un plan.
 
 % ============================================================
 \section{Contexto arquitectónico y alcance del sistema}
@@ -70,11 +77,17 @@ De manera simplificada, el flujo general puede expresarse como:
 }
 \end{equation}
 
-La contribución estudiada se concentra en las etapas de interpretación y planificación anteriores a la ejecución física. Una instrucción puede contener varias subtareas relacionadas que deben ser identificadas y transformadas en acciones compatibles con las capacidades del robot. Los módulos de percepción, navegación, manipulación e interacción encargados de realizar dichas acciones se consideran externos al problema de planificación estudiado.
-En consecuencia, la tesis evalúa principalmente la transformación de
-instrucciones en representaciones semánticas y planes de acción, mientras que
-la ejecución física se considera una etapa posterior que permite analizar, de
-forma separada, el comportamiento del plan sobre el robot.
+La contribución estudiada se concentra en las etapas de interpretación y
+planificación anteriores a la ejecución física. Una instrucción puede contener
+varias subtareas relacionadas que deben ser identificadas y transformadas en
+acciones compatibles con las capacidades del robot. Los módulos de percepción,
+navegación, manipulación e interacción encargados de realizar dichas acciones
+se consideran externos al problema de planificación estudiado.
+
+En consecuencia, la tesis evalúa la transformación de instrucciones en
+representaciones semánticas y planes de acción. La comparación experimental
+no incluye la ejecución física de los planes; el uso de Qwen--CLIPS integrado
+en Justina durante la RoboCup 2026 se analiza por separado.
 
 
 % ============================================================
@@ -140,7 +153,7 @@ Una característica relevante de GPSR es que los comandos utilizados durante la
 prueba no se seleccionan únicamente a partir de una lista fija de oraciones.
 El reglamento establece que las tareas se construyen mediante el
 \textit{CommandGenerator} oficial de RoboCup@Home
-\cite{robocuphome2026rulebook,robocup_command_generator}. Sobre esta herramienta se realizaron posteriormente adaptaciones específicas para construir el conjunto de datos empleado en el entrenamiento y evaluación del modelo. Dichas modificaciones se
+\cite{robocuphome2026rulebook,robocup_command_generator}. Sobre esta herramienta se realizaron posteriormente adaptaciones específicas para construir el conjunto de datos empleado para el entrenamiento de ambas variantes de Qwen y la evaluación de las configuraciones consideradas. Dichas modificaciones se
 describen en el capítulo de metodología.
 
 El generador define diferentes familias de instrucciones relacionadas con
@@ -921,11 +934,13 @@ objetivos obtenidos en acciones ejecutables.
 En la arquitectura GPT directo, un mismo modelo realiza tanto la interpretación
 de la orden como la generación del plan.
 
-Esta diferencia constituye el eje principal de la comparación. Por tanto, el
-objetivo no consiste únicamente en comparar dos modelos de lenguaje, sino en
-contrastar dos formas distintas de organizar el proceso que relaciona lenguaje
-natural, objetivos semánticos y acciones ejecutables.
-
+Esta diferencia constituye el eje principal de la comparación entre
+arquitecturas. Se busca contrastar dos formas de organizar el proceso
+que relaciona lenguaje natural, objetivos semánticos y acciones
+ejecutables. Adicionalmente, dentro de la arquitectura Qwen--CLIPS,
+se comparan las variantes Qwen2.5-3B y Qwen2.5-7B para examinar las
+diferencias asociadas con la elección del intérprete, manteniendo
+común el procesamiento simbólico posterior.
 
 % ------------------------------------------------------------
 \subsection{Base común de las arquitecturas evaluadas}
@@ -971,6 +986,19 @@ Por tanto, la comparación se realiza sobre un mismo problema y un mismo
 resultado esperado, aunque cada arquitectura distribuya de manera diferente el
 conocimiento utilizado para alcanzarlo.
 
+En la comparación experimental, las arquitecturas se implementan
+mediante dos programas independientes del sistema de ejecución física
+del robot: uno correspondiente a Qwen--CLIPS y otro a GPT directo.
+El primero se utiliza con Qwen2.5-3B y Qwen2.5-7B, dando lugar a dos
+configuraciones de una misma arquitectura.
+
+Las tres configuraciones reciben las mismas instrucciones y disponen
+de información equivalente sobre el dominio y las condiciones
+iniciales pertinentes. Los programas emplean convenciones comunes
+para registrar los objetivos interpretados, los planes generados y
+los fallos del procesamiento, de modo que sus resultados puedan
+evaluarse mediante los mismos criterios. Esta comparación no incluye
+la ejecución física de los planes.
 
 % ------------------------------------------------------------
 \subsection{Arquitectura Qwen--CLIPS}
@@ -978,6 +1006,21 @@ conocimiento utilizado para alcanzarlo.
 
 La primera arquitectura adopta una separación explícita entre interpretación
 semántica y planificación.
+
+Esta arquitectura se instancia con Qwen2.5-3B y Qwen2.5-7B.
+Ambos modelos fueron ajustados mediante QLoRA utilizando el mismo
+conjunto de datos, la misma partición, los mismos hiperparámetros
+y el mismo criterio de selección del checkpoint. La diferencia
+introducida en el procedimiento de entrenamiento fue el identificador
+del modelo base.
+
+En la comparación experimental se mantienen comunes los procedimientos
+de normalización y adaptación de los objetivos, las reglas de CLIPS
+y el estado inicial utilizado para generar cada plan. Por tanto,
+las dos configuraciones conservan la misma arquitectura y difieren
+en el modelo empleado para la interpretación semántica. Los detalles
+del entrenamiento y de la implementación se presentan en los
+capítulos correspondientes.
 
 Su funcionamiento general puede resumirse mediante:
 
@@ -1239,7 +1282,7 @@ características de ambas estrategias.
 \hline
 \textbf{Característica}
 &
-\textbf{Qwen--CLIPS}
+\textbf{Qwen2.5-3B   Qwen2.5-7B}
 &
 \textbf{GPT directo}
 \\
@@ -1324,13 +1367,18 @@ sea necesariamente correcto ni garantiza el éxito de su ejecución física. De
 manera similar, restringir la estructura de la respuesta de GPT no garantiza
 que la interpretación o el plan generado sean semánticamente correctos.
 
-Por ello, en ambas arquitecturas resulta necesario evaluar por separado la
-representación semántica $G$ y el plan $P$. Esta separación permite analizar no
-sólo qué arquitectura produce una mayor proporción de resultados correctos,
-sino también en qué etapa se originan los errores, qué grado de consistencia
-presenta cada estrategia y qué recursos requiere para transformar una
-instrucción en un plan compatible con las capacidades del robot.
+Por ello, en ambas arquitecturas resulta necesario evaluar por separado
+la representación semántica $G$ y el plan $P$. Esta separación permite
+examinar la corrección de los resultados, los tipos de error y la
+consistencia de cada configuración.
 
+La comparación también considera la latencia observada desde los
+programas experimentales. Adicionalmente, entre Qwen2.5-3B y
+Qwen2.5-7B se compara el consumo de recursos computacionales bajo
+condiciones comunes de ejecución local. Para GPT directo mediante API,
+la evaluación no incluye mediciones internas de memoria o procesamiento
+del modelo. Las métricas y los procedimientos de medición se definen
+en el capítulo de validación y experimentación.
 
 % ============================================================
 \section{Criterios conceptuales de validez}
@@ -1364,7 +1412,9 @@ donde $x$ representa la instrucción en lenguaje natural, $G$ la secuencia de
 objetivos semánticos, $P$ el plan generado y $E$ el resultado observado durante
 la ejecución.
 
-Cada una de estas etapas debe evaluarse de manera independiente.
+La comparación experimental evalúa la interpretación y el plan; el éxito
+de ejecución se conserva como un nivel conceptual distinto, que no se
+mide para los planes generados en dicha comparación.
 
 
 % ------------------------------------------------------------
@@ -1537,33 +1587,61 @@ La separación explícita entre interpretación y planificación de la arquitect
 Qwen--CLIPS permite introducir una condición experimental de control destinada
 a aislar el comportamiento del componente simbólico.
 
-En esta condición, los objetivos de referencia se proporcionan directamente a
-CLIPS:
+En esta condición, los objetivos de referencia se proporcionan al
+mismo adaptador utilizado por las configuraciones Qwen--CLIPS para
+convertirlos en hechos de CLIPS:
 
 \begin{equation}
 \boxed{
 G_{\mathrm{ref}}
+\xrightarrow{\text{adaptación}}
+F_{\mathrm{ref}}
 \xrightarrow{\text{CLIPS}}
 P_{\mathrm{CLIPS}}
 }
 \label{eq:control_clips}
 \end{equation}
 
-Esta condición no constituye una tercera arquitectura de planificación. Su
-propósito es evaluar únicamente la transformación $G\rightarrow P$,
-eliminando temporalmente los posibles errores producidos durante $x\rightarrow G$.
+donde $F_{\mathrm{ref}}$ representa los hechos obtenidos a partir de
+los objetivos de referencia. Esta condición constituye un control
+auxiliar del procesamiento posterior a la interpretación; no añade
+una arquitectura ni una cuarta configuración principal a la comparación.
 
-Si CLIPS genera un plan correcto cuando recibe $G_{\mathrm{ref}}$, pero el flujo
-completo Qwen--CLIPS falla para la misma instrucción, el error puede encontrarse
-en la interpretación producida por Qwen.
+El propósito del control es evaluar la transformación
+$G\rightarrow F\rightarrow P$, excluyendo la generación de objetivos
+por parte del modelo de lenguaje.
 
-En cambio, si el plan generado a partir de $G_{\mathrm{ref}}$ también es
-incorrecto, el problema corresponde a la expansión simbólica, la cobertura de
-las reglas o la generación del plan.
+Si el control genera un plan correcto pero una configuración
+Qwen--CLIPS falla para la misma instrucción, deben examinarse los
+objetivos predichos y su transformación en hechos para localizar
+el origen de la discrepancia.
 
-Esta condición permite distinguir experimentalmente entre dos tipos principales
-de error:
+Si el control también produce un plan incorrecto, deben revisarse
+la adaptación de los objetivos, las reglas de expansión y las
+condiciones iniciales utilizadas.
 
+El análisis distingue los siguientes tipos de error:
+
+\begin{itemize}
+
+    \item \textbf{Error de interpretación:} la secuencia $G$ no
+    representa correctamente la instrucción.
+
+    \item \textbf{Error de adaptación:} la transformación de los
+    objetivos en hechos no conserva correctamente la información
+    contenida en $G$.
+
+    \item \textbf{Error de planificación simbólica:} los objetivos
+    son correctos y se encuentran adecuadamente representados
+    mediante hechos, pero el plan $P$ no constituye una expansión
+    coherente con ellos y con las condiciones iniciales.
+
+\end{itemize}
+
+La condición de control apoya esta clasificación, pero la atribución
+de un fallo requiere examinar las representaciones intermedias y el
+plan generado. Esta separación será utilizada posteriormente para
+analizar los resultados de la evaluación.
 \begin{itemize}
 
     \item \textbf{error de interpretación:} la secuencia $G$ no representa
@@ -1627,24 +1705,12 @@ entorno.
 Por esta razón, el estado esperado utilizado durante la planificación no debe
 confundirse con el estado real observado durante la ejecución.
 
-La evaluación de las arquitecturas debe distinguir, por tanto, entre:
+Por tanto, la comparación entre Qwen--CLIPS y GPT directo se limita a la
+interpretación de la instrucción y a la validez y consistencia del plan
+generado. Los resultados observados al utilizar Qwen--CLIPS en Justina
+durante la RoboCup 2026 se presentan por separado y no constituyen una
+medición equivalente de la ejecución de ambas arquitecturas.
 
-\begin{enumerate}
-
-    \item la correcta interpretación de la instrucción;
-
-    \item la generación de un plan coherente con dicha interpretación;
-
-    \item el resultado obtenido al intentar ejecutar físicamente ese plan.
-
-\end{enumerate}
-
-Esta separación permite analizar los resultados sin atribuir automáticamente a
-la interpretación o a la planificación fallos originados en otros componentes
-del robot.
-
-Los criterios establecidos en esta sección definen conceptualmente qué se
-considera una interpretación correcta, un plan válido y una ejecución exitosa.
-Las métricas concretas, procedimientos experimentales y criterios utilizados
-para medir estas propiedades se presentan posteriormente en el capítulo de
-validación y experimentación.
+Los criterios de esta sección definen conceptualmente una interpretación
+correcta y un plan válido. Las métricas y procedimientos empleados para
+evaluarlos se presentan en el capítulo de validación y experimentación.

@@ -7,10 +7,13 @@
 
 En esta investigación se desarrolló una arquitectura para transformar
 instrucciones en lenguaje natural en planes de acciones para el robot
-Justina, mediante la especialización de Qwen2.5-7B como intérprete semántico
-y la expansión de objetivos mediante reglas CLIPS. Para estudiar esta
-estrategia se diseñó una arquitectura de comparación en la que un modelo
-GPT genera los objetivos y el plan durante una misma inferencia.
+Justina, mediante la especialización de modelos Qwen como intérpretes
+semánticos y la expansión de objetivos mediante reglas CLIPS.
+Esta arquitectura se estudia con Qwen2.5-3B y Qwen2.5-7B.
+Como arquitectura de comparación se utiliza GPT directo, que genera
+los objetivos y el plan durante una misma inferencia. De este modo,
+el diseño contempla dos arquitecturas y tres configuraciones
+experimentales.
 
 El desarrollo requirió adaptar el generador de comandos GPSR, construir un
 conjunto de datos con etiquetas semánticas, establecer una interfaz entre
@@ -49,6 +52,13 @@ su procedencia, se utilizarán \(G_{\mathrm{pred}}^{\mathrm{Qwen}}\) y
 \(G_{\mathrm{pred}}^{\mathrm{GPT}}\). Los superíndices identifican el
 modelo que produce la representación.
 
+La notación correspondiente a Qwen se utiliza de manera general para
+ambas variantes. Cuando sea necesario distinguir sus resultados, se
+emplearán los superíndices $\mathrm{Qwen3B}$ y $\mathrm{Qwen7B}$ para
+los objetivos, y $\mathrm{Qwen3B--CLIPS}$ y
+$\mathrm{Qwen7B--CLIPS}$ para los planes. Cada resultado se asociará
+con la configuración que lo produjo.
+
 En Qwen--CLIPS, la predicción \(G_{\mathrm{pred}}^{\mathrm{Qwen}}\)
 se somete a validación y conversión antes de su expansión mediante
 CLIPS, que produce el plan \(P^{\text{Qwen--CLIPS}}\). En la arquitectura
@@ -71,6 +81,14 @@ y la expansión se realiza con reglas explícitas. En GPT directo, ambas
 funciones se asignan a un modelo condicionado por una especificación del
 dominio y del comportamiento operativo esperado.
 
+Dentro de Qwen--CLIPS se considera un segundo factor de comparación:
+la variante del intérprete semántico, Qwen2.5-3B o Qwen2.5-7B.
+Para estudiar esta diferencia se mantienen comunes el conjunto de
+datos, la partición de entrenamiento y validación, los hiperparámetros
+de ajuste y el criterio de selección del checkpoint. También se
+mantienen fijos los procedimientos de normalización y adaptación,
+las reglas de CLIPS y las condiciones iniciales de planificación.
+
 Las variables de respuesta comprenden la corrección de los objetivos, la
 validez y consistencia del plan y el rendimiento computacional. La familia
 de tarea, la longitud de la secuencia de objetivos, los tipos de entidades
@@ -78,6 +96,14 @@ y las dependencias referenciales se utilizan para organizar el análisis.
 Las variantes que expresan una misma intención se mantienen identificadas
 como tales para interpretar adecuadamente los resultados por caso y por
 grupo de reformulaciones.
+
+El rendimiento computacional se examina mediante la latencia observada
+desde los programas experimentales para las tres configuraciones.
+Adicionalmente, se compara el consumo de recursos de ambas variantes
+Qwen sobre la misma plataforma y bajo condiciones comunes de
+inferencia. Para GPT directo mediante API no se incluyen mediciones
+internas de memoria o procesamiento del modelo. Las métricas y los
+procedimientos de medición se especifican en el capítulo 6.
 
 La comparación se delimita a instrucciones en inglés, un vocabulario
 semántico común y un repertorio compartido de acciones. El diseño exige
@@ -95,17 +121,24 @@ establecido.
 \subsection{Estrategia general de evaluación}
 
 La evaluación se organiza a partir de los niveles de validez definidos en
-la Sección~\ref{sec:criterios_validez}. Se examina primero la interpretación
-de la orden y después la generación del plan. Las pruebas físicas con
-Justina se consideran una etapa adicional, de manera que los fallos de
-ejecución puedan analizarse por separado de los errores anteriores.
+la Sección~\ref{sec:criterios_validez}. La comparación controlada examina
+primero la interpretación de la orden y después la validez y consistencia
+del plan generado, sin ejecutar físicamente los planes de cada caso.
+La experiencia de Qwen--CLIPS integrado en Justina durante la RoboCup 2026
+se analiza por separado y no se utiliza como resultado comparativo frente
+a GPT directo.
 
-Para estudiar la etapa simbólica se incorpora la condición de control de
-la Sección~\ref{subsec:control_clips}, en la que se proporcionan los
-objetivos de referencia a CLIPS. Esta condición permite contrastar el
-resultado de la expansión con el obtenido a partir de la interpretación
-de Qwen. La inspección de los objetivos y de su conversión a hechos ayuda
-a distinguir errores de interpretación, integración y expansión.
+Para estudiar el procesamiento posterior a la interpretación se
+incorpora la condición de control de la
+Sección~\ref{subsec:control_clips}. Los objetivos de referencia se
+transforman en hechos mediante el mismo adaptador utilizado por las
+configuraciones Qwen--CLIPS y se expanden bajo las mismas reglas y
+condiciones iniciales. Este control permite contrastar el plan
+resultante con los obtenidos a partir de las predicciones de ambos
+modelos Qwen. La inspección de los objetivos, los hechos y los planes
+ayuda a distinguir errores de interpretación, adaptación y
+planificación simbólica. Se trata de una condición auxiliar, no de
+una cuarta configuración principal.
 
 Se separan asimismo las comprobaciones realizadas durante el desarrollo
 de la evaluación comparativa. Las primeras permiten verificar el
@@ -453,16 +486,18 @@ del conjunto en el capítulo 5.
 \subsection{División de entrenamiento y evaluación}
 
 Las 40\,000 muestras se dividieron en 36\,000 ejemplos de entrenamiento
-y 4\,000 de validación. La partición de entrenamiento se utilizó para
-ajustar los adaptadores del modelo y la de validación para observar su
-comportamiento durante el ajuste. Esta última forma parte del desarrollo
-del intérprete y se distingue del conjunto destinado a la comparación
-final de arquitecturas.
+y 4\,000 de validación. Ambos modelos Qwen utilizaron exactamente las
+mismas muestras en cada partición. La partición de entrenamiento se
+empleó para ajustar los adaptadores de cada modelo y la de validación
+para observar su comportamiento durante el ajuste y seleccionar el
+checkpoint conforme a un criterio común. Esta última forma parte del
+desarrollo de los intérpretes y se distingue del conjunto destinado
+a la comparación final de las tres configuraciones.
 
 La eliminación de duplicados exactos no impide que ambas particiones
 compartan plantillas o contengan formulaciones de una misma intención.
 Por ello, los resultados sobre esta división describen el comportamiento
-del modelo bajo la distribución generada y no bastan para establecer su
+de los modelos bajo la distribución generada y no bastan para establecer su
 capacidad de generalización a formulaciones independientes.
 
 Para la evaluación comparativa se reserva como criterio de diseño un
@@ -569,13 +604,14 @@ validación y conservar los casos de falta de cobertura simbólica.
 
 \subsection{Función asignada a Qwen}
 
-Se asignó a Qwen2.5-7B la transformación de la instrucción \(x\) en
-una secuencia \(G_{\mathrm{pred}}^{\mathrm{Qwen}}\), expresada mediante
-la representación canónica definida en la
+Se asignó a Qwen2.5-3B y Qwen2.5-7B la misma función: transformar
+la instrucción \(x\) en una secuencia
+\(G_{\mathrm{pred}}^{\mathrm{Qwen}}\), expresada mediante la
+representación canónica definida en la
 Sección~\ref{subsec:objetivos_canonicos}. Esta delimitación permite
-especializar el modelo en la identificación de subtareas, entidades y
-relaciones, y mantener la construcción de acciones en el componente
-simbólico.
+especializar ambos modelos en la identificación de subtareas,
+entidades y relaciones, manteniendo la construcción de acciones
+en el componente simbólico.
 
 La respuesta del intérprete se restringió a una estructura que contiene
 la secuencia de objetivos. La decisión facilita su procesamiento
@@ -599,16 +635,29 @@ del prompt y del relleno. Se utilizó QLoRA con el modelo base cuantizado
 a cuatro bits y adaptadores entrenables, lo que permitió especializarlo
 dentro de los recursos de cómputo disponibles.
 
-Durante el desarrollo se exploró inicialmente Qwen2.5-0.5B. Su desempeño
-resultó insuficiente para las órdenes complejas consideradas y se
-continuó con Qwen2.5-7B, cuyo tamaño fue el mayor viable bajo los recursos
-locales disponibles. Esta exploración forma parte de las decisiones de
-desarrollo; la comparación experimental de la tesis se concentra en la
-configuración Qwen--CLIPS seleccionada y en GPT directo.
+El procedimiento de entrenamiento fue común para Qwen2.5-3B y
+Qwen2.5-7B. Se utilizaron el mismo conjunto de datos, la misma
+partición, los mismos hiperparámetros y el mismo criterio de
+selección del checkpoint. En el código de entrenamiento únicamente
+se modificó el identificador del modelo base, de
+\texttt{Qwen/Qwen2.5-7B} a \texttt{Qwen/Qwen2.5-3B}.
+La selección se realizó por separado para cada modelo; compartir
+el criterio no implica seleccionar el mismo paso de entrenamiento.
 
-Los hiperparámetros, la configuración de inferencia y la identificación
-del adaptador utilizado se presentan en el capítulo 5, junto con el
-procedimiento de entrenamiento correspondiente.
+Durante el desarrollo se exploró inicialmente Qwen2.5-0.5B.
+Las pruebas realizadas mostraron limitaciones para las órdenes
+complejas consideradas, por lo que se continuó con Qwen2.5-7B.
+Posteriormente se incorporó Qwen2.5-3B para examinar las diferencias
+de calidad y rendimiento respecto de la variante de mayor tamaño,
+manteniendo el mismo procedimiento de especialización y la misma
+etapa simbólica. La exploración con Qwen2.5-0.5B se conserva como
+antecedente de desarrollo y no forma parte de la comparación
+experimental principal.
+
+Los hiperparámetros, las configuraciones de inferencia y la
+identificación de los adaptadores y checkpoints seleccionados para
+cada modelo se presentan en el capítulo 5, junto con el procedimiento
+de entrenamiento.
 
 % TODO: Identificar el checkpoint realmente utilizado. No atribuir al
 % entrenamiento previo una restauración automática que se añadió después.
@@ -634,7 +683,7 @@ acierto del modelo antes de esa intervención.
 
 La preservación de argumentos constituye un criterio de validez de la
 interfaz. Una pérdida de destino o de un atributo relevante durante la
-conversión se clasifica como un error de integración. Esta separación
+conversión se clasifica como un error de adaptación. Esta separación
 permite evitar que un problema de representación entre componentes se
 atribuya automáticamente a la interpretación o a las reglas.
 
@@ -769,6 +818,19 @@ un mecanismo conversacional de aclaración.
 \section{Diseño de la comparación}
 \label{sec:diseno_comparacion}
 
+Para realizar la comparación se emplean dos programas independientes
+del sistema de ejecución física del robot. Uno implementa la cadena
+Qwen--CLIPS y se utiliza con Qwen2.5-3B y Qwen2.5-7B; el otro consulta
+al planificador GPT directo y valida su respuesta. De este modo,
+los dos programas permiten evaluar las tres configuraciones sobre
+los mismos casos de prueba.
+
+Ambos emplean convenciones comunes para registrar las entradas,
+los objetivos interpretados, los planes generados y los fallos.
+Esta organización permite aplicar criterios de evaluación comunes
+sin depender de los módulos de percepción, navegación y manipulación
+de Justina.
+
 \subsection{Igualdad del dominio de evaluación}
 
 La comparación se plantea sobre el mismo conjunto de instrucciones y
@@ -802,8 +864,8 @@ condiciones de comunicación utilizadas en cada caso.
 Los planes se evaluarán respecto de un contrato común de acciones,
 parámetros y efectos esperados. Se mantendrán las mismas capacidades de
 manipulación, convenciones de identificación y políticas de cierre.
-Este control permite comparar la realización de una tarea dentro de las
-posibilidades de Justina.
+Este control permite comparar cómo cada arquitectura representa la tarea
+mediante un plan compatible con las capacidades definidas para Justina.
 
 Se distinguen dos aspectos del resultado: la fidelidad a las
 convenciones operativas y el cumplimiento de la instrucción. La
@@ -844,13 +906,15 @@ Esta doble relación permite identificar un plan internamente
 coherente que, sin embargo, resuelve una interpretación equivocada
 de la instrucción.
 
-En Qwen--CLIPS, el análisis distinguirá la predicción del modelo, su
-transformación por el adaptador y el plan generado. La condición de
-control utilizará los objetivos de referencia bajo la misma
-configuración simbólica. Para estudiar la cadena integrada se
-considerará también el recorrido de conversión empleado, de manera que
-las diferencias entre una comprobación fuera de línea y la operación
-en ROS no se atribuyan directamente a las reglas.
+En ambas configuraciones Qwen--CLIPS, el análisis distinguirá la
+predicción del modelo, su normalización y conversión a hechos,
+y el plan producido por CLIPS. La condición de control utilizará
+los objetivos de referencia a través del mismo adaptador y bajo
+las mismas reglas y condiciones iniciales de planificación.
+
+Las diferencias entre el programa experimental y la integración
+con ROS 2 se documentarán para delimitar qué resultados de la
+comparación pueden trasladarse al sistema utilizado en Justina.
 
 En GPT directo se analizarán los objetivos y las acciones de una misma
 respuesta. La clasificación permite describir qué producto incumple
