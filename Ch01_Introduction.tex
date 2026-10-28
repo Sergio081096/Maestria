@@ -91,13 +91,13 @@ Diseñar, implementar y evaluar una arquitectura neuro-simbólica Qwen–CLIPS p
 \begin{itemize}
     \item \textbf{Objetivos específicos}
     \begin{itemize}
-        \item Definir una representación canónica de objetivos y su correspondencia con las acciones disponibles en el ejecutor.
+        \item Definir el dominio operacional evaluado, una representación canónica de objetivos y su correspondencia con las acciones y efectos documentados del ejecutor.
         \item Ajustar Qwen2.5-3B y Qwen2.5-7B mediante QLoRA para convertir órdenes en objetivos canónicos representados en JSON.
         \item Implementar la normalización, validación y conversión de los objetivos generados por Qwen en hechos.
         \item Implementar reglas de producción en CLIPS que expandan objetivos de alto nivel en secuencias de acciones compatibles con el ejecutor.
         \item Diseñar un planificador GPT directo mediante un prompt, un JSON Schema y un validador determinista.
-        \item Construir un conjunto experimental que incluya órdenes conocidas, paráfrasis, composiciones de objetivos, entradas ambiguas y casos fuera del dominio.
-        \item Comparar Qwen2.5-3B--CLIPS, Qwen2.5-7B--CLIPS y GPT directo en términos de exactitud semántica, validez y consistencia del plan, robustez, latencia, variabilidad y coste, analizando tanto las diferencias entre arquitecturas como entre las dos configuraciones del intérprete Qwen.
+        \item Construir un conjunto experimental que distinga nuevas instancias de las estructuras admitidas por el generador, variaciones lingüísticas que preserven su intención, composiciones no contempladas por dichas estructuras y entradas ambiguas, contradictorias o que excedan las capacidades disponibles, documentando su relación con los datos de entrenamiento.
+        \item Comparar Qwen2.5-3B–CLIPS, Qwen2.5-7B–CLIPS y GPT directo en fidelidad semántica, conformidad y cumplimiento simbólico del plan, robustez lingüística, latencia, variabilidad y coste computacional observable, analizando por separado el desempeño dentro del dominio operacional y el comportamiento fuera de sus estructuras o capacidades.
         \item Documentar la integración y el desempeño de Qwen--CLIPS en Justina durante la RoboCup 2026, distinguiendo esta experiencia de la comparación experimental de planes. 
     \end{itemize}
     \item \textbf{Contribuciones esperadas}
@@ -106,7 +106,7 @@ Diseñar, implementar y evaluar una arquitectura neuro-simbólica Qwen–CLIPS p
         \item Dos variantes de Qwen2.5, de 3B y 7B, ajustadas mediante QLoRA para traducir órdenes a objetivos canónicos.
         \item Una integración ROS 2–CLIPS que convierte dichos objetivos en planes compatibles con el ejecutor.
         \item Un planificador GPT directo restringido mediante prompt, JSON Schema y validación determinista.
-        \item Un protocolo experimental reproducible para comparar Qwen--CLIPS con dos tamaños de intérprete y GPT directo mediante entradas y criterios de evaluación comunes. 
+        \item Un protocolo experimental reproducible y un conjunto documentado de evaluación que distingan cobertura del dominio, generalización lingüística y composicional, y comportamiento ante límites de capacidad.
         \item Un análisis de errores que diferencia fallos de interpretación, adaptación y planificación en el experimento, y documenta por separado los fallos de ejecución observados en Justina durante la RoboCup 2026.
     \end{itemize}
 \end{itemize}
