@@ -1,114 +1,96 @@
 \chapter{Introducción}
 
-Los robots de servicio representan un sector de gran crecimiento para la inteligencia artificial y la automatización, con aplicaciones que van desde la asistencia a personas mayores hasta la gestión autónoma de entornos residenciales \cite{Murphy2019}, donde deben interpretar instrucciones expresadas por personas y convertirlas en acciones que puedan ejecutarse mediante módulos de navegación, percepción, manipulación e interacción \cite{Russell2020}.
+Los robots de servicio cubren usos muy variados: desde la asistencia a personas mayores hasta la gestión de tareas en entornos residenciales \cite{Murphy2019}. En estos escenarios, deben interpretar instrucciones formuladas en lenguaje natural y convertirlas en acciones que puedan ejecutarse mediante módulos de navegación, percepción, manipulación e interacción \cite{Russell2020}.
 
-La transformación de una instrucción en lenguaje natural a un plan robótico presenta dos problemas relacionados. El primero es semántico: identificar correctamente los objetivos, entidades, destinos y relaciones expresados por el usuario. El segundo es simbólico: convertir dicha interpretación en una secuencia de acciones pertenecientes al repertorio real del robot y con parámetros compatibles con el ejecutor.
+Esta transformación presenta dos problemas relacionados: interpretar las subtareas, entidades y dependencias de la orden, y construir una secuencia de acciones compatibles con las capacidades del robot. Los sistemas basados en reglas permiten representar explícitamente conocimiento operativo dentro de un dominio definido \cite{Giarratano2005}, mientras que los modelos de lenguaje de gran escala (\textit{Large Language Models}, LLMs) ofrecen mecanismos para procesar distintas formulaciones lingüísticas. Sin embargo, una respuesta generada por un modelo puede ser coherente en su redacción y contener entidades, acciones o relaciones incompatibles con la tarea \cite{Shi2023}.
 
-Los sistemas basados en reglas han demostrado ser robustos y predecibles en escenarios estructurados, como líneas de producción o laboratorios controlados \cite{Giarratano2005}. En particular, CLIPS utiliza hechos y reglas de producción para determinar qué transformaciones deben aplicarse a partir de un estado simbólico. Sin embargo, su rigidez los hace poco adaptables ante variaciones no previstas en el entorno o ante comandos expresados en lenguaje natural con alto grado de ambigüedad o complejidad \cite{Brooks1986}.
+Esta tesis estudia dos arquitecturas para transformar órdenes en planes. La primera, Qwen--CLIPS, utiliza Qwen2.5 como intérprete semántico para producir objetivos canónicos, es decir, una representación estructurada de las subtareas y sus argumentos. Estos objetivos se validan y adaptan a hechos que CLIPS procesa mediante reglas de producción para generar el plan. La segunda arquitectura, GPT directo, genera conjuntamente los objetivos y las acciones a partir de la orden y de una especificación del dominio. Su respuesta se solicita conforme a un JSON Schema, que define la estructura admitida, y se somete posteriormente a validación determinista.
 
-Recientemente, los modelos de lenguaje grande (LLMs), como ChatGPT, han emergido como herramientas capaces de interpretar y generar lenguaje natural, e incluso de actuar como agentes de planificación autónomos \cite{Vaswani2017}. Su flexibilidad contextual permite traducir instrucciones verbales en secuencias de acciones, complementando así la solidez de los sistemas basados en reglas. No obstante, su naturaleza probabilística puede producir formatos inválidos, entidades inexistentes o acciones que no pertenecen a las capacidades del robot. Por lo tanto, la falta de garantías formales de seguridad limita su uso directo en aplicaciones robóticas donde la integridad física y la predictibilidad son prioritarias \cite{Shi2023}.
+Ambas se implementan como arquitecturas independientes y se comparan experimentalmente bajo el mismo conjunto de órdenes, contexto y criterios de evaluación.
 
-Esta tesis estudia dos aproximaciones para resolver el problema. La primera es una arquitectura neuro-simbólica que utiliza Qwen2.5
-como intérprete semántico, con dos configuraciones basadas en las
-variantes Qwen2.5-3B y Qwen2.5-7B, ambas ajustadas al dominio mediante
-QLoRA. Las denominaciones 3B y 7B indican tamaños nominales de
-aproximadamente tres mil millones y siete mil millones de parámetros,
-respectivamente. En ambas configuraciones, el modelo transforma una orden en objetivos canónicos representados en JSON. Posteriormente, un módulo determinista normaliza y convierte esos objetivos en hechos, que son procesados por reglas de producción en CLIPS para generar el plan compatible con el ejecutor del robot. La segunda aproximación emplea un modelo GPT como planificador generativo directo. Este recibe la orden, el contexto y el catálogo de acciones, y produce una respuesta estructurada mediante JSON Schema que la somete a validación determinista.
+\section{Contexto y motivación}
 
-Las dos aproximaciones no se combinan mediante un selector de planes durante la ejecución. Se implementan como arquitecturas independientes y se comparan experimentalmente bajo el mismo conjunto de órdenes, contexto y criterios de evaluación. Esta comparación permite analizar el compromiso entre interpretación semántica, consistencia, trazabilidad, flexibilidad, latencia y coste de uso. 
+El robot de servicio Justina (Figura~\ref{fig:justina}), desarrollado en el Laboratorio de Bio-Robótica de la UNAM, integra capacidades de percepción, navegación, manipulación e interacción mediante ROS~2 (\textit{Robot Operating System 2}). La planificación conecta las instrucciones recibidas con las operaciones ofrecidas por esos componentes. Una orden de entrega, por ejemplo, puede requerir desplazarse a una habitación, localizar un objeto, adquirirlo y entregarlo a una persona, conservando la identidad del objeto y del destinatario entre subtareas. En este contexto, planificar acciones de manera autónoma y compatible con las capacidades del robot constituye un requisito fundamental.
 
-\section{Contexto y Motivación}
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[height=0.43\textheight,width=0.65\textwidth,keepaspectratio]{Figures/Justina.png}
+    \caption{Robot de servicio Justina, desarrollado en el Laboratorio de Bio-Robótica de la UNAM y utilizado como plataforma de referencia en esta investigación.}
+    \label{fig:justina}
+\end{figure}
 
-El área de la robótica orientada al servicio doméstico ha evolucionado significativamente en la última década, impulsada por avances en percepción, planificación y interacción humano-robot \cite{Murphy2019}. 
+El dominio de referencia se apoya en General Purpose Service Robot (GPSR), una prueba de RoboCup@Home que incluye órdenes de servicio compuestas \cite{robocuphome2026rulebook}. En este trabajo, las estructuras del generador de comandos, sus extensiones locales y las capacidades implementadas en Justina delimitan las tareas consideradas. La variación lingüística permite estudiar diferentes maneras de expresar esas tareas, además de las formulaciones utilizadas para construir los datos de entrenamiento.
 
-El robot de servicio Justina, desarrollado en el Laboratorio de Bio-Robótica de la UNAM, integra módulos de percepción, navegación, manipulación e interacción mediante ROS 2. Para ejecutar una orden, el robot necesita una representación intermedia que conecte el lenguaje del usuario con las acciones ofrecidas por dichos módulos.
+La motivación de la arquitectura neuro-simbólica es separar la interpretación lingüística de la expansión operativa de los objetivos. Esta separación permite inspeccionar las representaciones intermedias y las reglas utilizadas para producir las acciones. No obstante, su utilidad depende tanto de la fidelidad de la interpretación como de la cobertura y corrección del componente simbólico. El contraste con GPT directo permite examinar qué ventajas y limitaciones presenta cada organización del sistema y qué costos acompañan su despliegue.
 
-Estos sistemas se han diseñado para operar en entornos no estructurados como hogares, hospitales o centros de cuidado, donde deben realizar tareas que van desde la entrega de objetos hasta la asistencia en actividades de la vida diaria. En este contexto, la capacidad de planificar acciones de manera autónoma, segura y adaptativa se convierte en un requisito fundamental.
+El interés de la comparación no consiste en demostrar que un paradigma es universalmente superior. Se trata de identificar qué errores, costos y condiciones de uso caracterizan a cada arquitectura cuando se evalúan con las mismas órdenes, el mismo dominio y criterios comunes de cumplimiento.
 
-
-La planificación de acciones en robótica ha sido tradicionalmente abordada mediante sistemas basados en reglas \textit{(Rule-Based Systems, RBS)}, que ofrecen un marco predecible y verificable para la toma de decisiones \cite{Russell2020}. Sin embargo, una solución exclusivamente simbólica puede generar planes consistentes cuando recibe objetivos correctamente estructurados, pero no resuelve directamente la interpretación del lenguaje natural. En contraste, un modelo de lenguaje puede interpretar distintas formulaciones de una orden, aunque su salida no es necesariamente compatible con las restricciones del robot. La motivación de este trabajo es evaluar si la separación entre interpretación neuronal y expansión simbólica permite obtener planes ejecutables y trazables, y contrastar sus resultados con los de un planificador basado exclusivamente en un modelo GPT.
-
-El interés de la comparación no consiste en demostrar que un paradigma es universalmente superior. Se busca identificar qué arquitectura presenta ventajas dependiendo del comando, así como qué errores introduce cada etapa y cuáles son los costes asociados con su despliegue local o mediante una API externa.
-
-Para la evaluación comparativa se implementan dos programas independientes: uno ejecuta la cadena Qwen--CLIPS con el intérprete seleccionado y otro consulta al planificador GPT directo y valida su salida. Se consideran tres configuraciones experimentales: Qwen2.5-3B--CLIPS, Qwen2.5-7B--CLIPS y GPT directo. Todas reciben las mismas órdenes y contexto equivalente, y entregan objetivos y planes en un formato común para aplicar los mismos criterios de evaluación. En las dos configuraciones Qwen--CLIPS se mantienen el mismo normalizador, adaptador, reglas y estado simbólico inicial. La comparación examina las salidas de interpretación y planificación sin ejecutar físicamente los planes. La experiencia de Qwen--CLIPS integrado en Justina durante la RoboCup 2026 se documenta por separado.
-
-Las dos variantes de Qwen se ajustaron mediante QLoRA utilizando
-el mismo conjunto de datos, la misma partición de entrenamiento
-y validación, los mismos hiperparámetros y el mismo criterio de
-selección del checkpoint. En el código de entrenamiento se modificó
-únicamente el identificador del modelo base, de
-\texttt{Qwen/Qwen2.5-7B} a \texttt{Qwen/Qwen2.5-3B}. Esta
-configuración permite comparar ambas variantes bajo un procedimiento
-de ajuste común.
 
 \section{Planteamiento del problema}
 
-Una orden puede contener variaciones lingüísticas, referencias espaciales, objetos, personas, destinos y varias subtareas relacionadas. Para que el robot pueda ejecutarla, primero deben identificarse sus objetivos y después transformarse en una secuencia válida de acciones primitivas. En la arquitectura propuesta, Qwen realiza la interpretación lingüística y CLIPS utiliza hechos y reglas para expandir los objetivos en un plan.
+Una instrucción puede expresar varias subtareas, omitir operaciones implícitas y utilizar pronombres o descripciones que dependen del contexto. Su interpretación debe conservar las entidades, los atributos solicitados y las relaciones de precedencia. La generación del plan debe traducir esa interpretación a acciones con argumentos y efectos compatibles con el ejecutor.
 
-Una solución basada exclusivamente en reglas enfrenta las siguientes limitaciones:
+Una solución cuya interpretación depende de reglas lingüísticas predefinidas requiere ampliar su cobertura ante nuevas formulaciones. Un modelo de lenguaje puede procesar variaciones de expresión, pero también omitir restricciones o proponer operaciones no disponibles. Por su parte, una expansión simbólica puede generar una secuencia internamente coherente a partir de objetivos que no corresponden a la orden original. Por ello, la corrección del formato, la fidelidad de los objetivos y el cumplimiento de la tarea deben examinarse por separado.
 
-\begin{enumerate}
-	\item \textbf{Rigidez interpretativa:} No se pueden procesar comandos en lenguaje natural complejo o ambiguo.
-	\item \textbf{Falta de adaptabilidad:} Las reglas deben ser definidas a priori; cualquier situación no prevista en la base de conocimiento puede llevar al fracaso o a un comportamiento no deseado.
-	\item \textbf{Dificultad para gestionar la incertidumbre:} No manejan bien la información incompleta o cambiante del entorno en tiempo real.
-	\item \textbf{Escalabilidad limitada:} Mantener y extender un conjunto grande de reglas para cubrir todos los escenarios posibles resulta complejo y laborioso.
-\end{enumerate}
+El problema de investigación consiste en determinar cómo se comportan las arquitecturas propuestas bajo condiciones comparables: si sus planes satisfacen las subtareas y restricciones solicitadas, cómo responden a reformulaciones y límites de cobertura, y qué errores y costos introduce cada configuración. La pregunta principal se formula de la siguiente manera:
 
-Por otro lado, los resultados deben satisfacer al menos las siguientes condiciones \cite{Shi2023}:
-\begin{itemize}
-	\item Las entidades finales deben pertenecer al catálogo o ser tratadas explícitamente como desconocidas.
-	\item Los objetivos deben conservar el significado y el orden causal de la instrucción.
-	\item Las acciones generadas deben pertenecer al repertorio del ejecutor.
-	\item Cada acción debe contener los parámetros requeridos.
-	\item La secuencia debe respetar precondiciones simbólicas básicas, como la ubicación del robot o la posesión de un objeto.
-\end{itemize}
+\begin{quote}
+\textbf{¿Qué diferencias presentan las configuraciones Qwen2.5-3B--CLIPS, Qwen2.5-7B--CLIPS y GPT directo en el cumplimiento simbólico de órdenes del dominio implementado, y qué resultados muestran en fidelidad semántica, robustez lingüística, consistencia, latencia y costo observable?}
+\end{quote}
 
-Los modelos de lenguaje pueden ampliar la cobertura lingüística, aunque también pueden generar resultados inexistentes o inconsistentes. El problema de investigación se formula, por tanto, de la siguiente manera:
+El cumplimiento simbólico se entiende como la satisfacción de las subtareas, restricciones y dependencias de la orden mediante acciones compatibles con el contrato del ejecutor, bajo las condiciones del escenario. La robustez lingüística se refiere a conservar la corrección ante formulaciones equivalentes; la consistencia entre ejecuciones describe la estabilidad de las respuestas al repetir una misma entrada. Una respuesta estable no implica necesariamente una respuesta correcta.
 
-\textbf{¿Qué diferencias de exactitud, consistencia, robustez y coste existen entre una arquitectura neuro-simbólica Qwen–CLIPS y un planificador generativo basado en GPT al convertir órdenes en planes para un robot de servicio?}
+\section{Alcance y delimitaciones}
 
-Dentro de la arquitectura neuro-simbólica, se examina además cómo cambian la exactitud de la interpretación, la consistencia de los planes, la robustez y la latencia al utilizar Qwen2.5-3B o Qwen2.5-7B como intérprete semántico.
+Se comparan dos arquitecturas independientes y tres configuraciones: Qwen2.5-3B--CLIPS, Qwen2.5-7B--CLIPS y GPT directo. Se utilizan las variantes base Qwen2.5-3B y Qwen2.5-7B, especializadas mediante QLoRA, un método de adaptación de bajo rango con cuantización (\textit{Quantized Low-Rank Adaptation}), siguiendo un procedimiento común de ajuste \cite{dettmers2023qlora}. Ambas configuraciones comparten el procesamiento de normalización y adaptación, las reglas y el estado simbólico inicial. Las tres configuraciones reciben las mismas órdenes en inglés y disponen de información equivalente sobre el dominio y las condiciones del escenario.
+
+La unidad comparada es el sistema configurado, que comprende el modelo, su adaptación, las instrucciones de generación, la validación y el mecanismo de planificación. En consecuencia, las diferencias entre Qwen--CLIPS y GPT directo no pueden atribuirse exclusivamente a CLIPS, al tamaño del modelo o al ajuste fino. Las conclusiones se limitan a las configuraciones y condiciones evaluadas.
+
+La evaluación principal considera tareas resolubles dentro de la cobertura implementada. Se analizan por separado composiciones fuera de las estructuras del generador, solicitudes que exceden las capacidades disponibles y entradas ambiguas o contradictorias. Según los criterios de cada caso, una aclaración o un rechazo puede ser una respuesta adecuada. Se distinguen estos comportamientos de los fallos técnicos y del rechazo de salidas inválidas, sin suponer que ambas arquitecturas disponen del mismo mecanismo conversacional.
+
+La comparación es computacional y examina objetivos y planes sin ejecutarlos físicamente en Justina. La compatibilidad con el contrato de acciones y el cumplimiento simbólico no garantizan el éxito de la percepción, navegación, manipulación o interacción. La integración de Qwen--CLIPS en Justina y su utilización durante la RoboCup 2026 se documentan como una experiencia de aplicación separada.
+
+Para apoyar el diagnóstico, se incorpora un control que proporciona objetivos de referencia aprobados por el mismo adaptador y a las mismas reglas CLIPS. Este control permite examinar el procesamiento posterior a la interpretación y no constituye una cuarta configuración principal. Los recursos de inferencia local y el costo del acceso a GPT mediante una interfaz de programación de aplicaciones (API) se reportan según su disponibilidad; no se dispone de mediciones internas del cómputo del proveedor.
 
 \section{Hipótesis}
 
-Para la interpretación y planeación de órdenes, una arquitectura neuro-simbólica compuesta por Qwen y CLIPS producirá una mayor proporción de planes estructuralmente válidos, trazables y consistentes que un planificador generativo basado directamente en GPT. Por otra parte, se espera que el planificador GPT directo presente mayor flexibilidad ante formulaciones lingüísticas novedosas; también se compararán la variabilidad, la latencia y el coste de inferencia de ambas arquitecturas.
+La hipótesis principal es que, en el bloque de tareas resolubles dentro del dominio implementado, las configuraciones Qwen--CLIPS obtendrán una mayor proporción de planes que satisfagan las subtareas, restricciones y dependencias de la orden que GPT directo. Esta expectativa se apoya en su separación entre interpretación y expansión simbólica, sin atribuir las diferencias observadas exclusivamente a esa separación. Esta predicción se contrastará por separado para Qwen2.5-3B--CLIPS y Qwen2.5-7B--CLIPS frente a GPT directo.
 
-La hipótesis se contrasta mediante la evaluación de los objetivos
-interpretados y los planes generados por Qwen2.5-3B--CLIPS,
-Qwen2.5-7B--CLIPS y GPT directo ante un mismo conjunto de órdenes
-y contextos. Los resultados de cada configuración se presentan
-por separado, sin presuponer que el modelo Qwen de mayor tamaño
-obtendrá un mejor desempeño. Las conclusiones se circunscriben
-a los modelos y condiciones evaluados. La participación de Justina
-en la RoboCup 2026 utilizando Qwen--CLIPS se presenta como evidencia
-de aplicación del sistema integrado y no forma parte de esta
-comparación controlada.
+Como hipótesis complementaria, se espera que GPT directo presente mayor robustez ante reformulaciones léxicas y sintácticas elaboradas de manera independiente de las plantillas de entrenamiento de Qwen, manteniendo la intención de la tarea. Esta expectativa se evaluará mediante el cumplimiento ante formulaciones equivalentes y no únicamente por la estabilidad del formato o de la respuesta.
+
+La consistencia entre ejecuciones, la latencia y el costo observable se estudian como dimensiones comparativas sin anticipar una configuración ganadora. Tampoco se presupone que Qwen2.5-7B superará a Qwen2.5-3B. La trazabilidad de la cadena neuro-simbólica se utiliza para analizar errores de interpretación, adaptación y expansión; no se considera por sí misma una demostración de corrección.
+
+La hipótesis principal se contrastará mediante la proporción de ejecuciones experimentales con cumplimiento simbólico completo en cada configuración, con comparaciones sobre las mismas órdenes y considerando la agrupación de reformulaciones y repeticiones por escenario. El procedimiento detallado se presenta en el Capítulo~\ref{ch:validacion_experimentacion}, dedicado a la validación y experimentación.
 
 \section{Objetivos}
 
-Diseñar, implementar y evaluar una arquitectura neuro-simbólica Qwen–CLIPS para interpretar órdenes y generar planes compatibles con un robot de servicio, comparándola con un planificador generativo basado en GPT con salida estructurada.
+\subsection{Objetivo general}
+
+Diseñar, implementar y evaluar una arquitectura neuro-simbólica Qwen--CLIPS para interpretar órdenes y generar planes compatibles con un robot de servicio, comparándola con GPT directo en cumplimiento simbólico, fidelidad semántica, robustez lingüística, consistencia, latencia y costo observable.
+
+\subsection{Objetivos específicos}
+
+\begin{enumerate}
+    \item Definir el dominio operacional, la representación canónica de objetivos y el contrato de acciones, argumentos y efectos del ejecutor.
+    \item Ajustar Qwen2.5-3B y Qwen2.5-7B mediante QLoRA para transformar órdenes en objetivos canónicos representados en JSON, bajo un procedimiento común.
+    \item Implementar el procesamiento de la orden, validación, normalización y adaptación de los objetivos producidos por Qwen a hechos para CLIPS.
+    \item Implementar reglas de producción que expandan los objetivos en acciones, considerando las dependencias y el estado simbólico esperado.
+    \item Diseñar un planificador GPT directo condicionado por la especificación del dominio, con un contrato de salida definido mediante JSON Schema y validación determinista.
+    \item Construir un conjunto de evaluación independiente del desarrollo, documentando su relación con el entrenamiento y distinguiendo nuevas instancias, reformulaciones, composiciones y casos que requieren aclaración o reconocimiento de límites.
+    \item Comparar las tres configuraciones mediante criterios comunes de interpretación y cumplimiento del plan, junto con medidas de robustez lingüística, consistencia, latencia y costo observable. Analizar por separado el bloque principal y los casos de diagnóstico.
+    \item Analizar los errores de interpretación, adaptación y planificación mediante los productos intermedios y el control con objetivos de referencia.
+    \item Documentar la integración y el desempeño de Qwen--CLIPS en Justina durante la RoboCup 2026 como estudio separado de la comparación computacional.
+\end{enumerate}
+
+\section{Contribuciones esperadas}
 
 \begin{itemize}
-    \item \textbf{Objetivos específicos}
-    \begin{itemize}
-        \item Definir el dominio operacional evaluado, una representación canónica de objetivos y su correspondencia con las acciones y efectos documentados del ejecutor.
-        \item Ajustar Qwen2.5-3B y Qwen2.5-7B mediante QLoRA para convertir órdenes en objetivos canónicos representados en JSON.
-        \item Implementar la normalización, validación y conversión de los objetivos generados por Qwen en hechos.
-        \item Implementar reglas de producción en CLIPS que expandan objetivos de alto nivel en secuencias de acciones compatibles con el ejecutor.
-        \item Diseñar un planificador GPT directo mediante un prompt, un JSON Schema y un validador determinista.
-        \item Construir un conjunto experimental que distinga nuevas instancias de las estructuras admitidas por el generador, variaciones lingüísticas que preserven su intención, composiciones no contempladas por dichas estructuras y entradas ambiguas, contradictorias o que excedan las capacidades disponibles, documentando su relación con los datos de entrenamiento.
-        \item Comparar Qwen2.5-3B–CLIPS, Qwen2.5-7B–CLIPS y GPT directo en fidelidad semántica, conformidad y cumplimiento simbólico del plan, robustez lingüística, latencia, variabilidad y coste computacional observable, analizando por separado el desempeño dentro del dominio operacional y el comportamiento fuera de sus estructuras o capacidades.
-        \item Documentar la integración y el desempeño de Qwen--CLIPS en Justina durante la RoboCup 2026, distinguiendo esta experiencia de la comparación experimental de planes. 
-    \end{itemize}
-    \item \textbf{Contribuciones esperadas}
-    \begin{itemize}
-        \item Una representación intermedia de objetivos que conecta la interpretación lingüística con la planeación simbólica.
-        \item Dos variantes de Qwen2.5, de 3B y 7B, ajustadas mediante QLoRA para traducir órdenes a objetivos canónicos.
-        \item Una integración ROS 2–CLIPS que convierte dichos objetivos en planes compatibles con el ejecutor.
-        \item Un planificador GPT directo restringido mediante prompt, JSON Schema y validación determinista.
-        \item Un protocolo experimental reproducible y un conjunto documentado de evaluación que distingan cobertura del dominio, generalización lingüística y composicional, y comportamiento ante límites de capacidad.
-        \item Un análisis de errores que diferencia fallos de interpretación, adaptación y planificación en el experimento, y documenta por separado los fallos de ejecución observados en Justina durante la RoboCup 2026.
-    \end{itemize}
+    \item Una representación intermedia de objetivos y una interfaz de adaptación que conectan la interpretación lingüística con la expansión simbólica.
+    \item Dos intérpretes Qwen2.5, de 3B y 7B, especializados mediante QLoRA bajo un procedimiento común.
+    \item Una arquitectura Qwen--CLIPS y su integración con ROS~2 para generar planes compatibles con el ejecutor de Justina.
+    \item Un planificador GPT directo condicionado por el mismo dominio operativo, con salida estructurada y validación determinista.
+    \item Un protocolo reproducible y un conjunto documentado de evaluación que distinguen cumplimiento dentro de la cobertura, robustez lingüística, composición y comportamiento ante límites de capacidad.
+    \item Un análisis comparativo de resultados, errores y costos observables, acompañado de la documentación separada de la experiencia de integración en el robot.
 \end{itemize}
 
 \section{Estructura del documento}
@@ -116,19 +98,19 @@ Diseñar, implementar y evaluar una arquitectura neuro-simbólica Qwen–CLIPS p
 Este documento está organizado en los siguientes capítulos que describen el sistema propuesto para el desarrollo de esta tesis, abarcando el planteamiento, desarrollo, implementación y la evaluación de las arquitecturas estudiadas. La estructura es la siguiente:
 
 \begin{enumerate}
-    \item \textbf{Capítulo 1: Introducción.} Presenta el contexto, motivación, problemática, hipótesis y objetivos de la investigación, así como la justificación del enfoque híbrido en robótica de servicio doméstico.
+    \item \textbf{Capítulo 1: Introducción.} Presenta el contexto y la motivación de la investigación, formula el problema y las hipótesis, delimita el alcance de la comparación entre Qwen--CLIPS y GPT directo, y establece los objetivos y las contribuciones esperadas.
 
-    \item \textbf{Capítulo 2: Antecedentes y estado del arte.} Revisa la evolución de los sistemas basados en reglas en robótica, las características de CLIPS, los enfoques modernos de aprendizaje automático y los sistemas híbridos existentes.
+    \item \textbf{Capítulo 2: Antecedentes y estado del arte.} Revisa los sistemas basados en reglas, CLIPS, los modelos de lenguaje y las arquitecturas neuro-simbólicas. Compara trabajos relacionados que conectan instrucciones con habilidades, programas o planes simbólicos y sitúa la propuesta de investigación.
 
-    \item \textbf{Capítulo 3: Marco teórico y conceptual.} Describe los fundamentos de la planificación jerárquica, los sistemas de producción, los modelos de lenguaje grande (LLMs) y la arquitectura de integración propuesta.
+    \item \textbf{Capítulo 3: Formalización del problema y arquitecturas conceptuales.} Define el dominio de referencia, el contexto, el contrato del ejecutor y las representaciones de órdenes, objetivos y planes. Describe las arquitecturas evaluadas y el control auxiliar, y distingue fidelidad semántica, cumplimiento simbólico, robustez, consistencia y ejecución física.
 
-    \item \textbf{Capítulo 4: Metodología y diseño de las arquitecturas evaluadas.} Describe las dos arquitecturas evaluadas, la representación de objetivos y planes, y el protocolo experimental utilizado para comparar Qwen--CLIPS con GPT directo.
+    \item \textbf{Capítulo 4: Metodología y diseño de las arquitecturas evaluadas.} Explica la construcción y validación del conjunto de datos, distingue las etiquetas de entrenamiento de las referencias experimentales y separa los datos de ajuste, desarrollo y prueba final. Describe la especialización de Qwen, la adaptación de objetivos y el diseño de Qwen--CLIPS y GPT directo, junto con las condiciones comunes y los registros necesarios para su comparación.
 
-    \item \textbf{Capítulo 5: Implementación.} Explica los entornos de desarrollo, la configuración técnica, la interfaz con APIs y las pruebas utilizados para validar la integración de los módulos.
+    \item \textbf{Capítulo 5: Implementación.} Describe la implementación de los intérpretes Qwen, su entrenamiento y despliegue, la adaptación de objetivos y la expansión con CLIPS. Presenta la integración con ROS~2, GPT directo y el instrumento de campañas, junto con las comprobaciones y los registros de reproducibilidad.
 
-    \item \textbf{Capítulo 6: Escenarios de validación y experimentación.} Presenta el diseño experimental, los escenarios de prueba y las métricas cuantitativas y cualitativas utilizadas para evaluar el sistema.
+    \item \textbf{Capítulo 6: Diseño experimental y criterios de evaluación.} Distingue el desarrollo de la prueba final, organiza los escenarios y las condiciones de comparación, y establece el procedimiento de ejecución y revisión. Define las métricas de cumplimiento, interpretación, robustez, consistencia, latencia y costo, junto con el análisis estadístico y los límites de la evaluación.
 
-    \item \textbf{Capítulo 7: Resultados.} Presenta la comparación de los planes generados por ambas arquitecturas, el análisis de errores y los resultados de latencia, recursos computacionales y coste. Documenta por separado el desempeño observado de Qwen--CLIPS en Justina durante la RoboCup 2026.
+    \item \textbf{Capítulo 7: Resultados.} Presenta la comparación de los planes generados por ambas arquitecturas, el análisis de errores y los resultados de latencia, recursos computacionales y costo. Documenta por separado el desempeño observado de Qwen--CLIPS en Justina durante la RoboCup 2026.
 
     \item \textbf{Capítulo 8: Discusión.} Interpreta los resultados y sus limitaciones, incluyendo el alcance de la evaluación de planes y de la experiencia con el robot en la competencia.
 

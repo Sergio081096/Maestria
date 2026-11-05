@@ -1,4 +1,4 @@
-% Capítulo 5 consolidado con el entrenamiento seleccionado en checkpoint-5000.
+% Implementación contrastada con los repositorios Qwen y Justina, noviembre de 2026.
 \chapter{Implementación}
 \label{ch:implementacion}
 
@@ -6,7 +6,8 @@ Este capítulo describe los componentes desarrollados para transformar
 instrucciones del lenguaje natural en planes de acciones para el robot de servicio Justina.
 La implementación concreta las decisiones metodológicas del
 Capítulo~\ref{ch:metodologia} mediante la generación de datos supervisados,
-la especialización del intérprete Qwen, la conversión de objetivos a
+la especialización de los intérpretes Qwen2.5-3B y Qwen2.5-7B,
+la conversión de objetivos a
 hechos simbólicos y la expansión de acciones con CLIPS.
 
 El sistema se organiza en componentes con responsabilidades diferenciadas.
@@ -18,13 +19,15 @@ su consumo por el sistema de ejecución. La arquitectura GPT directo se
 trata como una implementación separada, con su propio contrato de
 respuesta e interfaz de generación.
 
-Como ejemplo conductor se utiliza la orden de búsqueda, adquisición y
-entrega de un objeto introducida en el capítulo anterior. Sus diferentes
+Como ejemplo conductor se utiliza una orden de búsqueda, adquisición y
+entrega de un objeto al operador. Sus diferentes
 representaciones permiten relacionar la entrada lingüística, los objetivos,
 los hechos CLIPS y las acciones del ejecutor. Se incluyen los registros
 necesarios para identificar el modelo y las comprobaciones preliminares
-realizadas. El análisis cuantitativo del desempeño y la comparación
-experimental se reservan para el capítulo de resultados.
+realizadas. El análisis cuantitativo del desempeño se reserva para los capítulos
+experimentales. Se distingue la implementación vigente de las versiones
+conservadas en las campañas de desarrollo; el experimento final requiere
+fijar sus propios datos, configuraciones y criterios antes de ejecutarse.
 
 \section{Plataforma experimental}
 \label{sec:plataforma_implementacion}
@@ -51,7 +54,7 @@ como una ubicación de navegación, un objeto o una referencia a una persona.
 La resolución física de esas instrucciones corresponde al ejecutor y a los
 módulos encargados de cada tarea.
 
-En el ciclo GPSR se utiliza \texttt{instruction\_point} para representar
+En el ciclo GPSR se utiliza \texttt{instruction\_\allowbreak point} para representar
 el punto de interacción con el operador. Este símbolo se distingue de
 \texttt{inspection point}, que puede aparecer como una entidad del
 catálogo. La diferencia se conserva al normalizar los parámetros del plan.
@@ -73,8 +76,12 @@ interfaces se describen en la Sección~\ref{subsec:despliegue_qwen}.
 \subsection{Entorno de software y ROS 2}
 
 Los componentes de generación, validación e interpretación se
-desarrollaron en Python. El entorno registrado utiliza Ubuntu 24.04.5
-LTS, Python 3.12.3 y ROS 2 Jazzy. El entrenamiento se implementó mediante
+desarrollaron en Python; la biblioteca de integración y el gestor de
+instrucciones incluyen componentes C++. La integración del robot utiliza
+ROS 2 Jazzy. El inventario de software conservado se presenta en la
+Sección~\ref{sec:reproducibilidad_impl}; se distingue de los entornos
+adicionales que pueden prepararse para servir los modelos.
+El entrenamiento se implementó mediante
 \texttt{Trainer}, de Transformers, con PyTorch para el cálculo de
 tensores, PEFT para los adaptadores LoRA, bitsandbytes para la
 cuantización y Datasets para la preparación de las particiones.
@@ -95,15 +102,27 @@ se reúnen en la Sección~\ref{sec:reproducibilidad_impl}.
 
 \subsection{Generador de órdenes}
 
-La generación se organiza alrededor de \texttt{generate\_dataset.py},
+El generador local parte de RoboCupAtHome/CommandGenerator
+\cite{robocup_command_generator}, adaptado para ampliar las plantillas y
+las formulaciones de las órdenes, según la procedencia declarada por el
+investigador. La implementación descrita corresponde a esa versión local.
+No se recuperó el commit externo utilizado originalmente, por lo que
+no se atribuyen sus modificaciones a una revisión exacta del repositorio
+de origen.
+
+El código se organiza en los paquetes \texttt{qwen\_\allowbreak gpsr/\allowbreak generation},
+\texttt{domain}, \texttt{training}, \texttt{runtime} y
+\texttt{evaluation}, para generación, conocimiento y contratos,
+entrenamiento, inferencia y evaluación, respectivamente.
+La generación se organiza alrededor de \texttt{generate\_\allowbreak dataset.\allowbreak py},
 que coordina la selección de muestras, el balance, la deduplicación y
 la validación previa a la escritura. El componente
-\texttt{gpsr\_commands.py} construye las órdenes utilizando las familias
-y variantes definidas en \texttt{command\_constants.py}.
+\texttt{gpsr\_\allowbreak commands.\allowbreak py} construye las órdenes utilizando las familias
+y variantes definidas en \texttt{command\_\allowbreak constants.\allowbreak py}.
 
-La generación semántica se implementó en \texttt{command\_goals.py}
-mediante la clase \texttt{CommandGoalsMixin}. El método
-\texttt{\_generate\_goals} selecciona la función registrada para una
+La generación semántica se implementó en \texttt{command\_\allowbreak goals.\allowbreak py}
+mediante la clase \texttt{Command\allowbreak Goals\allowbreak Mixin}. El método
+\texttt{\_\allowbreak generate\_\allowbreak goals} selecciona la función registrada para una
 familia y le entrega el contexto de construcción. Cada función devuelve
 una lista ordenada de objetivos. Las continuaciones de una orden pueden
 invocar otras funciones y recibir el objeto o la persona establecidos
@@ -152,7 +171,7 @@ objects/objects.md
 
 El conocimiento cargado se entrega al generador para sustituir los
 elementos variables de las plantillas. La validación de catálogos se
-encapsula en \texttt{catalog\_validation.py}; incluye la detección de
+encapsula en \texttt{catalog\_\allowbreak validation.\allowbreak py}; incluye la detección de
 colisiones y diferencias con el catálogo de nombres del banco de
 conocimiento de Justina.
 
@@ -161,27 +180,35 @@ La localización del espacio de trabajo del robot puede configurarse con
 repositorio utilizado en el despliegue sin incorporar rutas personales
 al contrato de generación.
 
+La auditoría de catálogos detectó nombres de objeto repetidos
+(\texttt{bowl}, \texttt{cup} y \texttt{plate}), la capitalización de
+\texttt{Water} y diferencias entre los nombres de personas de
+CompetitionTemplate y Justina. Estas advertencias no bloquearon la
+validación del catálogo, pero deben considerarse en la normalización y
+clasificación de entidades. La comparación entre fuentes no exige que
+sus listas sean idénticas.
+
 \subsection{Validadores}
 
-La validación de etiquetas se implementó en \texttt{goal\_schema.py}.
+La validación de etiquetas se implementó en \texttt{goal\_\allowbreak schema.\allowbreak py}.
 La función \texttt{parse\_goal} separa el nombre del objetivo, sus
 argumentos posicionales y los campos nombrados, y almacena el resultado
 en una estructura \texttt{ParsedGoal}. La función
-\texttt{validate\_goals} comprueba sintaxis, argumentos obligatorios,
+\texttt{validate\_\allowbreak goals} comprueba sintaxis, argumentos obligatorios,
 campos admitidos, compatibilidad de tipos y calificadores, y dependencias
 programadas entre objetivos. Las incidencias se representan mediante
-\texttt{ValidationIssue}, con un código, un mensaje y, cuando corresponde,
+\texttt{Validation\allowbreak Issue}, con un código, un mensaje y, cuando corresponde,
 la posición del objetivo.
 
-La auditoría del archivo final utiliza \texttt{evaluate\_dataset.py}
-y las funciones de \texttt{dataset\_evaluation.py}. El procedimiento
+La auditoría del archivo final utiliza \texttt{evaluate\_\allowbreak dataset.\allowbreak py}
+y las funciones de \texttt{dataset\_\allowbreak evaluation.\allowbreak py}. El procedimiento
 recorre las filas, valida las etiquetas y acumula estadísticas por
 familia, firma de objetivos, tipos de entidades y campos. La revisión
 manual realizada durante el desarrollo abarcó partes del conjunto;
 la comprobación sistemática posterior se ejecutó mediante estos
 validadores programados.
 
-La comprobación simbólica se implementó en \texttt{ClipsPlanValidator}.
+La comprobación simbólica se implementó en \texttt{Clips\allowbreak Plan\allowbreak Validator}.
 El componente carga las reglas, reinicia el entorno para cada secuencia,
 convierte sus objetivos a hechos e inicia la expansión. Para aceptar
 una secuencia exige que no queden hechos \texttt{gpsr-goal}, que se
@@ -190,8 +217,10 @@ no soportado. La conversión utilizada en esta auditoría se distingue
 de las heurísticas del adaptador ROS 2 descritas en la
 Sección~\ref{subsec:adaptador_objetivos_impl}.
 
-La auditoría recorrió las 40\,000 filas del archivo final. Todas sus
-etiquetas fueron aceptadas por las comprobaciones del esquema y no se
+La auditoría del 4 de noviembre de 2026 recorrió las 40\,000 filas
+del archivo final. Esta comprobación posterior no reconstruye el
+registro original de validación previo a los entrenamientos. Todas las
+etiquetas examinadas fueron aceptadas por las comprobaciones del esquema y no se
 registraron incidencias de validación. Para CLIPS se estableció un
 límite de 200 secuencias: se examinaron las primeras 200 etiquetas
 válidas en el orden del archivo y todas superaron los criterios de
@@ -204,16 +233,16 @@ programadas y la expansión de las secuencias examinadas. No constituyen
 una revisión independiente de la correspondencia semántica de cada
 orden con su etiqueta ni una comprobación de ejecución física.
 
-Las pruebas de \texttt{test\_dataset\_quality.py} complementan esta
+Las pruebas de \texttt{test\_\allowbreak dataset\_\allowbreak quality.\allowbreak py} complementan esta
 auditoría mediante un lote generado de 500 muestras. Comprueban
 cardinalidad, deduplicación, distribución entre categorías, metadatos
 y firmas esperadas. La prueba simbólica selecciona el primer ejemplo
 de cada familia presente en ese lote. Este procedimiento se distingue
 de las 200 secuencias del archivo final comprobadas en la auditoría.
 
-\subsection{Dataset final}
+\subsection{Corpus de entrenamiento}
 
-El conjunto final se conserva en \texttt{dataset\_gpsr.jsonl}, con
+El corpus de entrenamiento se conserva en \texttt{dataset\_\allowbreak gpsr.\allowbreak jsonl}, con
 40\,000 registros y un objeto JSON por línea. La auditoría identifica
 29 familias de órdenes, 18 firmas distintas de objetivos y 87
 identificadores de plantilla superficial. Cada registro contiene
@@ -231,8 +260,10 @@ con la propiedad \texttt{goals} como respuesta esperada. El cargador
 conserva temporalmente la familia y la categoría como columnas
 auxiliares y las elimina al construir las entradas tokenizadas.
 
-El archivo auditado corresponde al conjunto utilizado en el entrenamiento.
-La partición utiliza \texttt{train\_test\_split}, una proporción de
+Según la declaración de procedencia del investigador, ambos ajustes
+utilizaron el mismo archivo, sin cambios entre corridas. La huella del
+corpus actual coincide con la conservada en la auditoría de procedencia.
+Los scripts y los registros documentan una partición que utiliza \texttt{train\_\allowbreak test\_\allowbreak split}, una proporción de
 validación de 0.1 y semilla 42, con 36\,000 muestras de entrenamiento
 y 4\,000 de validación. La división se realiza aleatoriamente por filas, sin
 agrupar ni estratificar por familia o plantilla. Por ello, la pérdida
@@ -242,18 +273,22 @@ y no acredita por sí sola generalización a familias excluidas del ajuste.
 La identidad del archivo auditado se conserva mediante su huella
 SHA-256, incluida en la Sección~\ref{sec:reproducibilidad_impl}.
 
-\section{Entrenamiento e inferencia de Qwen2.5-7B}
+\section{Entrenamiento e inferencia Qwen}
 \label{sec:implementacion_qwen}
 
 \subsection{Preparación del modelo}
 
-El entrenamiento se organiza en \texttt{Nl-Cl.py} y utiliza
-\texttt{Qwen/Qwen2.5-7B} como modelo base. Cada fila se valida y se
-transforma en una conversación mediante \texttt{apply\_chat\_template}.
+Los módulos \texttt{qwen\_\allowbreak gpsr.\allowbreak training.\allowbreak train} y
+\texttt{qwen\_\allowbreak gpsr.\allowbreak training.\allowbreak train\_\allowbreak 3b} implementan los ajustes de
+\texttt{Qwen/\allowbreak Qwen2.\allowbreak 5-\allowbreak 7B} y \texttt{Qwen/\allowbreak Qwen2.\allowbreak 5-\allowbreak 3B}, respectivamente.
+Se parte de las variantes base, sin ajuste Instruct previo.
+Ambas siguen el mismo formato supervisado y producen objetivos semánticos,
+no planes. Cada fila se valida y se
+transforma en una conversación mediante \texttt{apply\_\allowbreak chat\_\allowbreak template}.
 El código proporciona un mensaje de usuario con la orden y un mensaje
 de asistente con los objetivos serializados como JSON.
 
-La plantilla conservada en \texttt{tokenizer\_config.json} incorpora
+La plantilla conservada en \texttt{tokenizer\_\allowbreak config.\allowbreak json} incorpora
 automáticamente un mensaje de sistema cuando la conversación no
 contiene uno explícito. Su contenido es
 \textit{You are a helpful assistant.} Por tanto, aunque el código
@@ -264,7 +299,7 @@ prefijo predeterminado. El tokenizador utiliza
 El cálculo de la pérdida se concentra en la respuesta del asistente.
 Las posiciones del prefijo reciben la etiqueta de exclusión
 \texttt{-100}, al igual que el relleno del lote. El componente
-\texttt{CompletionOnlyCollator} realiza relleno dinámico a la derecha
+\texttt{Completion\allowbreak Only\allowbreak Collator} realiza relleno dinámico a la derecha
 hasta un múltiplo de ocho posiciones y ajusta máscaras de atención y
 etiquetas.
 
@@ -278,8 +313,10 @@ respuesta.
 
 \subsection{Configuración QLoRA}
 
-El modelo base se carga con cuantización de cuatro bits en formato NF4
-y doble cuantización. Sus pesos permanecen congelados y el ajuste se
+El modelo base se carga con cuantización en formato NF4
+(\textit{NormalFloat} de cuatro bits), que reduce la precisión de
+representación de sus pesos. Se utiliza además doble cuantización para
+reducir la memoria de los parámetros de cuantización. Sus pesos permanecen congelados y el ajuste se
 realiza sobre adaptadores LoRA insertados en las proyecciones de atención
 y del bloque de transformación del modelo.
 
@@ -290,12 +327,14 @@ de escala 64 y una probabilidad de descarte de 0.05. Esta configuración
 delimita la capacidad entrenable sin actualizar todos los parámetros
 del modelo base.
 
-El cálculo utiliza BF16 cuando la GPU declara soporte para ese formato
-y FP16 en caso contrario. La carga selecciona la implementación de
+El cálculo utiliza BF16 (\textit{bfloat16}) cuando la GPU declara soporte
+para ese formato y FP16 en caso contrario. Ambos son formatos de punto
+flotante de 16 bits para las operaciones numéricas; se distinguen de la
+representación de los pesos base en cuatro bits. La carga selecciona la implementación de
 atención \texttt{eager}, desactiva la ventana deslizante y distribuye
-el modelo con \texttt{device\_map='auto'}. Durante el ajuste se
+el modelo con \texttt{device\_\allowbreak map='auto'}. Durante el ajuste se
 desactiva la caché y se habilita \textit{gradient checkpointing} con
-\texttt{use\_reentrant=False}, reduciendo las activaciones conservadas
+\texttt{use\_\allowbreak reentrant=False}, reduciendo las activaciones conservadas
 a cambio de recalcularlas durante la retropropagación. El script requiere
 CUDA y limita a 0.9 la fracción de memoria disponible para el asignador
 de PyTorch en el dispositivo configurado.
@@ -306,141 +345,122 @@ sobre la misma versión del modelo base.
 
 \subsection{Hiperparámetros de entrenamiento}
 
-La Tabla~\ref{tab:hiperparametros_qwen} presenta los valores conservados
-en los argumentos de entrenamiento y la configuración del adaptador.
-El lote de entrenamiento es de una muestra por dispositivo y se
-acumulan ocho pasos antes de actualizar los parámetros, lo que
-corresponde a un lote efectivo de ocho muestras con una GPU.
+La Tabla~\ref{tab:hiperparametros_qwen} reúne la configuración común
+y las diferencias de lote. Los argumentos conservados y las configuraciones
+LoRA complementan los valores de los scripts. En una GPU, ambas variantes
+utilizan un lote efectivo de ocho muestras.
 
 \begin{table}[htbp]
 \centering
-\caption{Configuración conservada del entrenamiento de Qwen2.5-7B.}
+\small
+\caption{Configuración de los dos entrenamientos QLoRA.}
 \label{tab:hiperparametros_qwen}
-\begin{tabular}{|p{0.57\textwidth}|p{0.30\textwidth}|}
-\hline
-\textbf{Parámetro} & \textbf{Valor} \\
-\hline
-Longitud máxima de la conversación & 512 tokens \\
-Lote de entrenamiento por dispositivo & 1 \\
-Lote de evaluación por dispositivo & 8 \\
-Acumulación de gradientes & 8 \\
-Épocas configuradas & 2 \\
-Optimizador & AdamW de PyTorch \\
-Tasa de aprendizaje inicial & \(10^{-4}\) \\
-Planificador de tasa de aprendizaje & Coseno \\
-Pasos de calentamiento & 150 \\
-Decaimiento de pesos & 0 \\
-Coeficientes de Adam & \(\beta_1=0.9\), \(\beta_2=0.999\) \\
-Épsilon de Adam & \(10^{-8}\) \\
-Norma máxima del gradiente & 1.0 \\
-Intervalo de evaluación & 250 pasos \\
-Intervalo de guardado & 250 pasos \\
-Intervalo de registro & 50 pasos \\
-Límite de checkpoints conservados & 2 \\
-Precisión mixta configurada & BF16 \\
-Semilla de entrenamiento & 42 \\
-Rango / escala / descarte LoRA & 32 / 64 / 0.05 \\
-\hline
-\end{tabular}
+\begin{tabularx}{\textwidth}{@{}Xcc@{}}
+\toprule
+\textbf{Parámetro} & \textbf{Qwen2.5-3B} & \textbf{Qwen2.5-7B} \\
+\midrule
+Entrenamiento / validación & 36\,000 / 4\,000 & 36\,000 / 4\,000 \\
+Longitud máxima de conversación & 512 tokens & 512 tokens \\
+Lote de entrenamiento por GPU & 4 & 1 \\
+Acumulación de gradientes & 2 & 8 \\
+Lote de evaluación por GPU & 8 & 8 \\
+Épocas / actualizaciones & 2 / 9\,000 & 2 / 9\,000 \\
+Tasa de aprendizaje inicial & \(10^{-4}\) & \(10^{-4}\) \\
+Planificador / calentamiento & Coseno / 150 & Coseno / 150 \\
+Evaluación y guardado & Cada 250 pasos & Cada 250 pasos \\
+Registro de pérdida & Cada 50 pasos & Cada 50 pasos \\
+Checkpoints conservados & 2 & 2 \\
+Precisión mixta configurada & BF16 & BF16 \\
+Semilla & 42 & 42 \\
+Rango / escala / descarte LoRA & 32 / 64 / 0.05 & 32 / 64 / 0.05 \\
+\bottomrule
+\end{tabularx}
 \end{table}
 
-El optimizador se identifica como \texttt{adamw\_torch}. Los argumentos
-registran \texttt{bf16=True}, \texttt{fp16=False} y \texttt{seed=42};
-no se especifica una semilla independiente en \texttt{data\_seed}.
-La partición de los datos utiliza también el valor 42, en una operación
-distinta del control de aleatoriedad del entrenamiento.
-
-Con 36\,000 muestras, un lote efectivo de ocho y dos épocas, la
-configuración corresponde a 9\,000 actualizaciones. El registro del
-checkpoint final confirma ese número de pasos y dos épocas completadas.
-La política de conservación se describe a continuación.
+El optimizador es \texttt{adamw\_torch}, con
+\(\beta_1=0.9\), \(\beta_2=0.999\), \(\epsilon=10^{-8}\),
+decaimiento de pesos nulo y norma máxima del gradiente de 1.0.
+La partición utiliza también semilla 42, en una operación distinta del
+control de aleatoriedad del entrenamiento. El lote efectivo y las dos
+épocas explican las 9\,000 actualizaciones registradas en ambas corridas.
 
 \subsection{Selección y conservación del checkpoint}
 \label{subsec:seleccion_checkpoint_qwen}
 
-La selección utiliza la pérdida de validación calculada sobre las
-4\,000 muestras de esa partición. La evaluación y el guardado se
-realizan cada 250 actualizaciones, con un límite de conservación de
-dos checkpoints. Los argumentos efectivos del entrenamiento establecen:
+La selección utiliza la menor pérdida sobre las 4\,000 muestras de
+validación. En ambas corridas se configuraron
+\texttt{load\_\allowbreak best\_\allowbreak model\_\allowbreak at\_\allowbreak end=True},
+\texttt{metric\_\allowbreak for\_\allowbreak best\_\allowbreak model="eval\_\allowbreak loss"} y
+\texttt{greater\_\allowbreak is\_\allowbreak better=False}. Al concluir el entrenamiento,
+\texttt{Trainer} restaura ese checkpoint y el script guarda el adaptador
+y el tokenizador en el directorio de salida.
 
-\begin{verbatim}
-load_best_model_at_end=True
-metric_for_best_model="eval_loss"
-greater_is_better=False
-\end{verbatim}
+\begin{table}[htbp]
+\centering
+\small
+\caption{Artefactos seleccionados y registros de los entrenamientos.}
+\label{tab:checkpoints_qwen_impl}
+\begin{tabularx}{\textwidth}{@{}Xcc@{}}
+\toprule
+\textbf{Registro} & \textbf{Qwen2.5-3B} & \textbf{Qwen2.5-7B} \\
+\midrule
+Checkpoint seleccionado & 7\,000 & 5\,000 \\
+Mejor pérdida de validación & 0.2271966 & 0.2321400 \\
+Último checkpoint & 9\,000 & 9\,000 \\
+Pérdida de validación final & 0.2272140 & 0.2321626 \\
+Tiempo de entrenamiento & 10\,042.3 s & 27\,772.8 s \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-El entrenamiento completó 9\,000 actualizaciones y dos épocas.
-El estado final conserva 36 evaluaciones e identifica
-\texttt{checkpoint-5000} como el checkpoint seleccionado,
-con una pérdida de validación de aproximadamente 0.2321400046.
-El último checkpoint, correspondiente al paso 9\,000, registra
-una pérdida de aproximadamente 0.2321625948. Por tanto, el paso de
-terminación del entrenamiento se distingue del paso de los pesos
-seleccionados. La selección responde exclusivamente al criterio de
-menor pérdida de validación; no demuestra por sí sola que ese
-checkpoint produzca los mejores planes.
+Los adaptadores de inferencia se conservan en
+\texttt{models/\allowbreak nl2cd\_\allowbreak qwen3b} y \texttt{models/\allowbreak nl2cd\_\allowbreak qwen7b}.
+La igualdad SHA-256 entre los pesos de cada directorio raíz y los de su
+checkpoint seleccionado confirma qué adaptador quedó exportado.
+El checkpoint del paso 9\,000 conserva el estado final y no sustituye
+esa selección. La pérdida y el tiempo de entrenamiento describen el
+ajuste; no determinan por sí solos qué configuración produce mejores planes.
 
-Al finalizar \texttt{trainer.train()}, el entrenador restaura los
-pesos del checkpoint seleccionado. Después, el script ejecuta:
-
-\begin{verbatim}
-trainer.save_model(OUTPUT_DIR)
-tokenizer.save_pretrained(OUTPUT_DIR)
-\end{verbatim}
-
-El directorio
-\texttt{nl2cd\_qwen7b} conserva así el adaptador seleccionado y el
-tokenizador para la inferencia. Los subdirectorios conservados
-corresponden a \texttt{checkpoint-5000} y \texttt{checkpoint-9000}.
-
-La Figura~\ref{fig:curva_perdida_qwen} se construye con el historial
-completo, presenta la evolución de las pérdidas de entrenamiento y 
-validación durante las 9\,000 actualizaciones. Se observa una 
-reducción inicial pronunciada, seguida de variaciones de menor magnitud.
-El registro del entrenador identifica el paso 5\,000 como
-el de menor pérdida de validación, aunque esta diferencia
-no se distingue con claridad en la escala de la figura.
+La Figura~\ref{fig:curva_perdida_qwen} compara ambas corridas: la vista
+completa muestra la estabilización inicial y el detalle de validación
+permite distinguir los checkpoints seleccionados. La tabla anterior
+conserva sus valores exactos.
 
 \begin{figure}[htbp]
     \centering
-    \includegraphics[width=\textwidth]{Figures/curva_perdida_qwen.pdf}
-    \caption{Evolución de las pérdidas de entrenamiento y
-    validación durante el ajuste de Qwen2.5-7B mediante QLoRA.
-    La pérdida de entrenamiento se registra cada 50
-    actualizaciones y la de validación cada 250.
-    Se muestra el historial completo, hasta el paso 9\,000.
-    Elaboración propia.}
+    \includegraphics[width=\textwidth]{Figures/entrenamiento_comparado_es.pdf}
+    \caption{Entrenamiento de Qwen2.5-3B y Qwen2.5-7B mediante QLoRA.
+    (a) Pérdidas durante las 9\,000 actualizaciones.
+    (b) Detalle de validación desde el paso 1\,000; las estrellas señalan
+    los checkpoints seleccionados: 7\,000 para 3B y 5\,000 para 7B.
+    Las curvas describen el ajuste y no equivalen al cumplimiento de
+    tareas de planificación. Elaboración propia.}
     \label{fig:curva_perdida_qwen}
 \end{figure}
 
-El script realiza posteriormente una comprobación generativa sobre
-las primeras 50 muestras de la partición de validación, utilizando
-las órdenes del dataset sin el normalizador del servicio HTTP y un
-máximo de 256 tokens nuevos. Compara las listas ordenadas de objetivos
-predichos con sus referencias, aplica el esquema y comprueba la
-expansión mediante el validador CLIPS fuera de línea. La salida
-conservada registra 50 coincidencias exactas, 50 secuencias válidas
-según el esquema y 50 secuencias aceptadas por CLIPS. También
-incluye cinco órdenes adicionales cuyas respuestas se imprimen
-como ejemplos de inferencia.
-
-Esta comprobación utiliza una parte de la misma partición empleada
-para seleccionar el checkpoint. Su alcance es preliminar: no
-constituye una evaluación sobre un conjunto de prueba independiente,
-una verificación del recorrido HTTP--ROS 2 ni una comparación con
-GPT. La evaluación detallada de ambas arquitecturas queda reservada
-para el capítulo de resultados.
+Después del ajuste, cada script realiza una comprobación generativa
+sobre las primeras 50 muestras de la partición de validación, sin el
+normalizador HTTP y con hasta 256 tokens nuevos. Los registros de ambas
+corridas indican 50 coincidencias exactas de objetivos, 50 secuencias
+válidas según el esquema y 50 aceptadas por el validador CLIPS.
+La comprobación reutiliza parte de la partición de selección; su alcance
+es preliminar y no sustituye una prueba independiente ni una evaluación
+del recorrido HTTP--ROS 2. El benchmark fijo se ejecuta y registra por
+separado para el adaptador que se desea evaluar.
 
 \subsection{Inferencia}
 
-El módulo \texttt{inference.py} carga \texttt{Qwen/Qwen2.5-7B} en NF4
+El módulo \texttt{qwen\_\allowbreak gpsr.\allowbreak runtime.\allowbreak inference} obtiene el identificador
+del modelo base desde \texttt{adapter\_\allowbreak config.\allowbreak json}, lo carga en NF4
 con doble cuantización e incorpora los pesos del adaptador mediante
-\texttt{PeftModel.from\_pretrained}. Recupera el tokenizador del
+\texttt{Peft\allowbreak Model.\allowbreak from\_\allowbreak pretrained}. Recupera el tokenizador del
 directorio del adaptador y coloca el modelo en modo de evaluación.
-El dispositivo predeterminado es \texttt{cuda:0}; las opciones de
+Así, seleccionar el adaptador de 3B carga su propia base, en lugar de
+aplicar sus pesos al modelo de 7B. El dispositivo predeterminado es
+\texttt{cuda:0}; las opciones de
 ejecución permiten modificar la distribución y los límites de memoria.
 
-Antes de tokenizar la orden se aplica \texttt{CommandNormalizer}.
+Antes de tokenizar la orden se aplica \texttt{Command\allowbreak Normalizer}.
 El procedimiento convierte el texto a minúsculas, uniforma espacios,
 guiones y signos, elimina las expresiones de cortesía y muletillas
 definidas en el código y reduce repeticiones adyacentes. Después
@@ -449,9 +469,9 @@ sustituye variantes de expresiones, como \textit{pick up} por
 de entidades, como \textit{fridge} por \textit{refrigerator}.
 
 El normalizador construye su repertorio con los catálogos de
-\texttt{CompetitionTemplate} y las listas de atributos e información
+\texttt{Competition\allowbreak Template} y las listas de atributos e información
 del generador. Tras las sustituciones exactas, busca coincidencias
-aproximadas mediante \texttt{SequenceMatcher}. Compara candidatos con
+aproximadas mediante \texttt{Sequence\allowbreak Matcher}. Compara candidatos con
 el mismo número de palabras y utiliza un umbral de 0.86 para una
 palabra y 0.82 para expresiones de varias palabras. Descarta de esta
 búsqueda los fragmentos de menos de cuatro caracteres y examina
@@ -461,13 +481,13 @@ similitud textual; no constituyen una comprobación semántica de la orden.
 El modo de diagnóstico del normalizador conserva la entrada original,
 la normalizada y la lista de transformaciones. En el recorrido de
 inferencia se utiliza el texto normalizado, que puede devolverse junto
-con la predicción mediante \texttt{return\_normalized=True}. Estas
+con la predicción mediante \texttt{return\_\allowbreak normalized=True}. Estas
 transformaciones pertenecen al preprocesamiento y se distinguen de
 las capacidades aprendidas por Qwen.
 
 La orden procesada se introduce como mensaje de usuario y la plantilla
 añade el prefijo de sistema predeterminado y el inicio de la respuesta
-del asistente. La generación utiliza \texttt{do\_sample=False}, una
+del asistente. La generación utiliza \texttt{do\_\allowbreak sample=False}, una
 penalización de repetición de 1.05 y un máximo de 128 tokens nuevos.
 Las condiciones de parada incluyen el token de fin de secuencia y
 \texttt{<|im\_end|>}, cuando está disponible. Las comprobaciones
@@ -483,93 +503,74 @@ Si la extracción o validación falla, se devuelve un error con hasta
 comprueba estructura y restricciones programadas, sin acreditar por
 sí sola fidelidad a la instrucción.
 
-La salida del intérprete se representa mediante
-\(G_{\mathrm{pred}}^{\mathrm{Qwen}}\). Las reparaciones posteriores del
-adaptador ROS 2 se registran como operaciones adicionales y no se
-atribuyen a la predicción original al evaluar el intérprete.
+La salida aceptada corresponde a los objetivos extraídos antes de la
+adaptación simbólica. El servicio no expone el texto completo generado
+por Qwen en las respuestas válidas; conserva el objeto JSON extraído.
+El cuerpo HTTP y la generación neuronal completa son productos distintos.
+Las reparaciones posteriores se analizan por separado de la interpretación.
 
 \subsection{Despliegue del modelo}
 \label{subsec:despliegue_qwen}
 
-El intérprete Qwen admite dos modalidades de despliegue: ejecución
-local y ejecución como servicio remoto. Ambas emplean el modelo
-base, el adaptador LoRA y el tokenizador, y conservan el mismo
-procedimiento de inferencia y contrato de objetivos semánticos.
-La diferencia reside en la ubicación del proceso y en el mecanismo
-utilizado para solicitar la interpretación.
+La inferencia puede ejecutarse en el equipo del robot o en una computadora
+remota. La entrada \texttt{server.py} delega en
+\texttt{qwen\_\allowbreak gpsr.\allowbreak runtime.\allowbreak server}; mantiene residentes el modelo,
+el tokenizador y el normalizador. El cliente ROS envía la orden por HTTP,
+mientras que la conversión a hechos y CLIPS permanecen en el entorno de
+Justina. Las campañas experimentales utilizan su propio proceso CLIPS.
 
-En la modalidad local, el modelo se carga en el mismo equipo que
-ejecuta los componentes de control del robot. El módulo
-\texttt{inference.py} proporciona las funciones de carga y
-traducción, permitiendo procesar las instrucciones desde un
-proceso Python. Una vez disponibles los archivos necesarios,
-la interpretación de cada orden no requiere consultar un
-servidor externo.
+La ruta del adaptador se selecciona explícitamente al iniciar el servicio.
+Por ejemplo, desde la raíz del repositorio:
 
-Cuando la carga conjunta de los componentes requiere liberar
-recursos del equipo del robot, la inferencia puede trasladarse
-a otra computadora accesible mediante una red local o Internet.
-Para esta modalidad se desarrolló \texttt{server.py}, que mantiene
-cargados el modelo, el tokenizador y el normalizador entre
-solicitudes. Justina envía la instrucción por HTTP y recibe los
-objetivos, mientras que la conversión a hechos y la planificación
-con CLIPS permanecen en su entorno ROS 2.
-
-El servidor atiende solicitudes mediante hilos y utiliza un
-mecanismo de exclusión mutua para permitir una sola traducción
-a la vez. La interfaz ofrece \texttt{GET /health} para consultar
-la disponibilidad del servicio y \texttt{POST /translate} para
-solicitar la interpretación. El cuerpo de la petición contiene
-la propiedad \texttt{command}:
-
+{\small
 \begin{verbatim}
-{"command": "go to the kitchen"}
+python3 server.py --adapter-path models/nl2cd_qwen3b \
+  --host 127.0.0.1 --port 8008
 \end{verbatim}
+}
 
-Una respuesta aceptada incluye el indicador \texttt{ok},
-el tiempo \texttt{elapsed\_ms} y un objeto \texttt{result}.
-Dentro de este último, \texttt{normalized\_input} conserva
-la entrada procesada y \texttt{prediction} contiene los
-objetivos. La envoltura del servicio se retira antes de entregar
-al adaptador el contrato semántico:
+Para 7B se utiliza \texttt{models/\allowbreak nl2cd\_\allowbreak qwen7b}, que también es la
+ruta predeterminada cuando se omite \texttt{-\allowbreak -\allowbreak adapter-\allowbreak path}.
+La dirección de escucha y la autenticación se configuran según el
+emplazamiento del cliente; \texttt{127.0.0.1} solo admite conexiones
+locales. La clave, si se utiliza, se proporciona fuera de los registros
+mediante \texttt{QWEN\_API\_KEY} y el encabezado Bearer.
+El servidor carga el adaptador indicado, sin comparar checkpoints al arrancar.
 
-\begin{verbatim}
-{"goals": ["go(kitchen)"]}
-\end{verbatim}
+\begin{table}[htbp]
+\centering
+\small
+\caption{Interfaz HTTP del servidor Qwen.}
+\label{tab:interfaz_http_qwen_impl}
+\begin{tabularx}{\textwidth}{@{}lX@{}}
+\toprule
+\textbf{Ruta} & \textbf{Función} \\
+\midrule
+\texttt{GET /health} & Comprobar que el servicio responde. \\
+\texttt{POST /\allowbreak translate} & Interpretar la orden del campo \texttt{command}. \\
+\texttt{GET /metadata} & Identificar modelos, archivos, parámetros y entorno efectivos. \\
+\texttt{GET /status} & Consultar actividad y terminación de solicitudes identificadas. \\
+\bottomrule
+\end{tabularx}
+\end{table}
 
-Las peticiones incorrectas, las predicciones inválidas y los
-fallos internos se comunican mediante respuestas de error.
-Cuando se configura una clave de acceso, el servidor comprueba
-el encabezado \texttt{Authorization} mediante el esquema
-\texttt{Bearer}.
+Una petición como \texttt{\{"command": "go to the kitchen"\}} recibe
+\texttt{ok}, \texttt{elapsed\_ms}, la huella
+\texttt{effective\_\allowbreak config\_\allowbreak sha256} y un objeto \texttt{result}.
+Este contiene \texttt{normalized\_\allowbreak input}, \texttt{prediction} y
+mediciones de recursos. El cliente ROS retira la envoltura y devuelve
+un JSON con \texttt{input} y \texttt{goals}. La predicción inválida,
+la petición incorrecta y el fallo interno se comunican como errores.
 
-El despliegue configurado utiliza el servicio HTTP, iniciado desde el
-directorio de trabajo \texttt{Qwen2.5-7B} del usuario, con la dirección IP
-\texttt{100.102.21.62} y puerto 8008. El comando proporciona la clave
-mediante la variable \texttt{QWEN\_API\_KEY} y no especifica
-\texttt{--adapter-path}. Por ello, el servidor utiliza el valor
-\texttt{ADAPTER\_PATH} del módulo de inferencia, establecido como
-\texttt{nl2cd\_qwen7b}. La ruta resultante es:
-
-\begin{verbatim}
-~/Qwen2.5-7B/nl2cd_qwen7b
-\end{verbatim}
-
-El tokenizador y el adaptador se recuperan de ese directorio; el
-modelo base se carga mediante el identificador
-\texttt{Qwen/Qwen2.5-7B}. El adaptador exportado corresponde al
-checkpoint seleccionado durante el entrenamiento. La selección y
-restauración se realizan en el entrenador; el servidor carga los
-archivos de la ruta configurada sin comparar los checkpoints. El comando
-conserva también el dispositivo predeterminado \texttt{cuda:0},
-mantiene TF32 habilitado y no activa la opción \texttt{--cpu-offload}.
-
-La modalidad utilizada forma parte de la configuración
-experimental. El tiempo informado por el servidor corresponde
-al procesamiento de la traducción y no incluye el recorrido
-completo de comunicación observado por el cliente. El registro
-de estas condiciones y el alcance de las mediciones se describen
-en la Sección~\ref{sec:reproducibilidad_impl}.
+El servidor acepta conexiones en hilos y serializa las generaciones
+mediante exclusión mutua. La campaña puede enviar
+\texttt{X-\allowbreak Experiment-\allowbreak Run-\allowbreak ID} y consultar la terminación mediante
+\texttt{/status}; la API ROS no incorpora este seguimiento.
+Un timeout del cliente no cancela la inferencia remota.
+El tiempo \texttt{elapsed\_ms} comprende la traducción observada por
+el servidor, incluida la espera de su bloqueo; las mediciones internas
+de recursos excluyen esa espera y la carga del modelo. Ninguna de ellas
+incluye la adaptación y planificación posteriores del cliente.
 
 \section{Implementación del planificador CLIPS}
 \label{sec:implementacion_clips}
@@ -577,7 +578,7 @@ en la Sección~\ref{sec:reproducibilidad_impl}.
 \subsection{Conversión de objetivos a hechos gpsr-goal}
 \label{subsec:adaptador_objetivos_impl}
 
-El adaptador \texttt{goals\_to\_clips\_node.py} recibe la lista de
+El adaptador \texttt{goals\_\allowbreak to\_\allowbreak clips\_\allowbreak node.\allowbreak py} recibe la lista de
 objetivos y construye hechos \texttt{gpsr-goal}. El componente
 \texttt{GoalParser} acepta un objeto con la propiedad \texttt{goals}
 o directamente una lista JSON. Analiza cada expresión y separa los
@@ -646,7 +647,7 @@ Por ejemplo, \texttt{go} y \texttt{place} se clasifican como ubicación,
 información como \texttt{info}. Esta clasificación cumple una función
 operativa en el adaptador y no redefine el vocabulario semántico.
 
-\texttt{ClipsGoalFactBuilder} conserva los destinos indicados por
+\texttt{Clips\allowbreak Goal\allowbreak Fact\allowbreak Builder} conserva los destinos indicados por
 \texttt{to}, \texttt{at}, \texttt{on} o \texttt{in}, en ese orden
 de prioridad. También admite el segundo argumento posicional para
 entrega, guía, seguimiento y colocación. La relación principal selecciona
@@ -681,7 +682,7 @@ a esta transformación. La evaluación del sistema completo considera
 también los hechos y el plan que resultan de ella.
 
 La auditoría fuera de línea utiliza
-\texttt{goal\_to\_clips\_fact} para construir el mismo tipo de hecho,
+\texttt{goal\_\allowbreak to\_\allowbreak clips\_\allowbreak fact} para construir el mismo tipo de hecho,
 pero emplea el análisis del esquema semántico y no reproduce todas las
 heurísticas y reparaciones del nodo ROS 2. En consecuencia, compartir
 la plantilla \texttt{gpsr-goal} no garantiza equivalencia entre ambos
@@ -689,6 +690,7 @@ recorridos. La comprobación integrada debe conservar la transformación
 que efectivamente recibió CLIPS.
 
 \subsection{Representación del estado simbólico}
+\label{subsec:estado_simbolico_impl}
 
 La planificación comienza con un estado que representa ubicación
 desconocida y ausencia de un objeto sostenido:
@@ -696,6 +698,13 @@ desconocida y ausencia de un objeto sostenido:
 \begin{verbatim}
 (current-state (location "unknown") (holding "nothing"))
 \end{verbatim}
+
+Este hecho inicializa la representación utilizada para construir el
+plan; no es una lectura del estado físico de Justina. Las herramientas
+de navegación y manipulación manejan la información de ubicación y
+posesión que necesitan al resolver las operaciones solicitadas.
+CLIPS mantiene, por su parte, un estado previsto durante la expansión,
+sin sincronizarlo automáticamente con esas observaciones del robot.
 
 Las reglas actualizan este estado al añadir acciones al plan. Los
 valores representan efectos previstos, no confirmaciones físicas. Por
@@ -707,21 +716,27 @@ objetivos y las condiciones de expansión son, por tanto, controles
 complementarios.
 
 Otros hechos conservan referencias a personas, el último contexto de
-interacción, análisis visuales y el estado del foco. Las referencias
+interacción y análisis visuales. Las acciones de diálogo añaden una
+anotación interna de interlocutor, utilizada al organizar el foco al
+final de la expansión. Las referencias
 \texttt{guest\_N} y \texttt{customer\_N} permiten reutilizar una entidad
 durante distintas subtareas. Los objetos se identifican mediante nombres
-normalizados e índices, como \texttt{chocolate\_jello\_1}.
+normalizados e índices, como \texttt{chocolate\_\allowbreak jello\_\allowbreak 1}.
 
 La referencia \texttt{guest\_last} se utiliza para una persona capturada
 por \texttt{find\_person}, mientras que \texttt{customer\_N} identifica
 una búsqueda por atributo realizada con \texttt{find\_pose}. Una persona
 nombrada puede requerir búsqueda anónima, solicitud del nombre y escucha
-mediante \texttt{guest\_name\_last}. La asociación efectiva de estos
+mediante \texttt{guest\_\allowbreak name\_\allowbreak last}. La asociación efectiva de estos
 identificadores con detecciones y respuestas corresponde al ejecutor.
+Los alias de última persona no garantizan identidades distintas para
+varios destinatarios nombrados. Asimismo, el estado \texttt{holding}
+representa un solo objeto; no equivale al conjunto de adquisiciones
+que puede mantener el validador de objetivos.
 
 \subsection{Reglas de expansión}
 
-Las reglas se agrupan en \texttt{goals\_planning.clp}. Una regla de
+Las reglas se agrupan en \texttt{goals\_\allowbreak planning.\allowbreak clp}. Una regla de
 procesamiento consume un objetivo únicamente cuando no existe otro
 pendiente con un paso menor. Después de expandirlo, retira el hecho
 correspondiente y añade las acciones de la subtarea.
@@ -797,8 +812,8 @@ acciones posteriores, sin asumir que hubo un desplazamiento físico.
 La guía genera una instrucción hablada, navegación al destino y cierre
 de la interacción. El seguimiento recupera o busca a la persona,
 incorpora aproximación cuando corresponde y emite mediante \texttt{say}
-las claves \texttt{instruct\_follow\_only} o
-\texttt{instruct\_follow\_to\_<destino>}. Esta regla no emite una
+las claves \texttt{instruct\_\allowbreak follow\_\allowbreak only} o
+\texttt{instruct\_\allowbreak follow\_\allowbreak to\_\allowbreak <destino>}. Esta regla no emite una
 acción explícita de seguimiento ni actualiza la ubicación al destino.
 Su expansión representa el protocolo de interacción; la realización
 física del seguimiento depende del tratamiento de esas claves en el
@@ -812,178 +827,148 @@ visual, pero no constituye una medición de peso o grosor ni demuestra
 la satisfacción de esas propiedades. Estos casos requieren una
 interpretación diferenciada en la evaluación.
 
-El conteo genera \texttt{analyze\_objects}, incorpora retorno al punto
+El conteo genera \texttt{analyze\_\allowbreak objects}, incorpora retorno al punto
 de instrucción cuando corresponde y emite la respuesta
-\texttt{count\_category}. Para guardar un nombre se solicita y escucha
-\texttt{guest\_name\_last}; para atributos de persona se utilizan
+\texttt{count\_\allowbreak category}. Para guardar un nombre se solicita y escucha
+\texttt{guest\_\allowbreak name\_\allowbreak last}; para atributos de persona se utilizan
 operaciones de análisis o búsqueda por postura. La información
 adquirida se comunica mediante las claves de respuesta de \texttt{tell}.
 La respuesta a preguntas combina \texttt{listen} y \texttt{say} con
-la clave \texttt{answer\_question}, y el saludo utiliza la persona
+la clave \texttt{answer\_\allowbreak question}, y el saludo utiliza la persona
 referenciada y la clave \texttt{greet}.
+
+El conteo por vestimenta ilustra la diferencia entre expresar una
+restricción y disponer de las funciones para resolverla. Aunque el esquema
+permite representar ese atributo, se necesitan operaciones que filtren
+las personas por vestimenta antes de contarlas. La expansión actual puede
+generar un conteo general sin aplicar ese filtro; en tal caso, los pasos
+producidos no bastan para obtener el resultado solicitado. Expresar la
+restricción en los objetivos no garantiza que el plan pueda satisfacerla.
 
 \subsection{Generación de acciones}
 
-Las reglas construyen hechos intermedios \texttt{action-step}, que
-posteriormente se convierten en \texttt{ros-message}. Los anuncios
+Las reglas construyen hechos intermedios \texttt{action-step}. Tras
+organizar las interacciones, los pasos finales se convierten en
+\texttt{ros-message}, como se detalla en la
+Sección~\ref{subsec:finalizacion_clips_impl}. Los anuncios
 generales utilizan numeración desde 1 y las acciones operativas desde
 1001. Al ordenar la salida, se presenta primero el anuncio de las tareas
 y después las operaciones del plan.
 
-Para la orden utilizada como ejemplo, las reglas generan la
-siguiente secuencia de acciones de navegación, búsqueda,
-adquisición y entrega. Se omiten los anuncios y las frases de
-confirmación para destacar cómo se expanden los cuatro
-objetivos semánticos.
+La expansión completa de una orden de navegación, búsqueda, adquisición
+y entrega se presenta en la Sección~\ref{sec:ejemplo_integrado_qwen_clips},
+junto con las representaciones intermedias y el plan resultante.
 
-\begin{verbatim}
-go_to       bed
-find_object chocolate_jello_1
-take        chocolate_jello_1
-go_to       instruction_point
-approach    host_1
-give        chocolate_jello_1
-\end{verbatim}
+\subsection{Finalización y organización del diálogo}
+\label{subsec:finalizacion_clips_impl}
 
-El objetivo de entrega al operador se expande en retorno al punto de
-instrucción, aproximación y entrega física. Esta secuencia es una
-ilustración de la expansión; el plan completo incluye también las
-acciones de comunicación y finalización establecidas por las reglas.
+La construcción se cierra en cuatro etapas. Cuando no quedan objetivos,
+\texttt{add-\allowbreak final-\allowbreak return} añade el retorno a
+\texttt{instruction\_\allowbreak point} si corresponde y una única operación final
+\texttt{say task completed}. Después,
+\texttt{organize-\allowbreak interaction-\allowbreak focus} invoca
+\texttt{normalize-\allowbreak interactions}, que ordena los pasos y organiza
+el foco de toda la secuencia.
 
-\subsection{Condición de finalización}
+Los \texttt{say} y \texttt{listen} consecutivos dirigidos al mismo
+interlocutor comparten un ciclo de \texttt{focus enable/\allowbreak disable},
+incluso si proceden de objetivos distintos. El cambio de interlocutor,
+una acción no dialogada o un anuncio general cierra ese ciclo.
+Los anuncios de navegación, manipulación y finalización no activan foco.
+Las anotaciones de interlocutor son internas y no se publican como
+argumentos adicionales del ejecutor. La pasada final concentra esta
+decisión; no se utiliza el mecanismo anterior de \texttt{focus-active}.
 
-Cuando no quedan objetivos pendientes, las reglas añaden las acciones
-de cierre: desactivación del foco si continúa activo, retorno a
-\texttt{instruction\_point} cuando corresponde y mensaje de tarea
-completada. La construcción concluye con la nota \texttt{GPSR\_DONE}.
+Los pasos organizados se guardan como \texttt{finalized-\allowbreak step}, con
+anuncios desde 1 y operaciones renumeradas desde 1001.
+\texttt{serialize-\allowbreak action-\allowbreak step} los convierte a \texttt{ros-message};
+\texttt{goals-finish} emite \texttt{GPSR\_DONE} cuando tampoco quedan
+pasos por serializar. Las cuatro reglas tienen prioridades 20, 7, 5 y 1.
 
-La finalización se distribuye en tres reglas.
-\texttt{add-final-return} incorpora el cierre y el hecho
-\texttt{final-steps-added}; \texttt{serialize-action-step} convierte
-las acciones en mensajes una vez presente ese hecho; finalmente,
-\texttt{goals-finish} emite la nota de cierre cuando no quedan hechos
-\texttt{action-step} por serializar. Sus prioridades son 20, 5 y 1,
-respectivamente.
-
-El componente \texttt{PlanExtractor} construye la representación
-textual a partir de los mensajes y las notas del plan. El nodo publica
-esa representación como una cadena y la añade a
-\texttt{plan\_execution.log}. El registro se vacía al iniciar el nodo
-y acumula los planes publicados durante la sesión.
-
-La comprobación que realiza el nodo después de ejecutar el motor
-consiste en buscar hechos \texttt{ros-message}; cuando existen,
-solicita la extracción y publica si el resultado no está vacío.
-Este criterio del nodo se distingue de las condiciones de cierre
-implementadas en las reglas. El nodo no comprueba explícitamente
-\texttt{GPSR\_DONE}, ausencia de objetivos pendientes o ausencia de
-mensajes de objetivo no soportado antes de solicitar la extracción.
-
-La regla de objetivo no soportado consume el hecho y añade una
-explicación hablada. Por ello, la ausencia de objetivos pendientes y
-la marca de cierre pueden coexistir con una incapacidad de expansión.
-La comprobación funcional debe examinar también el contenido del plan,
-incluidas las respuestas de manipulación no disponible. Las marcas
-de inicio y cierre describen la generación del plan y no confirman
-su ejecución física.
+\texttt{PlanExtractor} ordena los mensajes y coloca las notas de inicio
+y cierre. El nodo publica el texto si encuentra mensajes y una salida
+no vacía; no exige por sí mismo ausencia de objetivos pendientes ni
+comprueba todos los criterios del validador experimental.
+Una regla de objetivo desconocido puede consumirlo, añadir una explicación
+y terminar con \texttt{task completed}. Por ello, las marcas de cierre
+y el consumo de metas no acreditan cumplimiento de la orden.
 
 \section{Integración Qwen--CLIPS con Justina}
 \label{sec:integracion_implementada}
 
 \subsection{Componentes ROS 2}
 
-La integración se organiza mediante el nodo semántico, el adaptador
-de objetivos y el nodo que administra CLIPS. El primero solicita la
-inferencia Qwen y proporciona el objeto con \texttt{goals}; el
-adaptador construye los hechos y coordina las solicitudes de
-inserción y planificación. El nodo \texttt{clips\_node.py} expone
-los servicios del motor y publica el plan resultante.
+La Figura~\ref{fig:despliegue_integracion_cap5} sitúa los procesos y sus
+conexiones. El cliente coordinador solicita la interpretación al nodo
+semántico y entrega los objetivos devueltos al conversor. El servidor
+Qwen puede residir en otro equipo; el adaptador y CLIPS funcionan en el
+entorno ROS de Justina. La publicación del plan permite observarlo y
+entregar sus instrucciones al gestor.
 
-El nodo CLIPS delega la interacción con el entorno simbólico en
-\texttt{ClipsEngine}, la carga de reglas en \texttt{RuleLoader} y
-la extracción de la salida en \texttt{PlanExtractor}. El componente
-\texttt{PlanLogger} registra los planes publicados. Esta separación
-mantiene las reglas de expansión en la base CLIPS y concentra en el
-nodo la comunicación y coordinación de tareas.
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=\textwidth]{Figures/despliegue_integracion_cap5.pdf}
+    \caption{Despliegue e interfaces del recorrido Qwen--CLIPS en Justina.
+    El cliente coordina interpretación y conversión; CLIPS publica el
+    plan para sus consumidores. El gestor se inicia por separado y
+    requiere los remapeos descritos en el texto. Elaboración propia.}
+    \label{fig:despliegue_integracion_cap5}
+\end{figure}
 
-Las solicitudes recibidas por los servicios se convierten en tareas
-que se procesan secuencialmente mediante una cola y un trabajador
-dedicado. Los callbacks añaden el trabajo a la cola y responden sin
-esperar a que termine. La ejecución posterior del motor y la
-publicación ocurren en el planeador.
+El nodo CLIPS delega el motor, la carga de reglas, la extracción y el
+registro en \texttt{ClipsEngine}, \texttt{RuleLoader},
+\texttt{PlanExtractor} y \texttt{PlanLogger}, respectivamente.
+Los callbacks encolan las solicitudes y responden antes de completarlas;
+un trabajador único procesa secuencialmente las operaciones simbólicas.
 
 El nodo declara el parámetro \texttt{plan\_name}, cuyo valor
 predeterminado es \texttt{default}, y lo entrega al cargador de reglas.
-El archivo \texttt{planning.launch.xml}, del paquete
-\texttt{planning\_tools}, agrupa los lanzamientos de CLIPS y del
+El archivo \texttt{planning.\allowbreak launch.\allowbreak xml}, del paquete
+\texttt{planning\_\allowbreak tools}, agrupa los lanzamientos de CLIPS y del
 parser semántico bajo el espacio de nombres \texttt{/planning}.
-La invocación utilizada selecciona \texttt{plan\_name:=goals} y
-propaga ese argumento al lanzamiento de CLIPS.
+El lanzamiento superior selecciona \texttt{plan\_\allowbreak name=goals} por
+defecto y propaga ese argumento al lanzamiento de CLIPS.
 
-El lanzamiento mantiene \texttt{qwen\_response\_format=goals},
-\texttt{use\_goals\_to\_clips=true} y
-\texttt{use\_entity\_extractor=true}. También propaga al parser
+El lanzamiento mantiene \texttt{qwen\_\allowbreak response\_\allowbreak format=goals},
+\texttt{use\_\allowbreak goals\_\allowbreak to\_\allowbreak clips=true} y
+\texttt{use\_\allowbreak entity\_\allowbreak extractor=true}. También propaga al parser
 un tiempo de espera Qwen de 5.0 segundos. Este valor sustituye los
 15 segundos predeterminados del lanzamiento semántico incluido.
-
-El archivo \texttt{semantic\_parser.launch.xml} añade el espacio
-de nombres \texttt{semantic\_parser} y configura el servicio del
-nodo Qwen con el nombre relativo \texttt{semantic\_parser}. Su
-composición con el lanzamiento superior produce la ruta utilizada
-por el programa de pruebas:
-
-\begin{verbatim}
-/planning/semantic_parser/semantic_parser
-\end{verbatim}
 
 Los argumentos \texttt{qwen\_url} y \texttt{qwen\_api\_key}
 llegan vacíos en la invocación utilizada. El nodo resuelve cada valor
 consultando primero el parámetro ROS; si está vacío, utiliza
-\texttt{QWEN\_SERVER\_URL} o \texttt{QWEN\_API\_KEY},
+\texttt{QWEN\_\allowbreak SERVER\_\allowbreak URL} o \texttt{QWEN\_API\_KEY},
 respectivamente. Si la variable de URL no existe, utiliza
-\texttt{http://127.0.0.1:8008}; si no existe la variable de clave,
+\texttt{http:/\allowbreak /\allowbreak 127.\allowbreak 0.\allowbreak 0.\allowbreak 1:8008}; si no existe la variable de clave,
 emplea una cadena vacía. En el despliegue se utilizan las variables
 de entorno configuradas en la sesión de terminal del usuario.
 
 El nodo semántico proporciona el servicio mediante el tipo
 \texttt{Parser} y delega la solicitud HTTP en
-\texttt{QwenHTTPClient}. Utiliza un grupo de callbacks reentrante
+\texttt{Qwen\allowbreak HTTPClient}. Utiliza un grupo de callbacks reentrante
 y un ejecutor de dos hilos. También ofrece un servicio de recepción
 de órdenes desde el componente de escucha; las pruebas por consola
 utilizan directamente la entrada textual.
 
-Los servicios y el tópico del nodo CLIPS tienen nombres relativos.
-El espacio de nombres del lanzamiento los hace corresponder con
-las rutas bajo \texttt{/planning} utilizadas por el adaptador y
-por el programa de pruebas. El archivo superior no introduce
-remapeos explícitos y delega la creación de los nodos en los
-lanzamientos incluidos.
-
 El adaptador mantiene sus clientes de servicios en un nodo auxiliar.
-El ejecutor \texttt{SingleThreadedExecutor} funciona en un hilo
+El ejecutor \texttt{Single\allowbreak Threaded\allowbreak Executor} funciona en un hilo
 dedicado y procesa las respuestas mientras el callback de conversión
 espera la aceptación de sus solicitudes dependientes.
 
 \subsection{Flujo de comunicación}
 
-El programa \texttt{qwen\_to\_plan.py} recibe la orden como argumento
-posicional y la envía al servicio
-\texttt{/planning/semantic\_parser/semantic\_parser}, de tipo
-\texttt{Parser} del paquete \texttt{semantic\_parser\_interfaces}.
-La instrucción se coloca en \texttt{request.command} y el resultado
-se recupera de \texttt{response.response}. Con el formato
-\texttt{goals}, el nodo semántico devuelve un objeto JSON con
-\texttt{input} y \texttt{goals}; el primero conserva la orden
-normalizada recibida del cliente o, si no está disponible, la orden
-enviada. Si la solicitud HTTP falla, el nodo devuelve un objeto con
-\texttt{status=aborted}, la entrada y la causa del fallo. El programa comprueba
-que el texto recibido sea un objeto JSON con una lista
-\texttt{goals} en el nivel superior y lo envía al servicio de
-conversión. El adaptador construye
-los hechos y solicita primero su inserción por lote y después el
-inicio de planificación. Para una configuración del nodo CLIPS bajo
-\texttt{/planning}, sin remapeos adicionales de estas interfaces,
-las rutas son las siguientes:
+El coordinador envía la orden en \texttt{Parser.\allowbreak Request.\allowbreak command} y
+recupera un string JSON en \texttt{Parser.\allowbreak Response.\allowbreak response}.
+Una respuesta aceptada contiene \texttt{input} y \texttt{goals};
+\texttt{input} utiliza la entrada normalizada si está disponible y,
+en caso contrario, la orden enviada. Ante una excepción, el nodo
+devuelve \texttt{status=aborted} y la causa.
+
+El cliente comprueba que haya una lista \texttt{goals} en el nivel
+superior antes de llamar al conversor. Este solicita la inserción por
+lote y después el inicio de planificación. Con el lanzamiento integrado,
+las interfaces corresponden a:
 
 \begin{verbatim}
 /planning/semantic_parser/semantic_parser
@@ -993,24 +978,24 @@ las rutas son las siguientes:
 /planning/clips/results
 \end{verbatim}
 
-La conversión utiliza \texttt{clips\_interfaces/srv/String}:
+La conversión utiliza \texttt{clips\_\allowbreak interfaces/\allowbreak srv/\allowbreak String}:
 recibe el JSON en \texttt{request.data} y devuelve un mensaje de
 estado en \texttt{response.data}. La inserción por lote utiliza el
 tipo \texttt{StringArray}, del mismo paquete. El inicio de
-planificación utiliza \texttt{std\_srvs/srv/Trigger}.
+planificación utiliza \texttt{std\_\allowbreak srvs/\allowbreak srv/\allowbreak Trigger}.
 
 Al recibir un lote, el nodo encola una tarea que borra su copia del
 plan actual, reinicia el entorno mediante \texttt{reset}, inserta
 los hechos recibidos y ejecuta el motor. La solicitud de inicio
 encola otra tarea que borra la copia del plan, inserta el disparador
-\texttt{(start (name action-planning))} y vuelve a ejecutar el motor.
+\texttt{(start (name action-\allowbreak planning))} y vuelve a ejecutar el motor.
 El reinicio del entorno se realiza en la tarea de inserción por lote;
 la tarea de inicio no reinicia el entorno y conserva los hechos
 cargados para la planificación.
 
 El servicio por lote devuelve \texttt{successful=True} después de
 encolar la tarea. El servicio de inicio devuelve
-\texttt{success=True} y el mensaje \texttt{Planning started.} en
+\texttt{success=True} y el mensaje \texttt{Planning started.\allowbreak } en
 ese mismo punto del procedimiento. Estas respuestas confirman la
 aceptación de las solicitudes, no la terminación de la inserción ni
 de la planificación. Si una tarea falla posteriormente, el trabajador
@@ -1026,49 +1011,108 @@ global de generación del plan.
 
 Después de ejecutar el motor, el nodo busca hechos
 \texttt{ros-message}. Si existen, solicita su extracción y publica
-la salida no vacía mediante \texttt{std\_msgs/msg/String}, con una
+la salida no vacía mediante \texttt{std\_\allowbreak msgs/\allowbreak msg/\allowbreak String}, con una
 instrucción por línea. La obtención del plan se verifica sobre esa
 publicación y su contenido, por separado del estado devuelto por los
 servicios. El tópico publicado tiene el nombre relativo
 \texttt{clips/results}.
 
-\subsection{Recepción del plan y alcance de las pruebas}
+\subsection{Recepción del plan y entrega de instrucciones}
 
-En el recorrido de pruebas utilizado, el consumidor del plan es
-\texttt{qwen\_to\_plan.py}, ejecutado mediante \texttt{ros2 run}.
-El programa se suscribe a \texttt{/planning/clips/results} e
-imprime la respuesta de Qwen, el estado de conversión y el plan
-recibido. Este recorrido termina en la recepción y presentación del
-plan; no envía sus pasos a los controladores del robot.
+El cliente \texttt{qwen\_\allowbreak to\_\allowbreak plan.\allowbreak py} se suscribe al tópico de planes
+antes de enviar la orden. Imprime la respuesta semántica, el estado de
+conversión y el plan recibido. Puede ejecutarse desde la raíz del
+workspace Justina, con el entorno ROS cargado:
 
-El programa utiliza por defecto diez segundos para cada espera de
-servicio o respuesta y cinco segundos para la espera del plan.
-Estos límites se distinguen de los del adaptador y del cliente HTTP.
-El callback de suscripción conserva el último texto recibido y la
-espera termina cuando ese texto no está vacío. La recepción confirma
-que existe una salida disponible; la validación del contenido del
-plan constituye una comprobación adicional.
+{\small
+\begin{verbatim}
+ros2 launch planning_tools planning.launch.xml
+python3 src/Planning/planning_tools/scripts/qwen_to_plan.py \
+  "go to the kitchen and find an apple"
+\end{verbatim}
+}
 
-El programa no incorpora un identificador que vincule cada mensaje
-del tópico con la orden enviada. La prueba funcional se interpreta
-por ello como un recorrido de una orden a la vez, sin atribuirle
-correlación entre solicitudes concurrentes. Tampoco verifica por sí
-misma la ejecución física o todas las condiciones semánticas del plan.
+El lanzamiento y el cliente se mantienen en terminales independientes.
+El servidor Qwen debe estar iniciado y accesible mediante
+\texttt{QWEN\_\allowbreak SERVER\_\allowbreak URL}. El launch no inicia el servidor, el listener,
+el gestor de instrucciones ni el ejecutor físico.
+Las reglas se localizan respecto al directorio de trabajo, por lo que
+el arranque desde la raíz del workspace forma parte del procedimiento.
 
-La publicación mantiene una interfaz disponible para un consumidor
-de ejecución, pero las comprobaciones aquí descritas se circunscriben
-a interpretación, conversión y generación simbólica de acciones.
+El cliente espera, por defecto, diez segundos por servicio o respuesta
+y cinco por el plan. El HTTP del launch integrado utiliza cinco segundos,
+frente a los quince del launch semántico aislado. Aumentar la espera del
+cliente no modifica el timeout HTTP. La suscripción conserva el último
+texto recibido, sin identificador que lo vincule con la orden; por ello,
+este flujo se utiliza secuencialmente, con una orden a la vez.
 
-Durante el desarrollo se utilizaron 48 comandos como prueba de
-funcionamiento del recorrido de integración. Esa comprobación es
-anterior al entrenamiento cuyo adaptador se identifica en la
-Sección~\ref{subsec:seleccion_checkpoint_qwen}, por lo que no se
-atribuye a ese artefacto. Al cierre de esta implementación, las pruebas
-detalladas del nuevo adaptador mediante HTTP y ROS 2 y la comparación
-con GPT aún no se han realizado. La comprobación automática de 50
-muestras posterior al ajuste corresponde al recorrido fuera de línea.
+La biblioteca C++ \texttt{Planning} ofrece los clientes
+\texttt{parse\allowbreak Semantic\allowbreak Command}, \texttt{listen\allowbreak Gpsr\allowbreak Command} y
+\texttt{goalsToClips}. Los dos primeros devuelven objetivos y no inician
+CLIPS por sí solos; el coordinador solicita la conversión después.
+El servicio de escucha obtiene texto de \texttt{/\allowbreak hri/\allowbreak listener/\allowbreak listen}
+y lo envía a Qwen, con tiempos de escucha y traducción sucesivos.
+Los errores del nodo distinguen \texttt{gpsr\_\allowbreak unavailable}, para fallos
+de transporte y timeout, de \texttt{semantic\_\allowbreak error}, para otras
+excepciones. Ningún código acredita por sí solo que la orden sea inválida.
 
-\section{Ejemplo integrado de funcionamiento de Qwen--CLIPS}
+El componente \texttt{plan\_\allowbreak manager\_\allowbreak node} recibe el plan y entrega
+una instrucción en cada petición. Conserva nombres absolutos históricos;
+para conectarlo con las rutas de \texttt{Planning} debe iniciarse aparte:
+
+{\small
+\begin{verbatim}
+ros2 run plan_manager_node plan_manager_node --ros-args \
+  -r /clips/results:=/planning/clips/results \
+  -r /request_instruction:=/planning/request_instruction \
+  -r /instruction_msg:=/planning/instruction_msg
+\end{verbatim}
+}
+
+Asignar un namespace no modifica esos nombres absolutos. El gestor
+elimina la numeración textual, avanza al entregar cada instrucción y
+responde \texttt{No\allowbreak Plan\allowbreak Assigned} cuando ya no tiene un plan activo.
+No espera confirmación de que la acción entregada se haya completado.
+El cliente de generación termina en el plan y no llama a los controladores.
+
+\subsection{Extracción de entidades durante la interacción}
+
+\texttt{entity\_\allowbreak extractor\_\allowbreak node} interpreta respuestas habladas cuando
+una acción \texttt{listen} necesita un nombre, una confirmación u otro
+dato. No es una etapa obligatoria entre Qwen y CLIPS y no consulta un
+modelo de lenguaje. El ejecutor llama a \texttt{Planning::\allowbreak extract\allowbreak Entity}
+y al servicio \texttt{/\allowbreak planning/\allowbreak semantic\_\allowbreak parser/\allowbreak extract\_\allowbreak entity}.
+
+La interfaz \texttt{ExtractEntity} recibe \texttt{sentence} y
+\texttt{category}; devuelve \texttt{value} y \texttt{values}.
+Los catálogos YAML del paquete \texttt{knowledge\_\allowbreak bank} se cargan al
+iniciar el nodo. La búsqueda ordinaria utiliza expresiones regulares,
+palabras completas y prioridad de patrones largos, sin inferir entidades
+ausentes. Las ubicaciones y las confirmaciones tienen tratamientos
+específicos; una confirmación contradictoria no se toma automáticamente
+como afirmativa. El resultado puede utilizarse para actualizar atributos
+de una persona en el modo completo del ejecutor, sin convertir esa
+capacidad de interfaz en evidencia de ejecución física en la comparación.
+
+\subsection{Alcance de las comprobaciones de integración}
+
+Se conservaron 48 órdenes de pruebas funcionales y, por separado,
+un piloto de 60 órdenes para desarrollar la evaluación. No se atribuyen
+resultados históricos a un adaptador, prompt o conjunto de reglas
+posterior. Las pruebas locales de extracción y errores simulados,
+y los ejemplos expandidos con CLIPS, comprueban componentes concretos.
+La revisión documental de noviembre de 2026 no incluyó una ejecución
+completa de ROS con servidor Qwen y robot.
+
+Para contrastar el recorrido experimental con Justina se ejecutó
+\texttt{experiments.\allowbreak verify\_\allowbreak justina}. La comprobación comparó
+la estructura de las clases del adaptador, la huella de las reglas,
+los hechos adaptados y el texto del plan extraído mediante las clases de
+Justina. Se verificaron 57 secuencias, sin discrepancias. Esta evidencia
+respalda la equivalencia comprobada del procesamiento simbólico; no
+generaliza el resultado a cualquier entrada ni certifica operación física.
+
+\section{Ejemplo de funcionamiento Qwen--CLIPS}
 \label{sec:ejemplo_integrado_qwen_clips}
 \label{subsec:ejemplo_completo_qwen_clips}
 
@@ -1110,13 +1154,13 @@ operador.
 
 Los hechos se envían mediante el servicio de inserción por lote. Tras
 su aceptación, el adaptador solicita el inicio de planificación mediante
-el disparador \texttt{(start (name action-planning))}. La respuesta
+el disparador \texttt{(start (name action-\allowbreak planning))}. La respuesta
 favorable de los servicios indica que la coordinación fue aceptada;
 el plan se obtiene mediante la expansión posterior.
 
 \subsection{Aplicación de reglas y evolución del estado}
 
-La regla \texttt{goals-initialize} establece una ubicación desconocida,
+La regla \texttt{goals-\allowbreak initialize} establece una ubicación desconocida,
 ausencia de un objeto sostenido, los contadores y la nota
 \texttt{GPSR\_START}. Desde este punto, cada regla de procesamiento exige
 que no exista otro objetivo pendiente con un paso menor. La
@@ -1143,26 +1187,28 @@ prioridad de las reglas cumplen funciones distintas.
 
 La búsqueda mantiene la ubicación y el objeto sostenido; la adquisición
 modifica la posesión prevista. El estado utiliza
-\texttt{chocolate\_jello}, mientras que las acciones utilizan el
-identificador operativo \texttt{chocolate\_jello\_1}. En la entrega,
+\texttt{chocolate\_\allowbreak jello}, mientras que las acciones utilizan el
+identificador operativo \texttt{chocolate\_\allowbreak jello\_\allowbreak 1}. En la entrega,
 \texttt{me} se concreta mediante el retorno a
-\texttt{instruction\_point} y la aproximación a \texttt{host\_1}.
+\texttt{instruction\_\allowbreak point} y la aproximación a \texttt{host\_1}.
 Estos detalles operativos se incorporan mediante las reglas y no estaban
 expresados como objetivos independientes en la predicción.
 
 \subsection{Finalización y construcción de la salida}
 
-Cuando no quedan objetivos pendientes, \texttt{add-final-return}
+Cuando no quedan objetivos pendientes, \texttt{add-\allowbreak final-\allowbreak return}
 incorpora el cierre. La ubicación prevista ya es
-\texttt{instruction\_point}, por lo que no se añade otro retorno.
-Tampoco existe foco activo que requiera desactivación. En este caso
-se agrega únicamente la frase \texttt{task completed}.
+\texttt{instruction\_\allowbreak point}, por lo que no se añade otro retorno.
+En este caso se agrega únicamente la frase \texttt{task completed}.
+La pasada de organización del foco no añade acciones porque no hay
+un bloque de diálogo dirigido que las requiera.
 
-La regla \texttt{serialize-action-step} convierte cada acción
-\texttt{action-step} en un mensaje \texttt{ros-message}. Por ejemplo:
+La regla \texttt{serialize-\allowbreak action-\allowbreak step} convierte los pasos finales,
+producidos por la organización de interacciones, a mensajes del plan.
+Por ejemplo:
 
 \begin{verbatim}
-(action-step (step 1001) (action go_to) (arg "bed"))
+(finalized-step (step 1001) (action go_to) (arg "bed"))
 \end{verbatim}
 
 se convierte en:
@@ -1172,7 +1218,8 @@ se convierte en:
   (step 1001) (robot Justina) (action go_to) (params "bed"))
 \end{verbatim}
 
-Cuando tampoco quedan acciones por serializar, \texttt{goals-finish}
+Cuando tampoco quedan pasos intermedios ni finales por serializar,
+\texttt{goals-finish}
 añade \texttt{GPSR\_DONE}. El componente de extracción ordena los
 mensajes por \texttt{step}. Los anuncios se numeran desde uno y aparecen
 primero; el bloque numerado desde 1001 reúne las operaciones y las frases
@@ -1182,7 +1229,9 @@ la expansión de los mismos objetivos.
 
 \subsection{Plan resultante}
 
-La expansión produce los siguientes pasos:
+La expansión de estos objetivos, suministrados directamente al adaptador
+y a las reglas vigentes, produjo los siguientes pasos. La comprobación
+no consultó Qwen ni utilizó servicios ROS:
 
 {\scriptsize
 \begin{verbatim}
@@ -1217,82 +1266,141 @@ instrucciones generadas; no representan observaciones recibidas durante
 la planificación. La verificación de que el robot realizó físicamente
 cada operación corresponde a la etapa de ejecución.
 
-\subsection{Programa experimental Qwen--CLIPS}
+\section{Instrumento de campañas experimentales}
+\label{sec:instrumento_experimental_impl}
 
-Para la comparación de planes se implementó un programa independiente
-del recorrido ROS 2 de Justina. El programa recibe la instrucción y el
-contexto del caso, obtiene los objetivos mediante Qwen, aplica la
-normalización y conversión correspondientes, y utiliza CLIPS para
-generar el plan. Registra la entrada, los objetivos, el plan y las
-incidencias de cada etapa. Las acciones producidas no se envían al
-ejecutor del robot.
+El paquete \texttt{experiments} permite preparar, ejecutar, reanudar y
+evaluar campañas sin ROS ni ejecución física. Distingue las condiciones
+\texttt{qwen3b\_clips}, \texttt{qwen7b\_clips} y
+\texttt{gpt\_direct}; \texttt{reference\_\allowbreak clips} constituye un control
+auxiliar, no una cuarta configuración competidora.
 
-Este programa se distingue de \texttt{qwen\_to\_plan.py}, que prueba
-la cadena integrada mediante servicios ROS 2. Las diferencias entre
-ambos recorridos, particularmente en la normalización, la conversión
-a hechos y la configuración de reglas, se documentan para delimitar
-el alcance de la comparación experimental.
+\subsection{Preparación y conservación de la configuración}
+
+La operación \texttt{init} conserva entradas, referencias y recursos
+junto con un manifiesto. Este identifica condiciones, repeticiones,
+semilla de orden, límites de tiempo, modelos, parámetros y huellas.
+Las campañas copian el prompt, el esquema y las reglas que utilizarán.
+Para Qwen se captura \texttt{/metadata}; antes de ejecutar se contrasta
+la configuración efectiva del servidor con la esperada. Cambiar una
+etiqueta de condición no cambia el modelo cargado: debe seleccionarse
+el adaptador de 3B o 7B en el servidor correspondiente.
+
+Las operaciones \texttt{run}, \texttt{check}, \texttt{evaluate},
+\texttt{summary} y \texttt{view} separan ejecución, integridad,
+evaluación y consulta. El visor permite inspeccionar respuestas históricas
+sin consultar modelos; esa lectura no certifica reproducibilidad.
+Una campaña anterior no se reanuda con fuentes modificadas como si
+constituyeran la misma configuración.
+
+\subsection{Recorrido Qwen--CLIPS y control auxiliar}
+
+\texttt{experiments.\allowbreak backends} solicita la interpretación por HTTP,
+conserva el cuerpo recibido y extrae los objetivos antes de adaptarlos.
+\texttt{experiments.\allowbreak symbolic} utiliza las clases versionadas del
+adaptador y las reglas de \texttt{experiments/\allowbreak vendor} para construir
+hechos y expandir el plan. Su equivalencia con las fuentes de Justina
+se comprueba por separado, como se describió en la integración.
+Este recorrido difiere del validador del corpus, que no reproduce todas
+las heurísticas del adaptador de producción.
+
+El entorno CLIPS se reinicia para cada ejecución con ubicación desconocida
+y ausencia de objeto sostenido, según la representación descrita en la
+Sección~\ref{subsec:estado_simbolico_impl}. El instrumento de campañas
+utiliza ese estado inicial fijo. Los supuestos adicionales del
+escenario delimitan el dictamen y no se convierten automáticamente en
+hechos nuevos del motor.
+
+El control auxiliar introduce objetivos de referencia aprobados y
+aplicables por el mismo adaptador y reglas. Si no existe una referencia
+utilizable, se registra como control no realizado. Su plan se evalúa
+contra la tarea: una referencia aprobada no garantiza que la expansión
+sea correcta. Los criterios de cobertura y los denominadores siguen el
+Capítulo~\ref{ch:metodologia}.
+
+\subsection{Productos y tratamiento de incidencias}
+
+Cada ejecución identifica campaña, configuración, caso, repetición e
+intento. La Tabla~\ref{tab:productos_campana_impl} reúne los productos
+que permiten localizar discrepancias entre etapas. El cuerpo HTTP de
+Qwen contiene los objetivos extraídos y no la generación neuronal completa.
+GPT conserva el texto de salida y la respuesta del proveedor disponible.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Productos registrados y su función en la revisión de campañas.}
+\label{tab:productos_campana_impl}
+\begin{tabularx}{\textwidth}{@{}p{0.18\textwidth}XX@{}}
+\toprule
+\textbf{Etapa} & \textbf{Producto} & \textbf{Finalidad} \\
+\midrule
+Configuración & Manifiesto, identificadores, copias y huellas. & Identificar las condiciones de cada ejecución. \\
+Interpretación & Orden original, cuerpo de respuesta y objetivos recibidos; entrada normalizada en Qwen. & Examinar la interpretación antes de la adaptación. \\
+Adaptación Qwen & Objetos adaptados, transformaciones y hechos CLIPS. & Distinguir normalización y reparaciones de la predicción original. \\
+Planificación & Plan; en CLIPS, notas de cierre, número de reglas disparadas y metas restantes. & Revisar expansión y terminación. \\
+Validación & Comprobaciones del contrato e incidencias. & Separar aceptación técnica y dictamen semántico. \\
+Ejecución experimental & Tiempos, recursos observables, estado técnico y errores. & Conservar fallos y delimitar las mediciones. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Se separan el estado técnico de ejecución, el tipo de respuesta y el
+dictamen semántico. Un proceso completado puede devolver un plan incorrecto;
+una aclaración bien formada no acredita que aclarar fuera lo adecuado.
+El instrumento registra fallos y timeouts y conserva los intentos
+anteriores al reanudar. Los reintentos manuales constituyen intentos
+nuevos y no sobrescriben el primero. La disponibilidad del servidor tras
+un timeout y los límites de recuperación se tratan en el recorrido
+experimental, sin atribuir ese mecanismo al cliente ROS.
 
 \section{Implementación del planificador GPT}
 \label{sec:implementacion_gpt}
 
-El planificador directo se implementó como un programa independiente
-para pruebas por consola. Recibe una instrucción en lenguaje natural y solicita
+El planificador directo se implementó mediante un cliente individual
+y un backend de campañas que comparten prompt y esquema. Recibe una instrucción en lenguaje natural y solicita
 en una misma respuesta los objetivos semánticos y el plan de acciones.
-Esta implementación permite estudiar la interpretación y generación
-de planes bajo las convenciones operativas de Justina. El programa
-no utiliza CLIPS para construir el plan y no publica acciones al robot.
+El programa no utiliza CLIPS para construir el plan y no publica
+acciones al robot.
 
-El componente se organiza en \texttt{planner\_test\_node.py}, un
+El componente se organiza en \texttt{planner\_\allowbreak test\_\allowbreak node.\allowbreak py}, un
 prompt estático, un esquema JSON y ejemplos del contrato. Su salida
 consiste en una representación estructurada del plan y un registro
 de la solicitud, que permiten analizar el comportamiento del modelo
 sin ejecutar físicamente las acciones.
 
-El programa se mantuvo independiente porque el modelo genera
-los objetivos semánticos y el plan de acciones en una misma
-respuesta. Para obtener y analizar estas salidas no se requiere
-la transferencia entre un intérprete, un adaptador y un motor
-simbólico, como ocurre en Qwen--CLIPS. El cliente concentra
-la solicitud, la validación y el registro de resultados.
-
-Esta organización responde al alcance de la comparación,
-centrado en la interpretación y generación de planes. Una
-integración destinada a ejecutar las acciones en Justina
-requeriría incorporar las interfaces de comunicación y los
-controles correspondientes.
-
 \subsection{Interfaz con la API}
 
 El programa utiliza el cliente de OpenAI y el método
-\texttt{responses.create}. La solicitud contiene un mensaje de
+\texttt{responses.\allowbreak create}. La solicitud contiene un mensaje de
 sistema con las instrucciones del planificador y un mensaje de
 usuario con la orden. Cada invocación realiza una solicitud
 independiente y no conserva una conversación de varios turnos.
 
-El modelo seleccionado para este componente es
-\texttt{gpt-5.6-terra}. El programa recibe su identificador mediante
+Las campañas de desarrollo conservaron el identificador solicitado
+\texttt{gpt-5.6-terra}. Este antecedente no fija el modelo del experimento
+final ni acredita por sí solo un snapshot inmutable del proveedor. El programa recibe su identificador mediante
 \texttt{--model} o la variable \texttt{OPENAI\_MODEL}, sin fijar un
 modelo predeterminado en el código. El registro distingue el
 identificador solicitado del modelo informado en la respuesta,
 cuando el servicio proporciona este último.
 
-La solicitud produjo una respuesta con
-estado \texttt{completed}, aceptada por el validador local. Esta
-comprobación acredita el recorrido de solicitud y procesamiento del
-ejemplo y se distingue del conjunto experimental de comparación.
+El cliente \texttt{planner\_\allowbreak test\_\allowbreak node.\allowbreak py} permite comprobaciones
+individuales. Las solicitudes repetidas, la reanudación y el registro
+común de condiciones se implementan en el instrumento de campañas de la
+Sección~\ref{sec:instrumento_experimental_impl}.
 
 El cliente configura un tiempo de espera de 60 segundos y desactiva
 los reintentos automáticos. El límite predeterminado de salida es
 8\,192 tokens y puede modificarse mediante
-\texttt{--max-output-tokens}. La petición utiliza
+\texttt{-\allowbreak -\allowbreak max-\allowbreak output-\allowbreak tokens}. La petición utiliza
 \texttt{store=False}; el programa conserva su propio registro local.
 No especifica temperatura, \texttt{top\_p} ni un parámetro de esfuerzo
 de razonamiento en la solicitud.
 
-\subsection{System prompt}
+\subsection{Instrucciones del sistema}
 
-El prompt estático, identificado como versión 1.1, se elaboró en
+El prompt estático vigente, identificado como versión 1.6, se elaboró en
 inglés. Define los catálogos de entidades, las formas canónicas de
 los doce objetivos semánticos, la resolución de referencias y las
 convenciones de normalización. También establece las dependencias
@@ -1305,16 +1413,20 @@ entre anuncios y operaciones, la numeración de pasos y las condiciones
 de cierre. Los cambios de estado pertenecen a la construcción del plan
 y no representan observaciones del robot.
 
-El modelo recibe, por tanto, las convenciones de expansión empleadas
-por el sistema simbólico. La comparación estudia la generación directa
-bajo estas instrucciones y se circunscribe a esa configuración.
+La versión vigente incluye la selección de superficies por coincidencias
+ordenadas y la organización global del foco entre operaciones de diálogo,
+con un único \texttt{task completed} al final. El historial de versiones
+y las huellas permiten distinguir estos cambios de las campañas anteriores;
+las pruebas locales del protocolo no demuestran que el modelo remoto
+cumpla todas las instrucciones.
+
 El prompt se conserva separado de la orden y su huella SHA-256 se
 registra en cada solicitud para identificar el contenido utilizado.
 
 \subsection{JSON Schema y Structured Outputs}
 
 La solicitud incorpora el esquema mediante \texttt{text.format},
-con tipo \texttt{json\_schema}, nombre \texttt{gpsr\_direct\_plan}
+con tipo \texttt{json\_schema}, nombre \texttt{gpsr\_\allowbreak direct\_\allowbreak plan}
 y \texttt{strict=True}. Los seis campos del objeto raíz son
 obligatorios y no se admiten propiedades adicionales.
 
@@ -1353,7 +1465,7 @@ Los objetivos permiten evaluar la interpretación frente a
 secuencia de acciones y su correspondencia con las convenciones del
 ejecutor. Ambos elementos proceden de la misma respuesta del modelo.
 
-El programa convierte \texttt{response.output\_text} mediante
+El programa convierte \texttt{response.\allowbreak output\_\allowbreak text} mediante
 \texttt{json.loads}, conserva el resultado y lo somete a las
 comprobaciones locales. La respuesta se imprime como JSON y se añade
 al registro de ejecuciones. En este programa de pruebas no se realiza
@@ -1365,43 +1477,10 @@ rechazo de una tarea fuera del repertorio. Se utilizan para verificar
 el contrato local y se distinguen de las respuestas observadas en
 solicitudes reales al modelo.
 
-Como ejemplo de una respuesta real, la instrucción
-\textit{go to the kitchen and find an apple} produjo los objetivos:
-
-\begin{verbatim}
-{"goals": ["go(kitchen)", "find(apple, kind=object)"]}
-\end{verbatim}
-
-El plan devuelto contiene siete pasos. La
-Tabla~\ref{tab:ejemplo_gpt_observado_impl} presenta sus acciones y el
-único parámetro de cada paso; todos utilizan el identificador de robot
-\texttt{Justina}. La respuesta incluye también
-\texttt{status=executable}, mensaje vacío y las marcas
-\texttt{GPSR\_START} y \texttt{GPSR\_DONE}.
-
-\begin{table}[htbp]
-\centering
-\caption{Plan observado en la comprobación funcional del cliente GPT.}
-\label{tab:ejemplo_gpt_observado_impl}
-\begin{tabular}{|r|l|p{0.57\textwidth}|}
-\hline
-\textbf{Paso} & \textbf{Acción} & \textbf{Parámetro} \\
-\hline
-1 & \texttt{say} & \texttt{I will navigate to kitchen} \\
-2 & \texttt{say} & \texttt{I will search for apple} \\
-1001 & \texttt{go\_to} & \texttt{kitchen} \\
-1002 & \texttt{say} & \texttt{I have arrived at kitchen} \\
-1003 & \texttt{find\_object} & \texttt{apple\_1} \\
-1004 & \texttt{go\_to} & \texttt{instruction\_point} \\
-1005 & \texttt{say} & \texttt{task completed} \\
-\hline
-\end{tabular}
-\end{table}
-
-Los dos anuncios preceden al bloque operativo. El retorno al punto
-de instrucción y la frase final corresponden a las convenciones de
-cierre del prompt. El plan se conservó como salida de la generación;
-esta comprobación no incluyó su ejecución en el robot.
+Las respuestas reales de desarrollo se conservan en sus campañas, junto
+con las versiones del prompt y del esquema utilizados. Se consultan como
+evidencia histórica; no se presentan como salidas de la versión vigente
+sin comprobar sus huellas.
 
 \subsection{Tratamiento de aclaraciones y rechazos}
 
@@ -1420,112 +1499,107 @@ procesamiento, conservando la respuesta recibida cuando está disponible.
 
 \subsection{Validación determinista}
 
-La función \texttt{validate\_result} aplica primero el esquema mediante
-\texttt{Draft202012Validator}. Para una respuesta ejecutable exige
-objetivos y plan no vacíos, mensaje vacío y las marcas
-\texttt{GPSR\_START} y \texttt{GPSR\_DONE}. Las expresiones de
-objetivos se revisan con el validador semántico compartido y se
-restringen al vocabulario de la investigación.
+El cliente individual y el backend de campañas realizan comprobaciones
+locales, con diferencias en su implementación y en la forma de registrar
+el resultado. En el cliente individual, \texttt{validate\_\allowbreak result}
+aplica el esquema mediante \texttt{Draft202012Validator}. Para una
+respuesta ejecutable exige objetivos y plan no vacíos, mensaje vacío y
+las marcas \texttt{GPSR\_START} y \texttt{GPSR\_DONE}. Las expresiones
+de objetivos se revisan con el validador compartido.
 
-El programa comprueba que los pasos estén ordenados, sin duplicados
-ni huecos dentro de cada bloque. Los anuncios se numeran desde 1 y
-deben utilizar \texttt{say}; las operaciones comienzan en 1001.
-Cada paso debe contener exactamente un parámetro no vacío y el
-bloque de operaciones debe terminar con \texttt{say task completed}.
-Para aclaraciones y rechazos verifica que el mensaje esté presente
-y los campos operativos permanezcan vacíos.
+Ese cliente comprueba la numeración, exige anuncios \texttt{say} desde 1
+y operaciones desde 1001, y verifica un parámetro no vacío por paso y
+\texttt{say task completed} como última operación. Sin embargo, esta
+última comprobación no detecta por sí sola un cierre duplicado anterior.
+Para aclaraciones y rechazos exige mensaje y campos operativos vacíos.
+Su indicador \texttt{valid} informa de la aceptación por esos controles.
 
-El indicador \texttt{valid} señala que la respuesta superó estas
-comprobaciones. Puede ser verdadero tanto para un plan como para
-una aclaración o rechazo bien formado. No demuestra correspondencia
-semántica completa entre orden, objetivos y acciones ni satisfacción
-de todas las precondiciones del plan. Las verificaciones solicitadas
-al modelo dentro del prompt se distinguen de estos controles externos.
+En las campañas, \texttt{validate\_gpt}, del módulo
+\texttt{experiments.\allowbreak validation}, registra por separado la conformidad
+con el esquema de respuesta, la validez de los objetivos y la del contrato
+del plan mediante \texttt{response\_\allowbreak schema\_\allowbreak valid},
+\texttt{goals\_\allowbreak schema\_\allowbreak valid} y \texttt{plan\_\allowbreak contract\_\allowbreak valid}.
+La comprobación del plan, implementada en \texttt{plan\_issues}, exige
+un único cierre \texttt{task completed} al final de las operaciones y
+rechaza cierres prematuros o duplicados, sin repararlos.
 
-El programa incorpora un modo de validación local de los tres ejemplos
-del contrato. Las pruebas unitarias comprueban respuestas inconsistentes,
-numeración, parámetros, cierre, restricciones de objetivos y registro
-de errores. Para la interfaz con la API utilizan respuestas simuladas,
-por lo que esas pruebas no requieren solicitudes al servicio.
+Estos indicadores describen las comprobaciones implementadas. Una
+aclaración bien formada puede ser inadecuada para la tarea, y un plan
+aceptado puede incumplir una restricción de la orden. Por tanto, no
+sustituyen la revisión semántica ni demuestran satisfacción de todas
+las precondiciones. Las verificaciones pedidas al modelo en el prompt
+se distinguen de estos controles externos.
 
-\section{Reproducibilidad}
+El cliente incorpora un modo de validación local de los tres ejemplos
+del contrato. Las pruebas unitarias examinan respuestas inconsistentes,
+numeración, parámetros, cierre, objetivos y registro de errores.
+Las comprobaciones de interfaz utilizan respuestas simuladas, sin
+solicitudes al servicio.
+
+\section{Reproducibilidad y alcance de los registros}
 \label{sec:reproducibilidad_impl}
 
-\subsection{Versiones de modelos}
+\subsection{Identidad de modelos, datos y recursos}
 
-El modelo base se identifica como \texttt{Qwen/Qwen2.5-7B}. La
-configuración conservada del adaptador declara PEFT 0.18.1,
-\texttt{task\_type=CAUSAL\_LM}, rango 32, escala 64 y descarte
-0.05, sobre las proyecciones de atención y del bloque de
-transformación descritas anteriormente. La caché del entorno de
-entrenamiento conserva una única revisión de este repositorio,
-identificada también por su referencia local \texttt{main}:
+Los modelos base son \texttt{Qwen/\allowbreak Qwen2.\allowbreak 5-\allowbreak 3B} y
+\texttt{Qwen/\allowbreak Qwen2.\allowbreak 5-\allowbreak 7B}. Los metadatos conservados de inferencia
+identifican las siguientes revisiones, respectivamente:
 
+{\scriptsize
 \begin{verbatim}
-d149729398750b98c0af14eb82c78cfe92750796
+3B: 3aab1f1954e9cc14eb9509a215f9e5ca08227a9b
+7B: d149729398750b98c0af14eb82c78cfe92750796
 \end{verbatim}
+}
 
-Este identificador documenta la revisión local conservada del modelo
-base. Se recuperó de la caché al registrar la configuración: el
-script de carga no especifica \texttt{revision} y ese campo es nulo
-en la configuración del adaptador. Por tanto, la identificación
-recuperada se distingue de una selección de revisión fijada
-explícitamente en el código durante el entrenamiento.
+Estas revisiones identifican las bases observadas en las campañas
+registradas. El campo \texttt{revision} de los adaptadores es nulo y
+los scripts no fijan ese argumento; por tanto, la evidencia no acredita
+una selección explícita de esas revisiones durante el entrenamiento.
+Los estados de \texttt{Trainer}, argumentos y pesos seleccionados se
+conservan como productos distintos, según la
+Sección~\ref{subsec:seleccion_checkpoint_qwen}.
 
-El tokenizador guardado declara la clase \texttt{Qwen2Tokenizer} y
-conserva la plantilla conversacional utilizada para construir las
-entradas. Los archivos del adaptador, tokenizador y argumentos de
-entrenamiento constituyen registros complementarios. Los estados
-conservados documentan los checkpoints de 5\,000 y 9\,000
-actualizaciones. El estado final registra:
+El corpus compartido está en \texttt{data/\allowbreak datasets/\allowbreak dataset\_\allowbreak gpsr.\allowbreak jsonl}.
+La huella SHA-256 del archivo auditado es:
 
+{\scriptsize
 \begin{verbatim}
-global_step = 9000
-epoch = 2.0
-best_global_step = 5000
-best_model_checkpoint = "nl2cd_qwen7b/checkpoint-5000"
-best_metric = 0.23214000463485718
+0695f400370b93abbe97fc403a2acaa9f2d6bc8241667788bd466c6ad7c1c406
 \end{verbatim}
+}
 
-Los argumentos conservados
-confirman la selección por \texttt{eval\_loss}, con evaluación y
-guardado cada 250 pasos. El guardado posterior al entrenamiento
-exporta el adaptador restaurado, según el procedimiento de la
-Sección~\ref{subsec:seleccion_checkpoint_qwen}. El comando de despliegue
-inicia el servidor desde \texttt{Qwen2.5-7B}, dentro del directorio
-personal del usuario, y utiliza el adaptador y el tokenizador de
-\texttt{nl2cd\_qwen7b}, según la ruta descrita en la
-Sección~\ref{subsec:despliegue_qwen}.
+La declaración de procedencia respalda que se utilizó el mismo corpus
+en ambos entrenamientos; la huella actual no se presenta como una
+medición realizada durante cada corrida. La auditoría posterior de las
+etiquetas y del prefijo comprobado con CLIPS tampoco sustituye un reporte
+original de generación que no se conservó.
 
-Para el componente GPT se utilizó \texttt{gpt-5.6-terra}. El registro
-de la solicitud completada conserva ese
-identificador tanto en la petición como en la respuesta del servicio.
-El prompt versión 1.1 y el esquema coinciden con las huellas registradas
-en ambas solicitudes conservadas. La versión nominal del prompt se
-complementa con su huella para distinguir modificaciones de contenido.
+En GPT se identifican por separado el modelo solicitado, el informado
+en la respuesta, la fecha, el prompt y el esquema. La versión nominal
+se complementa con huellas y copias de recursos; el prompt vigente no
+se atribuye a todas las campañas históricas. La versión final del modelo
+y los parámetros efectivos se fijarán en la campaña de evaluación.
 
-\subsection{Configuraciones experimentales}
+\subsection{Entornos y configuración efectiva}
 
-La Tabla~\ref{tab:entorno_registrado_impl} reúne las versiones
-obtenidas del entorno utilizado para entrenar Qwen. La versión CUDA
-indicada corresponde a la compilación de PyTorch. Este inventario se
-conserva junto con los argumentos, la configuración del adaptador y
-los estados de entrenamiento.
+El inventario conservado del entorno empleado en el trabajo con 7B
+incluye Ubuntu 24.04.5 LTS, Python 3.12.3 y ROS 2 Jazzy. La
+Tabla~\ref{tab:entorno_registrado_impl} recoge las bibliotecas registradas.
+El inventario se distingue de una captura por ejecución y no se extrapola
+a cualquier servidor remoto ni al ajuste de 3B sin su registro asociado.
 
 \begin{table}[htbp]
 \centering
-\caption{Versiones del entorno de software utilizado para el entrenamiento.}
+\small
+\caption{Bibliotecas del inventario de software conservado.}
 \label{tab:entorno_registrado_impl}
-\begin{tabular}{|p{0.52\textwidth}|p{0.35\textwidth}|}
-\hline
-\textbf{Componente} & \textbf{Versión} \\
-\hline
-Ubuntu & 24.04.5 LTS \\
-Python & 3.12.3 \\
-ROS 2 & Jazzy \\
+\begin{tabularx}{\textwidth}{@{}Xl@{}}
+\toprule
+\textbf{Componente} & \textbf{Versión registrada} \\
+\midrule
 Controlador NVIDIA & 580.178.04 \\
-PyTorch & 2.9.0+cu130 \\
-CUDA de PyTorch & 13.0 \\
+PyTorch / CUDA de su compilación & 2.9.0+cu130 / 13.0 \\
 Transformers & 4.51.3 \\
 PEFT & 0.18.1 \\
 bitsandbytes & 0.49.2 \\
@@ -1536,166 +1610,59 @@ clipspy & 1.0.5 \\
 Cliente OpenAI & 2.8.1 \\
 jsonschema & 4.25.1 \\
 NumPy & 1.26.4 \\
-\hline
-\end{tabular}
+\bottomrule
+\end{tabularx}
 \end{table}
 
-El archivo \texttt{dataset\_gpsr.jsonl} auditado es el utilizado en el
-entrenamiento, contiene 40\,000 registros y se identifica mediante la
-siguiente huella SHA-256:
+El servidor actual calcula un inventario al cargar el modelo. Su
+\texttt{/metadata} identifica la base, revisión observada, pesos del
+adaptador, tokenizador, normalizador, catálogos, fuentes y parámetros.
+\texttt{effective\_\allowbreak config\_\allowbreak sha256} vincula ese inventario con las
+respuestas. El cliente experimental verifica la identidad antes de
+consultar y contrasta la huella recibida. El manifiesto registra la
+configuración; no reconfigura por sí mismo un servidor ya iniciado.
 
-{\scriptsize
-\begin{verbatim}
-0695f400370b93abbe97fc403a2acaa9f2d6bc8241667788bd466c6ad7c1c406
-\end{verbatim}
-}
+La inferencia Qwen compartida utiliza generación sin muestreo, hasta
+128 tokens nuevos y penalización de repetición de 1.05. El cliente GPT
+individual configura 60 segundos, hasta 8\,192 tokens y ausencia de
+reintentos automáticos; no envía temperatura, \texttt{top\_p} ni
+esfuerzo de razonamiento. Las campañas conservan sus propios parámetros
+y tiempos, que no deben deducirse únicamente de esos valores
+predeterminados. Los valores informados por el proveedor se distinguen
+de los enviados explícitamente.
 
-La partición implementada utiliza una fracción de validación de 0.1
-y semilla 42. La identidad del archivo, el orden de sus registros y
-la versión de la biblioteca de partición forman parte de la
-configuración necesaria para reconstruir la división.
+\subsection{Tiempos, recursos y conservación de evidencia}
 
-La inferencia Qwen del módulo compartido configura hasta 128 tokens
-nuevos, generación sin muestreo y penalización de repetición de 1.05.
-El normalizador utiliza los catálogos de \texttt{CompetitionTemplate}
-y los umbrales descritos en la sección de inferencia. Su entrada
-normalizada se conserva separada de la orden original. La ubicación
-del proceso, local o remota, y las transformaciones posteriores del
-adaptador forman parte de la condición del sistema completo.
+El instrumento separa petición al modelo, extracción, adaptación,
+planificación y validación. El monitor del servidor observa CPU, RAM y
+GPU en la inferencia, excluyendo carga y espera del bloqueo; el del
+cliente describe su propio proceso y procesamiento local. La memoria
+GPU asignada por PyTorch se distingue de la reservada y de otras
+mediciones del dispositivo. Los recursos internos del proveedor GPT no
+se infieren a partir del consumo del cliente.
 
-El servicio se inicia desde el directorio de trabajo del modelo
-mediante el siguiente comando. La clave se proporciona como variable
-de entorno y su valor no forma parte del registro de configuración:
+El uso de tokens, incluido el detalle de caché y razonamiento cuando se
+proporciona, se conserva con la respuesta GPT. El gasto observado o
+estimado se documenta por campaña y no se deduce solo de la latencia.
+La definición de ventanas temporales, denominadores y política de
+reintentos corresponde al protocolo experimental del capítulo siguiente.
 
-{\small
-\begin{verbatim}
-cd ~/Qwen2.5-7B/
-python3 server.py --host 100.102.21.62 --port 8008 \
-  --api-key "$QWEN_API_KEY"
-\end{verbatim}
-}
+En ROS, \texttt{PlanLogger} añade planes a \texttt{plan\_\allowbreak execution.\allowbreak log}
+y vacía el archivo al iniciar el nodo. Ese registro de sesión no contiene
+por sí solo la orden, el identificador de solicitud ni los tiempos de
+cada etapa. Es distinto del diario persistente de campañas. El registro
+experimental conserva los fallos y las transformaciones anteriores a
+la evaluación para permitir revisar dónde se produjo una discrepancia.
 
-El lanzamiento del sistema de planificación y el programa de pruebas
-se ejecutan en terminales independientes:
+Durante algunas comprobaciones CLIPS emitió \texttt{ENVRNMNT8},
+relativo a memoria no liberada por completo al cerrar entornos. La
+incidencia se conserva sin afirmar ausencia de crecimiento de memoria
+en campañas prolongadas. La revisión local de equivalencia y el ejemplo
+simbólico descritos en este capítulo no consultaron modelos remotos.
 
-{\small
-\begin{verbatim}
-ros2 launch planning_tools planning.launch.xml plan_name:=goals
-ros2 run planning_tools qwen_to_plan.py \
-  "go to the kitchen and find an apple"
-\end{verbatim}
-}
-
-La orden mostrada ilustra el argumento posicional requerido por el
-programa de pruebas. El archivo de lanzamiento fija el espacio de
-nombres \texttt{/planning} y conserva el formato de respuesta
-\texttt{goals}. Las rutas de servicios y del tópico coinciden con
-los valores predeterminados del programa.
-
-La URL del servidor y la clave se configuran mediante las variables
-\texttt{QWEN\_SERVER\_URL} y \texttt{QWEN\_API\_KEY},
-definidas en la configuración de la terminal e incorporadas al
-entorno del proceso ROS. El nodo utiliza esas variables cuando los
-parámetros ROS de conexión están vacíos. Un parámetro ROS
-no vacío tiene precedencia sobre su variable de entorno. Cuando no
-existe una URL en los parámetros ni en el entorno, el nodo utiliza
-\texttt{http://127.0.0.1:8008}, que se refiere al equipo donde
-se ejecuta el cliente.
-
-El valor de la URL debe identificar la dirección de escucha del
-servidor en el despliegue utilizado. La clave se conserva fuera del
-texto de la tesis. La resolución de parámetros, variables y valores
-predeterminados queda definida por el código del nodo semántico.
-El tiempo de espera HTTP efectivo de la invocación descrita es de
-cinco segundos, propagado desde el lanzamiento superior; se
-distingue de los diez segundos de espera de servicios del programa
-de pruebas y de sus cinco segundos de espera del plan.
-
-En GPT, el programa permite configurar el modelo, el límite de tokens
-y el archivo de resultados. El límite predeterminado es 8\,192 tokens,
-el tiempo de espera es de 60 segundos y los reintentos automáticos
-están desactivados. Los valores efectivamente enviados de modelo y
-límite de tokens quedan asociados a cada solicitud. La comprobación
-funcional utilizó el límite de 8\,192 tokens. Aunque el cliente no
-envía temperatura, \texttt{top\_p} ni esfuerzo de razonamiento, la
-respuesta conservada informa los valores 1.0, 0.98 y
-\texttt{medium}, respectivamente. Se registran como metadatos de esa
-respuesta, sin atribuirles una configuración explícita del cliente.
-Las condiciones
-de la comparación se establecen en el capítulo siguiente a partir
-de estas configuraciones.
-
-\subsection{Registro de ejecuciones}
-
-El entrenamiento conserva los argumentos, las configuraciones del
-adaptador y tokenizador, los estados de los checkpoints y la salida
-de consola. Esta última registra 27\,772.8461 segundos para
-\texttt{train\_runtime}, la finalización de las dos épocas y el paso
-al guardado del adaptador. Ese tiempo corresponde a la ejecución del
-entrenador; no incluye las comprobaciones generativas que el script
-realiza después de \texttt{trainer.train()}.
-
-La consola conserva también la comprobación de 50 muestras descrita
-en la Sección~\ref{subsec:seleccion_checkpoint_qwen} y las respuestas
-de cinco órdenes adicionales. Durante el cierre del validador CLIPS
-aparece el aviso \texttt{ENVRNMNT8} de memoria no liberada por completo.
-Se conserva como incidencia del entorno junto con los resultados
-reportados, sin describir la ejecución como libre de advertencias.
-Estos registros documentan el entrenamiento y su comprobación
-preliminar; las pruebas comparativas detalladas permanecen pendientes.
-
-El programa GPT añade un objeto JSON por solicitud a
-\texttt{runs/results.jsonl}, o a la ruta indicada mediante
-\texttt{--output}. El registro contiene la fecha UTC, la orden,
-el modelo solicitado, las huellas del prompt y esquema, los
-parámetros explícitos, el indicador de validación y la latencia.
-Cuando se obtiene una respuesta, conserva su representación completa
-y, si el texto pudo convertirse a JSON, el resultado estructurado.
-Los datos de uso de tokens y el modelo informado quedan dentro de la
-respuesta completa cuando el servicio los proporciona.
-
-El registro de comprobación funcional contiene solicitudes para
-la orden de navegación a la cocina y búsqueda de una manzana. Se 
-conserva una respuesta completada y validada, con un tiempo de 4.4844 
-segundos. El servicio informa 4\,251 tokens de entrada y 283 de salida, 
-para un total de 4\,534; el desglose de salida incluye 76 tokens de 
-razonamiento. Estos datos documentan solicitudes individuales y no se 
-interpretan como una estimación de precisión, tasa de fallos o latencia 
-media del sistema.
-
-La huella del prompt se calcula sobre el texto leído. La del esquema
-se calcula sobre su serialización JSON con claves ordenadas; por ello,
-no debe confundirse con una huella de los bytes originales del archivo.
-Las solicitudes fallidas también producen un registro con el error
-y el tiempo observado. La latencia se mide desde antes de la llamada
-hasta después del procesamiento y la validación, y excluye la escritura
-final del registro. Incluye comunicación y espera del servicio, por lo
-que no equivale únicamente al tiempo interno de generación del modelo.
-
-El nodo CLIPS añade cada plan publicado a
-\texttt{plan\_execution.log}. Al iniciar el nodo, el componente
-\texttt{PlanLogger} vacía el archivo; por tanto, su contenido corresponde
-a la sesión en curso y debe conservarse antes de reiniciar cuando se
-utiliza como evidencia. Este archivo contiene el texto de los planes,
-sin asociar por sí mismo un identificador de solicitud, la orden
-original o los tiempos de cada etapa. Los errores del planeador se
-envían al registro ROS y no se escriben mediante \texttt{PlanLogger}.
-El servidor Qwen devuelve
-\texttt{elapsed\_ms} para el procesamiento de la traducción; esta
-medición no comprende el recorrido completo observado por el cliente
-ni las etapas posteriores de adaptación y expansión simbólica.
-
-El módulo de inferencia incorpora \texttt{ResourceTimer} para
-diagnosticar tiempo transcurrido, tiempo de CPU, máximo de RAM del
-proceso y memoria de GPU asignada y reservada. Las mediciones temporales
-sincronizan CUDA en los límites del bloque observado. El porcentaje
-de CPU puede superar el 100\% cuando participan varios hilos y el
-máximo de RAM corresponde a la vida del proceso. Estos diagnósticos
-no se incorporan automáticamente a cada respuesta HTTP.
-
-Los registros disponibles describen etapas y límites temporales
-distintos. El archivo de planes, el tiempo de traducción y los
-diagnósticos del proceso no constituyen por separado una medición
-completa de Qwen--CLIPS. La evaluación debe asociar cada orden con
-sus objetivos, transformaciones, plan e incidencias, y delimitar de
-forma común las mediciones utilizadas en la comparación.
+Existe evidencia de desarrollo de 60 órdenes, cinco repeticiones y tres
+condiciones, con 900 primeros intentos. Sus versiones y dictámenes se
+conservan; esos antecedentes no constituyen la evaluación final
+independiente. El instrumento descrito permite preparar nuevas campañas,
+pero su disponibilidad no acredita que los datos finales estén construidos
+ni que modelos, referencias y criterios hayan sido congelados.
