@@ -6,7 +6,7 @@ Esta transformación presenta dos problemas relacionados: interpretar las subtar
 
 Esta tesis estudia dos arquitecturas para transformar órdenes en planes. La primera, Qwen--CLIPS, utiliza Qwen2.5 como intérprete semántico para producir objetivos canónicos, es decir, una representación estructurada de las subtareas y sus argumentos. Estos objetivos se validan y adaptan a hechos que CLIPS procesa mediante reglas de producción para generar el plan. La segunda arquitectura, GPT directo, genera conjuntamente los objetivos y las acciones a partir de la orden y de una especificación del dominio. Su respuesta se solicita conforme a un JSON Schema, que define la estructura admitida, y se somete posteriormente a validación determinista.
 
-Ambas se implementan como arquitecturas independientes y se comparan experimentalmente bajo el mismo conjunto de órdenes, contexto y criterios de evaluación.
+Ambas se implementaron como arquitecturas independientes. La comparación utiliza el mismo conjunto de órdenes, contexto y criterios de evaluación.
 
 \section{Contexto y motivación}
 
@@ -54,13 +54,11 @@ Para apoyar el diagnóstico, se incorpora un control que proporciona objetivos d
 
 \section{Hipótesis}
 
-La hipótesis principal es que, en el bloque de tareas resolubles dentro del dominio implementado, las configuraciones Qwen--CLIPS obtendrán una mayor proporción de planes que satisfagan las subtareas, restricciones y dependencias de la orden que GPT directo. Esta expectativa se apoya en su separación entre interpretación y expansión simbólica, sin atribuir las diferencias observadas exclusivamente a esa separación. Esta predicción se contrastará por separado para Qwen2.5-3B--CLIPS y Qwen2.5-7B--CLIPS frente a GPT directo.
+La hipótesis principal plantea que, en las tareas resolubles del dominio implementado, cada configuración Qwen--CLIPS alcanza una mayor proporción de planes con cumplimiento simbólico completo que GPT directo. Su fundamento es la separación entre interpretación y expansión operativa, aunque la comparación de sistemas completos no permite atribuir una diferencia exclusivamente a esa separación.
 
-Como hipótesis complementaria, se espera que GPT directo presente mayor robustez ante reformulaciones léxicas y sintácticas elaboradas de manera independiente de las plantillas de entrenamiento de Qwen, manteniendo la intención de la tarea. Esta expectativa se evaluará mediante el cumplimiento ante formulaciones equivalentes y no únicamente por la estabilidad del formato o de la respuesta.
+La hipótesis complementaria plantea que GPT directo presenta mayor robustez ante reformulaciones léxicas y sintácticas independientes de las plantillas de entrenamiento. El criterio es conservar el cumplimiento de la tarea ante expresiones equivalentes.
 
-La consistencia entre ejecuciones, la latencia y el costo observable se estudian como dimensiones comparativas sin anticipar una configuración ganadora. Tampoco se presupone que Qwen2.5-7B superará a Qwen2.5-3B. La trazabilidad de la cadena neuro-simbólica se utiliza para analizar errores de interpretación, adaptación y expansión; no se considera por sí misma una demostración de corrección.
-
-La hipótesis principal se contrastará mediante la proporción de ejecuciones experimentales con cumplimiento simbólico completo en cada configuración, con comparaciones sobre las mismas órdenes y considerando la agrupación de reformulaciones y repeticiones por escenario. El procedimiento detallado se presenta en el Capítulo~\ref{ch:validacion_experimentacion}, dedicado a la validación y experimentación.
+El contraste utiliza las mismas órdenes y agrupa las reformulaciones y repeticiones por escenario. La consistencia, la latencia y el costo se analizan como dimensiones comparativas, sin anticipar una configuración ganadora ni superioridad de 7B sobre 3B. El procedimiento se describe en el Capítulo~\ref{ch:validacion_experimentacion}.
 
 \section{Objetivos}
 
@@ -71,48 +69,27 @@ Diseñar, implementar y evaluar una arquitectura neuro-simbólica Qwen--CLIPS pa
 \subsection{Objetivos específicos}
 
 \begin{enumerate}
-    \item Definir el dominio operacional, la representación canónica de objetivos y el contrato de acciones, argumentos y efectos del ejecutor.
-    \item Ajustar Qwen2.5-3B y Qwen2.5-7B mediante QLoRA para transformar órdenes en objetivos canónicos representados en JSON, bajo un procedimiento común.
-    \item Implementar el procesamiento de la orden, validación, normalización y adaptación de los objetivos producidos por Qwen a hechos para CLIPS.
-    \item Implementar reglas de producción que expandan los objetivos en acciones, considerando las dependencias y el estado simbólico esperado.
-    \item Diseñar un planificador GPT directo condicionado por la especificación del dominio, con un contrato de salida definido mediante JSON Schema y validación determinista.
-    \item Construir un conjunto de evaluación independiente del desarrollo, documentando su relación con el entrenamiento y distinguiendo nuevas instancias, reformulaciones, composiciones y casos que requieren aclaración o reconocimiento de límites.
-    \item Comparar las tres configuraciones mediante criterios comunes de interpretación y cumplimiento del plan, junto con medidas de robustez lingüística, consistencia, latencia y costo observable. Analizar por separado el bloque principal y los casos de diagnóstico.
-    \item Analizar los errores de interpretación, adaptación y planificación mediante los productos intermedios y el control con objetivos de referencia.
-    \item Documentar la integración y el desempeño de Qwen--CLIPS en Justina durante la RoboCup 2026 como estudio separado de la comparación computacional.
+    \item Definir el dominio, la representación canónica de objetivos y el contrato de acciones del ejecutor, y construir los datos supervisados para la interpretación.
+    \item Especializar Qwen2.5-3B y Qwen2.5-7B mediante QLoRA bajo un procedimiento común.
+    \item Implementar la validación y adaptación de objetivos, su expansión mediante CLIPS y la integración con ROS~2 en Justina.
+    \item Implementar GPT directo con la misma especificación operativa, salida estructurada y validación determinista.
+    \item Establecer una evaluación independiente del desarrollo para comparar cumplimiento, fidelidad, robustez, consistencia, latencia y costo, y diagnosticar errores mediante productos intermedios y el control con objetivos de referencia.
+    \item Documentar la experiencia de Qwen--CLIPS en Justina durante RoboCup 2026, separada de la comparación computacional.
 \end{enumerate}
 
-\section{Contribuciones esperadas}
+\section{Contribuciones}
+
+El trabajo se apoyó en ViRBot, en el motor CLIPS y en el generador GPSR. Sobre esta base se desarrollaron:
 
 \begin{itemize}
-    \item Una representación intermedia de objetivos y una interfaz de adaptación que conectan la interpretación lingüística con la expansión simbólica.
-    \item Dos intérpretes Qwen2.5, de 3B y 7B, especializados mediante QLoRA bajo un procedimiento común.
-    \item Una arquitectura Qwen--CLIPS y su integración con ROS~2 para generar planes compatibles con el ejecutor de Justina.
-    \item Un planificador GPT directo condicionado por el mismo dominio operativo, con salida estructurada y validación determinista.
-    \item Un protocolo reproducible y un conjunto documentado de evaluación que distinguen cumplimiento dentro de la cobertura, robustez lingüística, composición y comportamiento ante límites de capacidad.
-    \item Un análisis comparativo de resultados, errores y costos observables, acompañado de la documentación separada de la experiencia de integración en el robot.
+    \item La adaptación del generador para producir pares orden--objetivos, con metadatos, controles de distribución y validación.
+    \item Los intérpretes Qwen2.5-3B y Qwen2.5-7B especializados mediante QLoRA, y la interfaz de adaptación que los conecta con la expansión por reglas e integración ROS~2 de Justina.
+    \item El planificador GPT directo, condicionado por el mismo dominio operativo y acompañado de validación determinista.
+    \item El instrumento de campañas y el protocolo que distinguen fidelidad de interpretación, cumplimiento del plan y errores entre componentes, junto con registros de configuración y costo observable.
 \end{itemize}
+
+La aportación experimental consiste en caracterizar estas configuraciones bajo requisitos comunes y analizar dónde se producen sus errores. Los resultados y la experiencia de aplicación en RoboCup se presentan en los capítulos correspondientes.
 
 \section{Estructura del documento}
 
-Este documento está organizado en los siguientes capítulos que describen el sistema propuesto para el desarrollo de esta tesis, abarcando el planteamiento, desarrollo, implementación y la evaluación de las arquitecturas estudiadas. La estructura es la siguiente:
-
-\begin{enumerate}
-    \item \textbf{Capítulo 1: Introducción.} Presenta el contexto y la motivación de la investigación, formula el problema y las hipótesis, delimita el alcance de la comparación entre Qwen--CLIPS y GPT directo, y establece los objetivos y las contribuciones esperadas.
-
-    \item \textbf{Capítulo 2: Antecedentes y estado del arte.} Revisa los sistemas basados en reglas, CLIPS, los modelos de lenguaje y las arquitecturas neuro-simbólicas. Compara trabajos relacionados que conectan instrucciones con habilidades, programas o planes simbólicos y sitúa la propuesta de investigación.
-
-    \item \textbf{Capítulo 3: Formalización del problema y arquitecturas conceptuales.} Define el dominio de referencia, el contexto, el contrato del ejecutor y las representaciones de órdenes, objetivos y planes. Describe las arquitecturas evaluadas y el control auxiliar, y distingue fidelidad semántica, cumplimiento simbólico, robustez, consistencia y ejecución física.
-
-    \item \textbf{Capítulo 4: Metodología y diseño de las arquitecturas evaluadas.} Explica la construcción y validación del conjunto de datos, distingue las etiquetas de entrenamiento de las referencias experimentales y separa los datos de ajuste, desarrollo y prueba final. Describe la especialización de Qwen, la adaptación de objetivos y el diseño de Qwen--CLIPS y GPT directo, junto con las condiciones comunes y los registros necesarios para su comparación.
-
-    \item \textbf{Capítulo 5: Implementación.} Describe la implementación de los intérpretes Qwen, su entrenamiento y despliegue, la adaptación de objetivos y la expansión con CLIPS. Presenta la integración con ROS~2, GPT directo y el instrumento de campañas, junto con las comprobaciones y los registros de reproducibilidad.
-
-    \item \textbf{Capítulo 6: Diseño experimental y criterios de evaluación.} Distingue el desarrollo de la prueba final, organiza los escenarios y las condiciones de comparación, y establece el procedimiento de ejecución y revisión. Define las métricas de cumplimiento, interpretación, robustez, consistencia, latencia y costo, junto con el análisis estadístico y los límites de la evaluación.
-
-    \item \textbf{Capítulo 7: Resultados.} Presenta la comparación de los planes generados por ambas arquitecturas, el análisis de errores y los resultados de latencia, recursos computacionales y costo. Documenta por separado el desempeño observado de Qwen--CLIPS en Justina durante la RoboCup 2026.
-
-    \item \textbf{Capítulo 8: Discusión.} Interpreta los resultados y sus limitaciones, incluyendo el alcance de la evaluación de planes y de la experiencia con el robot en la competencia.
-
-    \item \textbf{Capítulo 9: Conclusiones y trabajo futuro.} Resume los hallazgos, las contribuciones y las posibles mejoras de las arquitecturas estudiadas.
-\end{enumerate}
+El capítulo 2 revisa los antecedentes y sitúa la propuesta. El capítulo 3 define las representaciones, las arquitecturas y los criterios de corrección. El capítulo 4 explica la construcción de datos y el diseño metodológico; el capítulo 5 describe la implementación y sus comprobaciones. El capítulo 6 establece el protocolo experimental, y el capítulo 7 presenta los resultados y la experiencia con Justina. Los capítulos 8 y 9 desarrollan la discusión, las conclusiones y el trabajo futuro. El Apéndice~\ref{app:operacion} reúne los procedimientos de operación e integración.

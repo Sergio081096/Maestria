@@ -1,0 +1,262 @@
+\chapter{Procedimientos de operación e integración}
+\label{app:operacion}
+
+Este apéndice reúne los detalles operativos del sistema descrito en el Capítulo~\ref{ch:implementacion}. Los procedimientos corresponden a las interfaces y configuraciones documentadas; la confirmación de un servicio no acredita la ejecución física de las acciones.
+
+\section{Consulta del código y documentación}
+\label{app:codigo}
+
+El repositorio \url{https://github.com/Biorobotica-UNAM/qwen} contiene el código de generación, entrenamiento, inferencia y comparación experimental~\cite{repositorio_qwen_tesis}. Su \href{https://github.com/Biorobotica-UNAM/qwen/blob/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/README.md}{README} explica instalación, configuración y comandos. La Tabla~\ref{tab:mapa_codigo} ofrece enlaces a la revisión pública consultada, identificada por el commit \texttt{3e7fd13b5537}.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Ubicación de los componentes en el repositorio de código.}
+\label{tab:mapa_codigo}
+\begin{tabularx}{\textwidth}{@{}p{0.38\textwidth}X@{}}
+\toprule
+\textbf{Componente} & \textbf{Ubicación} \\
+\midrule
+Generación de datos & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/qwen_gpsr/generation}{\texttt{qwen\_gpsr/\allowbreak generation}} \\
+Contratos, catálogos y normalización & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/qwen_gpsr/domain}{\texttt{qwen\_gpsr/\allowbreak domain}} \\
+Entrenamiento QLoRA & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/qwen_gpsr/training}{\texttt{qwen\_gpsr/\allowbreak training}} \\
+Inferencia y servidor HTTP & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/qwen_gpsr/runtime}{\texttt{qwen\_gpsr/\allowbreak runtime}} \\
+Planificador GPT directo & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/chatgpt_planner}{\texttt{chatgpt\_planner}} \\
+Campañas y procesamiento simbólico & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/experiments}{\texttt{experiments}} \\
+Reglas y adaptador versionados & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/experiments/vendor}{\texttt{experiments/\allowbreak vendor}} \\
+Catálogos GPSR & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/data/CompetitionTemplate}{\texttt{data/\allowbreak CompetitionTemplate}} \\
+Informes y registros & \href{https://github.com/Biorobotica-UNAM/qwen/tree/3e7fd13b55375d9e776d7a1352673ecf06e45b2a/reports}{\texttt{reports}} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Los adaptadores y checkpoints de \texttt{models/} son artefactos locales excluidos del control de versiones; su disponibilidad no se deduce del acceso al repositorio. Los modelos base se obtienen de sus fuentes originales. La integración ROS~2 reside en el espacio de trabajo de Justina, mientras que \texttt{experiments/vendor/} conserva el adaptador y las reglas utilizados por el recorrido experimental. Las dependencias, los datos y los pesos necesarios deben identificarse junto con la configuración de cada ejecución.
+
+\section{Comunicación ROS 2 y operación del sistema}
+
+El coordinador envía la orden en \texttt{Parser.\allowbreak Request.\allowbreak command} y
+recupera un string JSON en \texttt{Parser.\allowbreak Response.\allowbreak response}.
+Una respuesta aceptada contiene \texttt{input} y \texttt{goals};
+\texttt{input} utiliza la entrada normalizada si está disponible y,
+en caso contrario, la orden enviada. Ante una excepción, el nodo
+devuelve \texttt{status=aborted} y la causa.
+
+El cliente comprueba que haya una lista \texttt{goals} en el nivel
+superior antes de llamar al conversor. Este solicita la inserción por
+lote y después el inicio de planificación. Con el lanzamiento integrado,
+las interfaces corresponden a:
+
+\begin{verbatim}
+/planning/semantic_parser/semantic_parser
+/planning/goals_to_clips/convert
+/planning/clips/assert_facts_batch
+/planning/clips/start_planning
+/planning/clips/results
+\end{verbatim}
+
+La conversión utiliza \texttt{clips\_\allowbreak interfaces/\allowbreak srv/\allowbreak String}:
+recibe el JSON en \texttt{request.data} y devuelve un mensaje de
+estado en \texttt{response.data}. La inserción por lote utiliza el
+tipo \texttt{StringArray}, del mismo paquete. El inicio de
+planificación utiliza \texttt{std\_\allowbreak srvs/\allowbreak srv/\allowbreak Trigger}.
+
+Al recibir un lote, el nodo encola una tarea que borra su copia del
+plan actual, reinicia el entorno mediante \texttt{reset}, inserta
+los hechos recibidos y ejecuta el motor. La solicitud de inicio
+encola otra tarea que borra la copia del plan, inserta el disparador
+\texttt{(start (name action-\allowbreak planning))} y vuelve a ejecutar el motor.
+El reinicio del entorno se realiza en la tarea de inserción por lote;
+la tarea de inicio no reinicia el entorno y conserva los hechos
+cargados para la planificación.
+
+El servicio por lote devuelve \texttt{successful=True} después de
+encolar la tarea. El servicio de inicio devuelve
+\texttt{success=True} y el mensaje \texttt{Planning started.\allowbreak } en
+ese mismo punto del procedimiento. Estas respuestas confirman la
+aceptación de las solicitudes, no la terminación de la inserción ni
+de la planificación. Si una tarea falla posteriormente, el trabajador
+escribe el error en el registro ROS; el callback que ya respondió no
+comunica ese fallo mediante su respuesta original.
+
+El adaptador espera hasta tres segundos por la disponibilidad de cada
+servicio dependiente y hasta cinco segundos por su respuesta. Rechaza
+una lista vacía y devuelve \texttt{OK} cuando ambas solicitudes
+reciben respuestas favorables. Estos límites corresponden a la
+comunicación de cada operación y no establecen un tiempo máximo
+global de generación del plan.
+
+Después de ejecutar el motor, el nodo busca hechos
+\texttt{ros-message}. Si existen, solicita su extracción y publica
+la salida no vacía mediante \texttt{std\_\allowbreak msgs/\allowbreak msg/\allowbreak String}, con una
+instrucción por línea. La obtención del plan se verifica sobre esa
+publicación y su contenido, por separado del estado devuelto por los
+servicios. El tópico publicado tiene el nombre relativo
+\texttt{clips/results}.
+
+\subsection{Recepción del plan y entrega de instrucciones}
+
+El cliente \texttt{qwen\_\allowbreak to\_\allowbreak plan.\allowbreak py} se suscribe al tópico de planes
+antes de enviar la orden. Imprime la respuesta semántica, el estado de
+conversión y el plan recibido. Puede ejecutarse desde la raíz del
+workspace Justina, con el entorno ROS cargado:
+
+{\small
+\begin{verbatim}
+ros2 launch planning_tools planning.launch.xml
+python3 src/Planning/planning_tools/scripts/qwen_to_plan.py \
+  "go to the kitchen and find an apple"
+\end{verbatim}
+}
+
+El lanzamiento y el cliente se mantienen en terminales independientes.
+El servidor Qwen debe estar iniciado y accesible mediante
+\texttt{QWEN\_\allowbreak SERVER\_\allowbreak URL}. El launch no inicia el servidor, el listener,
+el gestor de instrucciones ni el ejecutor físico.
+Las reglas se localizan respecto al directorio de trabajo, por lo que
+el arranque desde la raíz del workspace forma parte del procedimiento.
+
+El cliente espera, por defecto, diez segundos por servicio o respuesta
+y cinco por el plan. El HTTP del launch integrado utiliza cinco segundos,
+frente a los quince del launch semántico aislado. Aumentar la espera del
+cliente no modifica el timeout HTTP. La suscripción conserva el último
+texto recibido, sin identificador que lo vincule con la orden; por ello,
+este flujo se utiliza secuencialmente, con una orden a la vez.
+
+La biblioteca C++ \texttt{Planning} ofrece los clientes
+\texttt{parse\allowbreak Semantic\allowbreak Command}, \texttt{listen\allowbreak Gpsr\allowbreak Command} y
+\texttt{goalsToClips}. Los dos primeros devuelven objetivos y no inician
+CLIPS por sí solos; el coordinador solicita la conversión después.
+El servicio de escucha obtiene texto de \texttt{/\allowbreak hri/\allowbreak listener/\allowbreak listen}
+y lo envía a Qwen, con tiempos de escucha y traducción sucesivos.
+Los errores del nodo distinguen \texttt{gpsr\_\allowbreak unavailable}, para fallos
+de transporte y timeout, de \texttt{semantic\_\allowbreak error}, para otras
+excepciones. Ningún código acredita por sí solo que la orden sea inválida.
+
+El componente \texttt{plan\_\allowbreak manager\_\allowbreak node} recibe el plan y entrega
+una instrucción en cada petición. Conserva nombres absolutos históricos;
+para conectarlo con las rutas de \texttt{Planning} debe iniciarse aparte:
+
+{\small
+\begin{verbatim}
+ros2 run plan_manager_node plan_manager_node --ros-args \
+  -r /clips/results:=/planning/clips/results \
+  -r /request_instruction:=/planning/request_instruction \
+  -r /instruction_msg:=/planning/instruction_msg
+\end{verbatim}
+}
+
+Asignar un namespace no modifica esos nombres absolutos. El gestor
+elimina la numeración textual, avanza al entregar cada instrucción y
+responde \texttt{No\allowbreak Plan\allowbreak Assigned} cuando ya no tiene un plan activo.
+No espera confirmación de que la acción entregada se haya completado.
+El cliente de generación termina en el plan y no llama a los controladores.
+
+
+
+\section{Inicio del servidor Qwen}
+
+La inferencia puede ejecutarse en el equipo del robot o en una computadora
+remota. La entrada \texttt{server.py} delega en
+\texttt{qwen\_\allowbreak gpsr.\allowbreak runtime.\allowbreak server}; mantiene residentes el modelo,
+el tokenizador y el normalizador. El cliente ROS envía la orden por HTTP,
+mientras que la conversión a hechos y CLIPS permanecen en el entorno de
+Justina. Las campañas experimentales utilizan su propio proceso CLIPS.
+
+La ruta del adaptador se selecciona explícitamente al iniciar el servicio.
+Por ejemplo, desde la raíz del repositorio:
+
+{\small
+\begin{verbatim}
+python3 server.py --adapter-path models/nl2cd_qwen3b \
+  --host 127.0.0.1 --port 8008
+\end{verbatim}
+}
+
+Para 7B se utiliza \texttt{models/\allowbreak nl2cd\_\allowbreak qwen7b}, que también es la
+ruta predeterminada cuando se omite \texttt{-\allowbreak -\allowbreak adapter-\allowbreak path}.
+La dirección de escucha y la autenticación se configuran según el
+emplazamiento del cliente; \texttt{127.0.0.1} solo admite conexiones
+locales. La clave, si se utiliza, se proporciona fuera de los registros
+mediante \texttt{QWEN\_API\_KEY} y el encabezado Bearer.
+El servidor carga el adaptador indicado, sin comparar checkpoints al arrancar.
+
+
+
+\section{Identidad de modelos, datos y recursos}
+\label{app:identidad}
+
+Los modelos base son \texttt{Qwen/\allowbreak Qwen2.\allowbreak 5-\allowbreak 3B} y
+\texttt{Qwen/\allowbreak Qwen2.\allowbreak 5-\allowbreak 7B}. Los metadatos conservados de inferencia
+identifican las siguientes revisiones, respectivamente:
+
+{\scriptsize
+\begin{verbatim}
+3B: 3aab1f1954e9cc14eb9509a215f9e5ca08227a9b
+7B: d149729398750b98c0af14eb82c78cfe92750796
+\end{verbatim}
+}
+
+Estas revisiones identifican las bases observadas en las campañas
+registradas. El campo \texttt{revision} de los adaptadores es nulo y
+los scripts no fijan ese argumento; por tanto, la evidencia no acredita
+una selección explícita de esas revisiones durante el entrenamiento.
+Los estados de \texttt{Trainer}, argumentos y pesos seleccionados se
+conservan como productos distintos, según la
+Sección~\ref{subsec:seleccion_checkpoint_qwen}.
+
+El corpus compartido está en \texttt{data/\allowbreak datasets/\allowbreak dataset\_\allowbreak gpsr.\allowbreak jsonl}.
+La huella SHA-256 del archivo auditado es:
+
+{\scriptsize
+\begin{verbatim}
+0695f400370b93abbe97fc403a2acaa9f2d6bc8241667788bd466c6ad7c1c406
+\end{verbatim}
+}
+
+Se utilizó el mismo corpus en ambos entrenamientos; la huella actual
+identifica el archivo conservado, pero no corresponde a una medición
+realizada durante cada corrida. La auditoría posterior de las
+etiquetas y del prefijo comprobado con CLIPS tampoco sustituye un reporte
+original de generación que no se conservó.
+
+En GPT se identifican por separado el modelo solicitado, el informado
+en la respuesta, la fecha, el prompt y el esquema. La versión nominal
+se complementa con huellas y copias de recursos; el prompt vigente no
+se atribuye a todas las campañas históricas. El manifiesto de cada campaña identifica el modelo
+y los parámetros efectivos utilizados.
+
+
+
+\section{Inventario de software}
+
+El inventario conservado del entorno empleado en el trabajo con 7B
+incluye Ubuntu 24.04.5 LTS, Python 3.12.3 y ROS 2 Jazzy. La
+Tabla~\ref{tab:entorno_registrado_impl} recoge las bibliotecas registradas.
+El inventario se distingue de una captura por ejecución y no se extrapola
+a cualquier servidor remoto ni al ajuste de 3B sin su registro asociado.
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Bibliotecas del inventario de software conservado.}
+\label{tab:entorno_registrado_impl}
+\begin{tabularx}{\textwidth}{@{}Xl@{}}
+\toprule
+\textbf{Componente} & \textbf{Versión registrada} \\
+\midrule
+Controlador NVIDIA & 580.178.04 \\
+PyTorch / CUDA de su compilación & 2.9.0+cu130 / 13.0 \\
+Transformers & 4.51.3 \\
+PEFT & 0.18.1 \\
+bitsandbytes & 0.49.2 \\
+Accelerate & 1.13.0 \\
+Datasets & 4.8.4 \\
+Tokenizers & 0.21.4 \\
+clipspy & 1.0.5 \\
+Cliente OpenAI & 2.8.1 \\
+jsonschema & 4.25.1 \\
+NumPy & 1.26.4 \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
